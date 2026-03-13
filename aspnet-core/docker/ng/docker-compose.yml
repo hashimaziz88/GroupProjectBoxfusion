@@ -1,0 +1,40 @@
+version: '3'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: "Team2GroupProjectDb"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+    ports:
+      - "5433:5432"
+    volumes:
+      - "postgres_data:/var/lib/postgresql/data"
+    restart: always
+
+  abp_host:
+    image: abp/host
+    depends_on:
+      - postgres
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Staging"
+      ConnectionStrings__Default: "Host=postgres;Port=5432;Database=Team2GroupProjectDb;Username=postgres;Password=postgres"
+      App__ServerRootAddress: "http://localhost:44311/"
+      App__ClientRootAddress: "http://localhost:4200/"
+      App__CorsOrigins: "http://localhost:4200"
+      TZ: "America/Toronto"
+      Kestrel__Endpoints__Http__Url: "http://+:80"
+    ports:
+      - "44311:80"
+    volumes:
+      - "./Host-Logs:/app/App_Data/Logs"
+    restart: always
+
+  abp_ng:
+    image: abp/ng
+    ports:
+      - "4200:80"
+
+volumes:
+  postgres_data:
