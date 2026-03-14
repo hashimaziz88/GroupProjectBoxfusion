@@ -1,0 +1,50 @@
+name: Backend CI
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "aspnet-core/**"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "aspnet-core/**"
+
+jobs:
+  build-and-test:
+    name: Build & Test (ASP.NET Core)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: aspnet-core
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore dependencies
+        run: dotnet restore Team2GroupProject.sln
+
+      - name: Build solution
+        run: dotnet build Team2GroupProject.sln --no-restore --configuration Release
+
+      - name: Run tests
+        run: |
+          dotnet test test/Team2GroupProject.Tests/Team2GroupProject.Tests.csproj \
+            --no-build \
+            --configuration Release \
+            --logger "trx;LogFileName=test-results.trx" \
+            --results-directory ./TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: aspnet-core/TestResults/*.trx
