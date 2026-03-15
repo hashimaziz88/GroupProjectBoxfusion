@@ -5,17 +5,12 @@ import { Button, Layout, Menu, Tag, Typography } from "antd";
 import { usePathname, useRouter } from "next/navigation";
 import { getVisibleNavigationItems } from "@/constants/navigation";
 import { useAuthActions, useAuthState } from "@/providers/authProvider";
-import { isHostAdmin, isTenantAdmin } from "@/utils/roles";
+import { isHostAdmin, isTenantAdmin } from "@/utils/auth/roles";
 import { useStyles } from "@/app/style/style";
+import { IAppShellProps } from "@/interfaces/auth/authProps";
 
 const { Content, Header, Sider } = Layout;
 const { Paragraph, Text, Title } = Typography;
-
-interface IAppShellProps {
-  title: string;
-  subtitle: string;
-  children: ReactNode;
-}
 
 const resolveRoleLabel = (roles?: string[] | null) => {
   if (isHostAdmin(roles)) {

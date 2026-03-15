@@ -1,40 +1,9 @@
 import { axiosInstance } from "@/utils/axiosInstance";
-import { IAbpResponse, unwrapAbpResponse } from "@/utils/abp";
+import { unwrapAbpResponse } from "@/utils/abp";
+import { IAbpResponse } from "@/interfaces/abp";
+import { ICurrentLoginInformations, IUserConfiguration } from "@/interfaces/auth/sesstionService";
 
-export interface IApplicationInfo {
-  version?: string;
-  releaseDate?: string;
-  features?: Record<string, boolean>;
-}
 
-export interface IUserLoginInfo {
-  id?: number;
-  name?: string | null;
-  surname?: string | null;
-  userName?: string | null;
-  emailAddress?: string | null;
-}
-
-export interface ITenantLoginInfo {
-  id?: number;
-  tenancyName?: string | null;
-  name?: string | null;
-}
-
-export interface ICurrentLoginInformations {
-  application?: IApplicationInfo | null;
-  user?: IUserLoginInfo | null;
-  tenant?: ITenantLoginInfo | null;
-}
-
-export interface IUserConfiguration {
-  auth?: {
-    grantedPermissions?: Record<string, boolean>;
-  };
-  multiTenancy?: {
-    isEnabled?: boolean;
-  };
-}
 
 export const getCurrentLoginInformations = async () => {
   const response = await axiosInstance().get<

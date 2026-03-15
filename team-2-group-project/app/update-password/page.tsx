@@ -62,7 +62,7 @@ const UpdatePasswordPageContent = () => {
         <Alert
           type="success"
           showIcon
-          message={successMessage}
+          title={successMessage}
           className={styles.alert}
         />
       ) : null}
@@ -71,7 +71,7 @@ const UpdatePasswordPageContent = () => {
         <Alert
           type="error"
           showIcon
-          message={errorMessage}
+          title={errorMessage}
           className={styles.alert}
         />
       ) : null}

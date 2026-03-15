@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AppSpinner from "@/components/spinner/AppSpinner";
 import { useAuthState } from "@/providers/authProvider";
-import { hasPermission, selectBestAuthenticatedRoute } from "@/utils/roles";
+import { hasPermission, selectBestAuthenticatedRoute } from "@/utils/auth/roles";
 
 export const withAuth = <P extends object>(
   Component: ComponentType<P>,

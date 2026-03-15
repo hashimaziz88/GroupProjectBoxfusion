@@ -2,12 +2,9 @@
 
 import { Spin, Typography } from "antd";
 import { useStyles } from "@/components/spinner/style/style";
+import { IAppSpinnerProps } from "@/interfaces/spinnerProps";
 
 const { Text } = Typography;
-
-interface IAppSpinnerProps {
-  label?: string;
-}
 
 const AppSpinner = ({ label = "Loading..." }: IAppSpinnerProps) => {
   const { styles } = useStyles();

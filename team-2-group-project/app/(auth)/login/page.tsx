@@ -8,16 +8,13 @@ import AuthHeader from "@/components/auth/AuthHeader";
 import AuthLayout from "@/components/auth/AuthLayout";
 import AppSpinner from "@/components/spinner/AppSpinner";
 import { useAuthActions, useAuthState } from "@/providers/authProvider";
-import { selectBestAuthenticatedRoute } from "@/utils/roles";
+import { selectBestAuthenticatedRoute } from "@/utils/auth/roles";
 import { useStyles } from "@/app/(auth)/style/style";
+import { ILoginFormValues } from "@/interfaces/auth/authProps";
 
 const { Paragraph, Text, Title } = Typography;
 
-interface ILoginFormValues {
-  userNameOrEmailAddress: string;
-  password: string;
-  rememberClient: boolean;
-}
+
 
 type TenantFeedbackState =
   | { type: "success"; message: string }

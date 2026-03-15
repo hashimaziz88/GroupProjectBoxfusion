@@ -1,38 +1,17 @@
 import { axiosInstance } from "@/utils/axiosInstance";
-import { IAbpResponse, unwrapAbpResponse } from "@/utils/abp";
+import { unwrapAbpResponse } from "@/utils/abp";
+import { IAbpResponse } from "@/interfaces/abp";
+import { IAuthenticateRequest, IAuthenticateResponse, IRegisterRequest, IRegisterResponse } from "@/interfaces/auth/authService";
+import { ENCRYPTED_TOKEN_COOKIE_KEY, REMEMBERED_TOKEN_STORAGE_KEY, TOKEN_STORAGE_KEY } from "@/enums/auth/authService";
 
-const TOKEN_STORAGE_KEY = "access_token";
-const REMEMBERED_TOKEN_STORAGE_KEY = "remembered_access_token";
-const ENCRYPTED_TOKEN_COOKIE_KEY = "enc_auth_token";
-
-export interface IAuthenticateRequest {
-  userNameOrEmailAddress?: string | null;
-  password?: string | null;
-  rememberClient?: boolean | null;
-}
-
-export interface IAuthenticateResponse {
-  accessToken: string;
-  encryptedAccessToken: string;
-  expireInSeconds: number;
-  userId: number;
-}
-
-export interface IRegisterRequest {
-  name?: string | null;
-  surname?: string | null;
-  userName?: string | null;
-  emailAddress?: string | null;
-  password?: string | null;
-}
-
-export interface IRegisterResponse {
-  canLogin: boolean;
-}
 
 const canUseDom = () => typeof window !== "undefined";
 
-const setCookieValue = (name: string, value: string, maxAgeSeconds?: number) => {
+const setCookieValue = (
+  name: string,
+  value: string,
+  maxAgeSeconds?: number,
+) => {
   if (!canUseDom()) {
     return;
   }
@@ -50,10 +29,9 @@ const deleteCookieValue = (name: string) => {
 };
 
 export const authenticate = async (payload: IAuthenticateRequest) => {
-  const response = await axiosInstance().post<IAbpResponse<IAuthenticateResponse>>(
-    "/api/TokenAuth/Authenticate",
-    payload,
-  );
+  const response = await axiosInstance().post<
+    IAbpResponse<IAuthenticateResponse>
+  >("/api/TokenAuth/Authenticate", payload);
 
   return unwrapAbpResponse(response.data);
 };
@@ -83,7 +61,10 @@ export const storeAccessToken = (
   window.localStorage.removeItem(REMEMBERED_TOKEN_STORAGE_KEY);
 
   if (rememberClient) {
-    window.localStorage.setItem(REMEMBERED_TOKEN_STORAGE_KEY, authResult.accessToken);
+    window.localStorage.setItem(
+      REMEMBERED_TOKEN_STORAGE_KEY,
+      authResult.accessToken,
+    );
   } else {
     window.sessionStorage.setItem(TOKEN_STORAGE_KEY, authResult.accessToken);
   }

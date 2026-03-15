@@ -8,7 +8,6 @@ import {
   extractRolesFromToken,
   getAccessToken,
   getTokenExpiry,
-  IAuthenticateResponse,
   register as registerAccount,
   storeAccessToken,
 } from "@/utils/auth/authService";
@@ -16,16 +15,13 @@ import {
   clearTenantContext,
   getCurrentTenantContext,
   isTenantAvailable,
-  ITenantContext,
   setTenantContext,
   syncTenantFromLocation,
-  TenantAvailabilityState,
 } from "@/utils/auth/tenantService";
 import {
   extractGrantedPermissions,
   getCurrentLoginInformations,
   getUserConfiguration,
-  ICurrentLoginInformations,
   isMultiTenancyEnabled,
 } from "@/utils/auth/sessionService";
 import {
@@ -50,12 +46,16 @@ import {
   AuthStateContext,
   INITIAL_STATE,
   ITenantChangeResult,
+  ITenantContext,
   IUserLoginRequest,
   IUserLoginResponse,
   IUserRegisterRequest,
 } from "./context";
 import { AuthReducer } from "./reducer";
-import { selectBestAuthenticatedRoute } from "@/utils/roles";
+import { selectBestAuthenticatedRoute } from "@/utils/auth/roles";
+import { ICurrentLoginInformations } from "@/interfaces/auth/sesstionService";
+import { TenantAvailabilityState } from "@/enums/auth/tenantService";
+import { IAuthenticateResponse } from "@/interfaces/auth/authService";
 
 const buildResolvedUser = (
   authResult: IAuthenticateResponse | null,

@@ -1,26 +1,9 @@
 import axios from "axios";
-import { IAbpResponse, unwrapAbpResponse } from "@/utils/abp";
-
-const TENANT_COOKIE_KEY = "Abp.TenantId";
-const TENANT_ID_STORAGE_KEY = "abp_tenant_id";
-const TENANCY_NAME_STORAGE_KEY = "abp_tenancy_name";
-const TENANCY_NAME_QUERY_KEY = "abp_tenancy_name";
-
-export enum TenantAvailabilityState {
-  Available = 1,
-  InActive = 2,
-  NotFound = 3,
-}
-
-export interface ITenantContext {
-  tenantId?: number | null;
-  tenancyName?: string | null;
-}
-
-export interface IIsTenantAvailableResponse {
-  state: TenantAvailabilityState;
-  tenantId?: number | null;
-}
+import { unwrapAbpResponse } from "@/utils/abp";
+import { IAbpResponse } from "@/interfaces/abp";
+import { IIsTenantAvailableResponse, ITenantContext } from "@/interfaces/auth/tenantService";
+import { TenantAvailabilityState } from "@/enums/auth/tenantService";
+import { TENANCY_NAME_QUERY_KEY, TENANCY_NAME_STORAGE_KEY, TENANT_COOKIE_KEY, TENANT_ID_STORAGE_KEY } from "@/constants/auth/tenantService";
 
 const canUseDom = () => typeof window !== "undefined";
 

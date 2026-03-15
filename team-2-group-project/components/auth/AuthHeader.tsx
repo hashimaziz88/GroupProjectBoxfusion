@@ -2,14 +2,10 @@
 
 import { Tag, Typography } from "antd";
 import { useStyles } from "@/app/(auth)/style/style";
+import { IAuthHeaderProps } from "@/interfaces/auth/authProps";
 
 const { Paragraph, Title } = Typography;
 
-interface IAuthHeaderProps {
-  title: string;
-  subtitle: string;
-  tenantLabel?: string;
-}
 
 const AuthHeader = ({ title, subtitle, tenantLabel }: IAuthHeaderProps) => {
   const { styles } = useStyles();

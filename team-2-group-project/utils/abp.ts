@@ -1,14 +1,4 @@
-export interface IAbpResponse<T> {
-  result?: T | null;
-  targetUrl?: string | null;
-  success?: boolean;
-  error?: {
-    message?: string;
-    details?: string;
-  } | null;
-  unAuthorizedRequest?: boolean;
-  __abp?: boolean;
-}
+import { IAbpResponse } from "@/interfaces/abp";
 
 const resolveErrorMessage = (response: IAbpResponse<unknown>) =>
   response.error?.details ||

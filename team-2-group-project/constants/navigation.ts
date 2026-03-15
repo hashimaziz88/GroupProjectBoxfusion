@@ -1,9 +1,10 @@
 import {
-  PERMISSIONS,
+  
   canAccessRoles,
   canAccessTenants,
   canAccessUsers,
-} from "@/utils/roles";
+} from "@/utils/auth/roles";
+import { PERMISSIONS } from "./auth/roles";
 
 export interface INavigationItem {
   key: string;

@@ -1,18 +1,6 @@
-export const PERMISSIONS = {
-  users: "Pages.Users",
-  roles: "Pages.Roles",
-  tenants: "Pages.Tenants",
-} as const;
-
-export const STATIC_ROLES = {
-  hostAdmin: "Host.Admin",
-  tenantAdmin: "Tenants.Admin",
-} as const;
-
-export interface IRouteSelectorUser {
-  permissions?: string[] | null;
-  roles?: string[] | null;
-}
+import { STATIC_ROLES } from "@/constants/auth/roles";
+import { PERMISSIONS } from "@/constants/auth/roles";
+import { IRouteSelectorUser } from "@/interfaces/auth/roles";
 
 const normalizeValues = (values?: string[] | null) =>
   Array.isArray(values)

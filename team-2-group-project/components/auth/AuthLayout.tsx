@@ -3,14 +3,11 @@
 import type { ReactNode } from "react";
 import { Card, Typography } from "antd";
 import { useStyles } from "@/app/(auth)/style/style";
+import { IAuthLayoutProps } from "@/interfaces/auth/authProps";
 
 const { Paragraph, Title } = Typography;
 
-interface IAuthLayoutProps {
-  children: ReactNode;
-  asideTitle: string;
-  asideText: string;
-}
+
 
 const AuthLayout = ({
   children,

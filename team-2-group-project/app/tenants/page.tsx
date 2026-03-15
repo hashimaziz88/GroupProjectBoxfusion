@@ -4,10 +4,11 @@ import { useEffect, useState } from "react";
 import { Alert, Card, Table, Tag, Typography } from "antd";
 import AppShell from "@/components/auth/AppShell";
 import { withAuth } from "@/hoc/withAuth";
-import { getTenants, ITenantListItem } from "@/utils/auth/adminService";
+import { getTenants } from "@/utils/auth/adminService";
 import { toArray } from "@/utils/helpers";
-import { PERMISSIONS } from "@/utils/roles";
 import { useStyles } from "@/app/style/style";
+import { ITenantListItem } from "@/interfaces/auth/adminService";
+import { PERMISSIONS } from "@/constants/auth/roles";
 
 const { Paragraph, Title } = Typography;
 
@@ -42,7 +43,7 @@ const TenantsPageContent = () => {
         <Alert
           type="error"
           showIcon
-          message={errorMessage}
+          title={errorMessage}
           className={styles.alert}
         />
       ) : null}

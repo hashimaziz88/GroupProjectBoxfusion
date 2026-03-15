@@ -5,7 +5,7 @@ import AppShell from "@/components/auth/AppShell";
 import { withAuth } from "@/hoc/withAuth";
 import { useAuthState } from "@/providers/authProvider";
 import { useStyles } from "@/app/style/style";
-import { isHostAdmin, isTenantAdmin } from "@/utils/roles";
+import { isHostAdmin, isTenantAdmin } from "@/utils/auth/roles";
 
 const { Paragraph, Title } = Typography;
 

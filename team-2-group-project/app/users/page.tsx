@@ -4,10 +4,11 @@ import { useEffect, useState } from "react";
 import { Alert, Card, Table, Tag, Typography } from "antd";
 import AppShell from "@/components/auth/AppShell";
 import { withAuth } from "@/hoc/withAuth";
-import { getUsers, IUserListItem } from "@/utils/auth/adminService";
+import { getUsers } from "@/utils/auth/adminService";
 import { formatDateTime, toArray } from "@/utils/helpers";
-import { PERMISSIONS } from "@/utils/roles";
 import { useStyles } from "@/app/style/style";
+import { IUserListItem } from "@/interfaces/auth/adminService";
+import { PERMISSIONS } from "@/constants/auth/roles";
 
 const { Paragraph, Title } = Typography;
 

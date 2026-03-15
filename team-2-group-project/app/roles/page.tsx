@@ -4,10 +4,11 @@ import { useEffect, useState } from "react";
 import { Alert, Card, Table, Tag, Typography } from "antd";
 import AppShell from "@/components/auth/AppShell";
 import { withAuth } from "@/hoc/withAuth";
-import { getRoles, IRoleListItem } from "@/utils/auth/adminService";
+import { getRoles } from "@/utils/auth/adminService";
 import { formatDateTime, toArray } from "@/utils/helpers";
-import { PERMISSIONS } from "@/utils/roles";
 import { useStyles } from "@/app/style/style";
+import { IRoleListItem } from "@/interfaces/auth/adminService";
+import { PERMISSIONS } from "@/constants/auth/roles";
 
 const { Paragraph, Title } = Typography;
 
@@ -42,7 +43,7 @@ const RolesPageContent = () => {
         <Alert
           type="error"
           showIcon
-          message={errorMessage}
+          title={errorMessage}
           className={styles.alert}
         />
       ) : null}

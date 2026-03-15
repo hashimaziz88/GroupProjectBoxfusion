@@ -8,18 +8,13 @@ import AuthHeader from "@/components/auth/AuthHeader";
 import AuthLayout from "@/components/auth/AuthLayout";
 import AppSpinner from "@/components/spinner/AppSpinner";
 import { useAuthActions, useAuthState } from "@/providers/authProvider";
-import { selectBestAuthenticatedRoute } from "@/utils/roles";
+import { selectBestAuthenticatedRoute } from "@/utils/auth/roles";
 import { useStyles } from "@/app/(auth)/style/style";
+import { IRegisterFormValues } from "@/interfaces/auth/authProps";
 
 const { Paragraph, Title } = Typography;
 
-interface IRegisterFormValues {
-  name: string;
-  surname: string;
-  emailAddress: string;
-  userName: string;
-  password: string;
-}
+
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -88,7 +83,7 @@ export default function RegisterPage() {
             <Alert
               type="error"
               showIcon
-              message={errorMessage}
+              title={errorMessage}
               className={styles.alert}
             />
           ) : null}
