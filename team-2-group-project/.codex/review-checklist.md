@@ -37,6 +37,16 @@
 - [ ] Current login information is refreshed after login and tenant changes.
 - [ ] Tenant resolution strategy matches the documented Angular reference behavior.
 
+## Roles And Access
+
+- [ ] Host admin flow matches the Angular and ABP scaffold.
+- [ ] Tenant admin flow matches the Angular and ABP scaffold.
+- [ ] Tenant user flow matches the Angular and ABP scaffold.
+- [ ] Users routes are guarded by `Pages.Users`.
+- [ ] Roles routes are guarded by `Pages.Roles`.
+- [ ] Tenants routes are guarded by `Pages.Tenants`.
+- [ ] No separate built-in `Manager` role is assumed unless the backend is explicitly extended for it.
+
 ## UX And State
 
 - [ ] Loading states are visible.

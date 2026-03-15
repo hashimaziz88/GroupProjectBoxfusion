@@ -6,6 +6,29 @@ This file defines how the Next.js frontend should implement authentication, regi
 
 ## Current Backend Source Of Truth
 
+### Static Roles And Permissions
+
+Backend role and permission source files:
+
+- `../aspnet-core/src/Team2GroupProject.Core/Authorization/Roles/StaticRoleNames.cs`
+- `../aspnet-core/src/Team2GroupProject.Core/Authorization/Roles/AppRoleConfig.cs`
+- `../aspnet-core/src/Team2GroupProject.Core/Authorization/PermissionNames.cs`
+
+Exact built-in static roles:
+
+- `Host.Admin`
+- `Tenants.Admin`
+
+There is no separate built-in `Manager` static role in the current Angular and ABP scaffold.
+If exact Angular parity is the goal, do not invent one in the docs or implementation.
+
+Relevant permissions:
+
+- `Pages.Users`
+- `Pages.Users.Activation`
+- `Pages.Roles`
+- `Pages.Tenants`
+
 ### Authentication
 
 - Endpoint: `POST /api/TokenAuth/Authenticate`
@@ -129,6 +152,12 @@ Use these files to match behavior:
 - `../angular/src/app-initializer.ts`
 - `../angular/src/shared/auth/app-auth.service.ts`
 - `../angular/src/shared/session/app-session.service.ts`
+- `../angular/src/app/app-routing.module.ts`
+- `../angular/src/app/layout/sidebar-menu.component.ts`
+- `../angular/src/app/home/home.component.ts`
+- `../angular/src/app/users/users.component.ts`
+- `../angular/src/app/roles/roles.component.ts`
+- `../angular/src/app/tenants/tenants.component.ts`
 
 Use them for:
 
@@ -138,6 +167,9 @@ Use them for:
 - tenant change behavior
 - subdomain and query-string tenant resolution
 - session bootstrap order
+- logged-in shell routes
+- permission-based visibility for users, roles, and tenants
+- role parity between host admin, tenant admin, and tenant users
 
 Do not copy Angular structure into the Next.js repo.
 
@@ -276,6 +308,51 @@ Required outcomes:
 - missing tenant -> show warning feedback
 - empty tenancy name -> clear tenant context and return to host mode
 
+## Required Logged-In Entry Shell
+
+To match the Angular app, the authenticated part of the app should include:
+
+- a home entry page
+- an about entry page
+- users management page
+- roles management page
+- tenants management page
+- update-password route
+
+The Angular routing and sidebar currently expose:
+
+- `/app/home`
+- `/app/about`
+- `/app/users`
+- `/app/roles`
+- `/app/tenants`
+
+Use permission-based route protection for:
+
+- users -> `Pages.Users`
+- roles -> `Pages.Roles`
+- tenants -> `Pages.Tenants`
+
+Authenticated users without those permissions should still be able to reach the basic logged-in shell.
+
+## Required Role Parity
+
+If the goal is exact Angular parity, the Next.js implementation should document and enforce this access model:
+
+- host admin
+  - static role: `Host.Admin`
+  - manages tenants, users, and roles
+- tenant admin
+  - static role: `Tenants.Admin`
+  - manages users and roles inside the active tenant
+  - does not manage the global tenants list
+- tenant user
+  - standard authenticated tenant user
+  - can access the logged-in shell
+  - only sees management sections when granted the corresponding permissions
+
+Do not describe or implement a separate built-in `Manager` static role as if it already exists in Angular or ABP.
+
 ## Required Auth Flow Order
 
 ### On App Startup
@@ -306,4 +383,4 @@ Required outcomes:
 - Keep session bootstrap centralized.
 - Keep the provider, page, and style structure identical to `.codex/provider-pattern-contract.md`.
 - Use Angular as a behavior reference only.
-- Treat auth and multi-tenancy as the only confirmed integration surface until new backend contracts are added and documented.
+- Match the existing Angular and ABP role/permission model before inventing new role concepts.

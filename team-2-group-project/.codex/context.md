@@ -62,12 +62,23 @@ utils/
 
 ## Backend Context
 
-Only the ABP auth and multi-tenancy scaffold should currently be treated as the confirmed backend integration surface for the Next.js app:
+The current ABP template surface that already exists and can be mirrored from the Angular app includes:
 
 - `TokenAuthController.Authenticate`
 - `AccountAppService.Register`
 - `AccountAppService.IsTenantAvailable`
 - `SessionAppService.GetCurrentLoginInformations`
+- `UserAppService`
+- `RoleAppService`
+- `TenantAppService`
+- permission names:
+  - `Pages.Users`
+  - `Pages.Users.Activation`
+  - `Pages.Roles`
+  - `Pages.Tenants`
+- static roles:
+  - `Host.Admin`
+  - `Tenants.Admin`
 
 This means the frontend should prioritize:
 
@@ -75,6 +86,8 @@ This means the frontend should prioritize:
 - register
 - tenant resolution and tenant switching
 - current-session bootstrap
+- authenticated entry shell
+- users, roles, and tenants management parity with Angular permissions
 
 ## Angular Reference Context
 
@@ -113,4 +126,5 @@ Use these Angular files as reference when documenting or implementing behavior:
 - Keep API contracts typed and centralized.
 - Keep tenant resolution and tenant header logic centralized.
 - Use Ant Design and `antd-style`.
-- Do not document or build business features as if the backend already exposes them when only auth scaffolding is confirmed.
+- Match the Angular role and permission model exactly when documenting or implementing users, roles, tenants, and logged-in entry routes.
+- Do not invent a new static `Manager` role if the goal is exact parity with the current Angular and ABP scaffold.

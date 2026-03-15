@@ -63,8 +63,25 @@ The frontend should currently treat these ASP.NET Core contracts as the active a
 - `POST /api/services/app/Account/Register`
 - `POST /api/services/app/Account/IsTenantAvailable`
 - `POST /api/services/app/Session/GetCurrentLoginInformations`
+- users management under `Pages.Users`
+- roles management under `Pages.Roles`
+- tenant management under `Pages.Tenants`
 
 These are documented in `.codex/auth-multi-tenancy.md`.
+
+## Exact Angular Parity Notes
+
+If the goal is to match the Angular app exactly, the authenticated Next.js app should preserve:
+
+- auth routes for login, register, and tenant switching
+- an authenticated shell with home/about-style entry pages
+- permission-gated users, roles, and tenants pages
+- the ABP static role model:
+  - `Host.Admin`
+  - `Tenants.Admin`
+  - regular tenant users
+
+There is no built-in separate `Manager` static role in the current Angular and ABP scaffold.
 
 ## Angular Reference Use
 

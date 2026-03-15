@@ -98,6 +98,11 @@ app/
 - Bootstrap the current session after login and after tenant changes.
 - Use the Angular account flow as a behavior reference, not as a structure to copy verbatim.
 - No structural deviations from the provider, page, and style contract are allowed.
+- Match the Angular and ABP role model exactly:
+  - `Host.Admin`
+  - `Tenants.Admin`
+  - tenant users with permission-based access
+- Do not invent a separate built-in `Manager` role if the goal is exact Angular parity.
 
 ## Setup Notes
 
