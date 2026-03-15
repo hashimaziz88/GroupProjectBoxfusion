@@ -1,3 +1,5 @@
+import AppSpinner from "@/components/spinner/AppSpinner";
+
 export default function Loading() {
-  return <div>Loading application...</div>;
+  return <AppSpinner label="Loading application..." />;
 }

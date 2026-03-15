@@ -1,3 +1,5 @@
+import AppSpinner from "@/components/spinner/AppSpinner";
+
 export default function AuthLoading() {
-  return <div>Loading authentication...</div>;
+  return <AppSpinner label="Loading authentication..." />;
 }
