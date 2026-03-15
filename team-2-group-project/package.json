@@ -9,9 +9,14 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@types/redux-actions": "^2.6.5",
+    "antd": "^6.3.2",
+    "antd-style": "^4.1.0",
+    "axios": "^1.13.6",
     "next": "16.1.6",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "redux-actions": "^3.0.3"
   },
   "devDependencies": {
     "@types/node": "^20",
