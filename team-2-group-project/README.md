@@ -1,36 +1,98 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Team 2 Group Project Frontend
 
-## Getting Started
+This repository is the Next.js frontend workspace for `team-2-group-project`.
+It is currently an auth-first scaffold aligned to the ABP backend authentication and multi-tenancy surface that already exists in `../aspnet-core`.
 
-First, run the development server:
+## Source Of Truth
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+1. Actual repo state
+2. `AGENTS.md`
+3. `.codex/context.md`
+4. `.codex/rules.md`
+5. `.codex/auth-multi-tenancy.md`
+6. `.codex/provider-pattern-contract.md`
+7. `.codex/review-checklist.md`
+8. Confirmed backend contracts in `../aspnet-core`
+9. Angular auth and tenant reference flows in `../angular`
+
+## Current Frontend Shape
+
+```text
+app/
+  (auth)/
+    login/
+      page.tsx
+    register/
+      page.tsx
+    style/
+      style.ts
+    loading.tsx
+  style/
+    style.ts
+  favicon.ico
+  globals.css
+  layout.tsx
+  loading.tsx
+  page.tsx
+  providers.tsx
+components/
+  auth/
+  spinner/
+constants/
+hoc/
+  withAuth.tsx
+providers/
+  authProvider/
+types/
+utils/
+  auth/
+  dashboard/
+  session/
+  todos/
+  axiosInstance.ts
+  helpers.ts
+  roles.ts
+  themeSetup.ts
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Current Backend Surface
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+The frontend should currently treat these ASP.NET Core contracts as the active auth source of truth:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `POST /api/TokenAuth/Authenticate`
+- `POST /api/services/app/Account/Register`
+- `POST /api/services/app/Account/IsTenantAvailable`
+- `POST /api/services/app/Session/GetCurrentLoginInformations`
 
-## Learn More
+These are documented in `.codex/auth-multi-tenancy.md`.
 
-To learn more about Next.js, take a look at the following resources:
+## Angular Reference Use
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Use the Angular project only to document expected auth behavior and tenant flow:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `../angular/src/account/login`
+- `../angular/src/account/register`
+- `../angular/src/account/tenant`
+- `../angular/src/app-initializer.ts`
+- `../angular/src/shared/auth/app-auth.service.ts`
+- `../angular/src/shared/session/app-session.service.ts`
 
-## Deploy on Vercel
+Do not copy Angular structure into this repo. Recreate the flow using the Next.js conventions documented here.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Setup
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Copy `.env.example` to `.env.local`.
+2. Set `NEXT_PUBLIC_API_LINK` to the ASP.NET Core host base URL.
+3. Run:
+
+```bash
+npm install
+npm run dev
+```
+
+## Team Guidance
+
+- Read `AGENTS.md` before adding feature files.
+- Read `.codex/auth-multi-tenancy.md` before implementing login, register, tenant selection, or session bootstrap.
+- Use `.codex/provider-pattern-contract.md` when building `providers/authProvider`.
+- Use `.codex/review-checklist.md` before handoff.
