@@ -120,5 +120,17 @@
     <text name="403PageHeader">Forbidden</text>
     <text name="403PageDescription">You don't have permission to access this resource. Please contact your administrator.</text>
     <text name="403PageButton">Go back to Dashboard</text>
+    <text name="DataSentinel">DataSentinel</text>
+    <text name="DataSentinelDashboard">DataSentinel dashboard</text>
+    <text name="DataSentinelIntake">DataSentinel intake</text>
+    <text name="DataSentinelAnalytics">DataSentinel analytics</text>
+    <text name="DataSentinelAlerts">DataSentinel alerts</text>
+    <text name="DataSentinelAlertsView">View DataSentinel alerts</text>
+    <text name="DataSentinelAlertsReview">Review DataSentinel alerts</text>
+    <text name="DataSentinelRules">DataSentinel rules</text>
+    <text name="DataSentinelRulesView">View DataSentinel rules</text>
+    <text name="DataSentinelRulesManage">Manage DataSentinel rules</text>
+    <text name="DataSentinelAiInsights">Use AI alert insights</text>
+    <text name="DataSentinelAdmin">Administer DataSentinel</text>
   </texts>
 </localizationDictionary>

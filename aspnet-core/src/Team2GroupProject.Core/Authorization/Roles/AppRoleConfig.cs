@@ -24,6 +24,27 @@ namespace Team2GroupProject.Authorization.Roles
                     MultiTenancySides.Tenant
                 )
             );
+
+            roleManagementConfig.StaticRoles.Add(
+                new StaticRoleDefinition(
+                    StaticRoleNames.Tenants.SecurityAnalyst,
+                    MultiTenancySides.Tenant
+                )
+            );
+
+            roleManagementConfig.StaticRoles.Add(
+                new StaticRoleDefinition(
+                    StaticRoleNames.Tenants.DatabaseAdministrator,
+                    MultiTenancySides.Tenant
+                )
+            );
+
+            roleManagementConfig.StaticRoles.Add(
+                new StaticRoleDefinition(
+                    StaticRoleNames.Tenants.OperationsManager,
+                    MultiTenancySides.Tenant
+                )
+            );
         }
     }
 }

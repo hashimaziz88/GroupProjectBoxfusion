@@ -1,11 +1,12 @@
-﻿using System.Linq;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
+using System.Collections.Generic;
+using System.Linq;
 using Abp.Authorization;
 using Abp.Authorization.Roles;
 using Abp.Authorization.Users;
 using Abp.MultiTenancy;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Team2GroupProject.Authorization;
 using Team2GroupProject.Authorization.Roles;
 using Team2GroupProject.Authorization.Users;
@@ -30,46 +31,79 @@ namespace Team2GroupProject.EntityFrameworkCore.Seed.Tenants
 
         private void CreateRolesAndUsers()
         {
-            // Admin role
+            var allTenantPermissions = PermissionFinder
+                .GetAllPermissions(new Team2GroupProjectAuthorizationProvider())
+                .Where(p => p.MultiTenancySides.HasFlag(MultiTenancySides.Tenant))
+                .ToList();
 
-            var adminRole = _context.Roles.IgnoreQueryFilters().FirstOrDefault(r => r.TenantId == _tenantId && r.Name == StaticRoleNames.Tenants.Admin);
-            if (adminRole == null)
+            var adminRole = CreateStaticRole(StaticRoleNames.Tenants.Admin);
+            GrantPermissions(adminRole, allTenantPermissions.Select(x => x.Name).ToArray());
+
+            var analystRole = CreateStaticRole(StaticRoleNames.Tenants.SecurityAnalyst);
+            GrantPermissions(analystRole, DataSentinelRolePermissionDefaults.SecurityAnalyst);
+
+            var dbaRole = CreateStaticRole(StaticRoleNames.Tenants.DatabaseAdministrator);
+            GrantPermissions(dbaRole, DataSentinelRolePermissionDefaults.DatabaseAdministrator);
+
+            var opsManagerRole = CreateStaticRole(StaticRoleNames.Tenants.OperationsManager);
+            GrantPermissions(opsManagerRole, DataSentinelRolePermissionDefaults.OperationsManager);
+
+            CreateAdminUser(adminRole);
+        }
+
+        private Role CreateStaticRole(string roleName)
+        {
+            var role = _context.Roles.IgnoreQueryFilters()
+                .FirstOrDefault(r => r.TenantId == _tenantId && r.Name == roleName);
+
+            if (role != null)
             {
-                adminRole = _context.Roles.Add(new Role(_tenantId, StaticRoleNames.Tenants.Admin, StaticRoleNames.Tenants.Admin) { IsStatic = true }).Entity;
-                _context.SaveChanges();
+                return role;
             }
 
-            // Grant all permissions to admin role
+            role = _context.Roles.Add(new Role(_tenantId, roleName, roleName)
+            {
+                IsStatic = true
+            }).Entity;
 
+            _context.SaveChanges();
+
+            return role;
+        }
+
+        private void GrantPermissions(Role role, IReadOnlyCollection<string> permissionNames)
+        {
             var grantedPermissions = _context.Permissions.IgnoreQueryFilters()
                 .OfType<RolePermissionSetting>()
-                .Where(p => p.TenantId == _tenantId && p.RoleId == adminRole.Id)
+                .Where(p => p.TenantId == _tenantId && p.RoleId == role.Id)
                 .Select(p => p.Name)
                 .ToList();
 
-            var permissions = PermissionFinder
-                .GetAllPermissions(new Team2GroupProjectAuthorizationProvider())
-                .Where(p => p.MultiTenancySides.HasFlag(MultiTenancySides.Tenant) &&
-                            !grantedPermissions.Contains(p.Name))
+            var permissionsToAdd = permissionNames
+                .Except(grantedPermissions)
+                .Select(permissionName => new RolePermissionSetting
+                {
+                    TenantId = _tenantId,
+                    Name = permissionName,
+                    IsGranted = true,
+                    RoleId = role.Id
+                })
                 .ToList();
 
-            if (permissions.Any())
+            if (!permissionsToAdd.Any())
             {
-                _context.Permissions.AddRange(
-                    permissions.Select(permission => new RolePermissionSetting
-                    {
-                        TenantId = _tenantId,
-                        Name = permission.Name,
-                        IsGranted = true,
-                        RoleId = adminRole.Id
-                    })
-                );
-                _context.SaveChanges();
+                return;
             }
 
-            // Admin user
+            _context.Permissions.AddRange(permissionsToAdd);
+            _context.SaveChanges();
+        }
 
-            var adminUser = _context.Users.IgnoreQueryFilters().FirstOrDefault(u => u.TenantId == _tenantId && u.UserName == AbpUserBase.AdminUserName);
+        private void CreateAdminUser(Role adminRole)
+        {
+            var adminUser = _context.Users.IgnoreQueryFilters()
+                .FirstOrDefault(u => u.TenantId == _tenantId && u.UserName == AbpUserBase.AdminUserName);
+
             if (adminUser == null)
             {
                 adminUser = User.CreateTenantAdminUser(_tenantId, "admin@defaulttenant.com");
@@ -79,11 +113,18 @@ namespace Team2GroupProject.EntityFrameworkCore.Seed.Tenants
 
                 _context.Users.Add(adminUser);
                 _context.SaveChanges();
-
-                // Assign Admin role to admin user
-                _context.UserRoles.Add(new UserRole(_tenantId, adminUser.Id, adminRole.Id));
-                _context.SaveChanges();
             }
+
+            var hasAdminRole = _context.UserRoles.IgnoreQueryFilters()
+                .Any(x => x.TenantId == _tenantId && x.UserId == adminUser.Id && x.RoleId == adminRole.Id);
+
+            if (hasAdminRole)
+            {
+                return;
+            }
+
+            _context.UserRoles.Add(new UserRole(_tenantId, adminUser.Id, adminRole.Id));
+            _context.SaveChanges();
         }
     }
 }
