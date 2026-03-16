@@ -6,8 +6,16 @@ export const useStyles = createStyles(({ token }) => ({
     display: grid;
     grid-template-columns: minmax(300px, 1.05fr) minmax(380px, 0.95fr);
     background:
-      radial-gradient(circle at top left, rgba(31, 111, 235, 0.24) 0%, transparent 34%),
-      radial-gradient(circle at bottom right, rgba(214, 51, 108, 0.16) 0%, transparent 28%),
+      radial-gradient(
+        circle at top left,
+        rgba(31, 111, 235, 0.24) 0%,
+        transparent 34%
+      ),
+      radial-gradient(
+        circle at bottom right,
+        rgba(214, 51, 108, 0.16) 0%,
+        transparent 28%
+      ),
       linear-gradient(160deg, #f5f9ff 0%, #eef3fb 48%, #f9fbfd 100%);
 
     @media (max-width: 980px) {

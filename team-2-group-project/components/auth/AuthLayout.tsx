@@ -20,7 +20,7 @@ const AuthLayout = ({
     <main className={styles.page}>
       <section className={styles.heroPanel}>
         <div className={styles.heroContent}>
-          <span className={styles.eyebrow}>ABP Multi-Tenant Frontend</span>
+          <span className={styles.eyebrow}>DataSentinel</span>
           <Title level={1} className={styles.heroTitle}>
             {asideTitle}
           </Title>

@@ -51,8 +51,8 @@ export default function LoginPage() {
   const tenantLabel = useMemo(
     () =>
       currentTenant?.tenancyName
-        ? `Tenant: ${currentTenant.tenancyName}`
-        : "Host session",
+        ? `Environment: ${currentTenant.tenancyName}`
+        : "Host workspace",
     [currentTenant?.tenancyName],
   );
 
@@ -65,7 +65,7 @@ export default function LoginPage() {
     if (result.state === "available") {
       setTenantFeedback({
         type: "success",
-        message: `Tenant changed to ${result.tenancyName}.`,
+        message: `Environment switched to ${result.tenancyName}.`,
       });
       return;
     }
@@ -73,7 +73,7 @@ export default function LoginPage() {
     if (result.state === "host") {
       setTenantFeedback({
         type: "success",
-        message: "Tenant context cleared. You are now in the host context.",
+        message: "Tenant context cleared. You are now operating in the host workspace.",
       });
       return;
     }
@@ -81,14 +81,14 @@ export default function LoginPage() {
     if (result.state === "inactive") {
       setTenantFeedback({
         type: "warning",
-        message: `Tenant ${result.tenancyName} is not active.`,
+        message: `Environment ${result.tenancyName} is inactive.`,
       });
       return;
     }
 
     setTenantFeedback({
       type: "warning",
-      message: `There is no tenant defined with the name ${result.tenancyName}.`,
+      message: `No tenant environment was found with the name ${result.tenancyName}.`,
     });
   };
 
@@ -102,12 +102,12 @@ export default function LoginPage() {
 
   return (
     <AuthLayout
-      asideTitle="Sign in with tenant-aware ABP authentication."
-      asideText="The login flow resolves tenant context first, then authenticates against the same backend endpoints used by the Angular client."
+      asideTitle="Secure access for SQL anomaly monitoring."
+      asideText="Sign in to DataSentinel to investigate suspicious database activity, review anomaly alerts, and work inside the correct tenant environment."
     >
       <AuthHeader
-        title="Log in"
-        subtitle="Use your username or email address and password to enter the tenant or host workspace."
+        title="Sign in"
+        subtitle="Use your username or email address and password to enter the monitoring workspace for the selected tenant or host context."
         tenantLabel={tenantLabel}
       />
 
@@ -115,7 +115,7 @@ export default function LoginPage() {
         <Alert
           type="success"
           showIcon
-          title="Registration completed. You can sign in now."
+          title="Registration completed. You can sign in to DataSentinel now."
           className={styles.alert}
         />
       ) : null}
@@ -142,20 +142,20 @@ export default function LoginPage() {
         <section className={styles.sectionCard}>
           <div className={styles.tenantSummary}>
             <Title level={5} className={styles.tenantName}>
-              {currentTenant?.tenancyName ?? "No tenant selected"}
+              {currentTenant?.tenancyName ?? "No environment selected"}
             </Title>
             <Paragraph className={styles.tenantHint}>
-              Leave the field empty to return to the host context.
+              Choose the tenant environment you want to monitor, or leave the field empty to return to the host workspace.
             </Paragraph>
           </div>
 
           <div className={styles.fieldStack}>
             <div>
-              <Text className={styles.fieldLabel}>Tenant name</Text>
+              <Text className={styles.fieldLabel}>Tenant environment</Text>
               <Input
                 value={tenantName}
                 onChange={(event) => setTenantName(event.target.value)}
-                placeholder="Enter a tenancy name"
+                placeholder="Enter a tenant name"
               />
             </div>
 
@@ -164,7 +164,7 @@ export default function LoginPage() {
                 onClick={() => void handleTenantChange()}
                 className={styles.secondaryButton}
               >
-                Change tenant
+                Switch environment
               </Button>
 
               <Button
@@ -173,7 +173,7 @@ export default function LoginPage() {
                   void changeTenant(null).then(() => {
                     setTenantFeedback({
                       type: "success",
-                      message: "Tenant context cleared. You are now in the host context.",
+                      message: "Tenant context cleared. You are now operating in the host workspace.",
                     });
                   });
                 }}
@@ -231,14 +231,14 @@ export default function LoginPage() {
 
       {registrationEnabled ? (
         <AuthFooterLink
-          question="Need a tenant account?"
-          label="Register"
+          question="Need a monitored-environment account?"
+          label="Create account"
           href="/register"
         />
       ) : (
         <div className={styles.footerLinkRow}>
           <Text className={styles.footerText}>
-            Registration is available only when a tenant is selected.
+            Self-service registration is available only when a tenant environment is selected.
           </Text>
         </div>
       )}

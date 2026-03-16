@@ -17,29 +17,29 @@ export const NAVIGATION_ITEMS: INavigationItem[] = [
   {
     key: "about",
     href: "/about",
-    label: "About",
+    label: "Platform",
   },
   {
     key: "home",
     href: "/home",
-    label: "Home",
+    label: "Overview",
   },
   {
     key: "roles",
     href: "/roles",
-    label: "Roles",
+    label: "Access Control",
     permission: PERMISSIONS.roles,
   },
   {
     key: "tenants",
     href: "/tenants",
-    label: "Tenants",
+    label: "Environments",
     permission: PERMISSIONS.tenants,
   },
   {
     key: "users",
     href: "/users",
-    label: "Users",
+    label: "Identities",
     permission: PERMISSIONS.users,
   },
 ];

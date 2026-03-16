@@ -36,8 +36,8 @@ const RolesPageContent = () => {
 
   return (
     <AppShell
-      title="Roles"
-      subtitle="This route reflects the Angular administration menu and only opens when the ABP role permission is granted."
+      title="Access Control"
+      subtitle="Review the privileged roles and permission bundles that shape how DataSentinel is accessed."
     >
       {errorMessage ? (
         <Alert
@@ -50,10 +50,10 @@ const RolesPageContent = () => {
 
       <Card className={styles.pageCard}>
         <Title level={4} className={styles.sectionTitle}>
-          Role catalogue
+          Role and privilege catalogue
         </Title>
         <Paragraph className={styles.sectionLead}>
-          The backend provides static roles such as `Host.Admin` and `Tenants.Admin`, plus any custom roles defined in the tenant scope.
+          This temporary control view highlights built-in administrator roles such as `Host.Admin` and `Tenants.Admin`, plus any tenant-scoped roles returned by the backend.
         </Paragraph>
         <Table<IRoleListItem>
           rowKey="id"
@@ -62,7 +62,7 @@ const RolesPageContent = () => {
           className={styles.table}
           columns={[
             {
-              title: "Role",
+              title: "Role profile",
               dataIndex: "displayName",
               key: "displayName",
               render: (_, record) => (
@@ -79,7 +79,7 @@ const RolesPageContent = () => {
               render: (value?: string | null) => value || "No description",
             },
             {
-              title: "Flags",
+              title: "Security flags",
               key: "flags",
               render: (_, record) => (
                 <>
@@ -95,7 +95,7 @@ const RolesPageContent = () => {
               render: (value?: string | null) => formatDateTime(value),
             },
             {
-              title: "Permissions",
+              title: "Permission count",
               dataIndex: "grantedPermissions",
               key: "grantedPermissions",
               render: (permissions?: string[] | null) => toArray(permissions).length,

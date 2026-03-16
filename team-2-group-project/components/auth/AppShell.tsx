@@ -14,14 +14,14 @@ const { Paragraph, Text, Title } = Typography;
 
 const resolveRoleLabel = (roles?: string[] | null) => {
   if (isHostAdmin(roles)) {
-    return "Host admin";
+    return "Platform admin";
   }
 
   if (isTenantAdmin(roles)) {
-    return "Tenant admin";
+    return "Environment admin";
   }
 
-  return "Tenant user";
+  return "Security analyst";
 };
 
 const AppShell = ({ title, subtitle, children }: IAppShellProps) => {
@@ -39,15 +39,16 @@ const AppShell = ({ title, subtitle, children }: IAppShellProps) => {
     <Layout className={styles.shell}>
       <Sider breakpoint="lg" collapsedWidth="0" className={styles.sider}>
         <div className={styles.brandBlock}>
-          <Text className={styles.brandEyebrow}>Team 2</Text>
+          <Text className={styles.brandEyebrow}>SQL Security Platform</Text>
           <Title level={4} className={styles.brandTitle}>
-            Group Project
+            DataSentinel
           </Title>
           <Paragraph className={styles.brandText}>
-            Angular-parity shell with ABP auth, permissions, and tenancy.
+            Monitor suspicious SQL activity, triage anomaly alerts, and review
+            access-sensitive events across tenant environments.
           </Paragraph>
           <Tag className={styles.tenantBadge}>
-            {currentTenant?.tenancyName ?? "Host context"}
+            Scope: {currentTenant?.tenancyName ?? "Host"}
           </Tag>
         </div>
 
@@ -76,16 +77,16 @@ const AppShell = ({ title, subtitle, children }: IAppShellProps) => {
           <div className={styles.headerActions}>
             <Tag className={styles.headerTag}>{resolveRoleLabel(user?.roles)}</Tag>
             <Tag className={styles.headerTag}>
-              {currentTenant?.tenancyName ?? "Host"}
+              {currentTenant?.tenancyName ?? "Host workspace"}
             </Tag>
             <Button
               className={styles.secondaryButton}
               onClick={() => router.push("/update-password")}
             >
-              Update password
+              Account security
             </Button>
             <Button className={styles.primaryButton} onClick={() => void logout()}>
-              Log out
+              Sign out
             </Button>
           </div>
         </Header>

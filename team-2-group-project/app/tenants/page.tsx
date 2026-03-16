@@ -36,8 +36,8 @@ const TenantsPageContent = () => {
 
   return (
     <AppShell
-      title="Tenants"
-      subtitle="Host-level tenant administration, matching the Angular app's host management route."
+      title="Environments"
+      subtitle="View the tenant estates currently available to the monitoring platform."
     >
       {errorMessage ? (
         <Alert
@@ -50,10 +50,10 @@ const TenantsPageContent = () => {
 
       <Card className={styles.pageCard}>
         <Title level={4} className={styles.sectionTitle}>
-          Tenant directory
+          Monitored environments
         </Title>
         <Paragraph className={styles.sectionLead}>
-          This route is available only when `{PERMISSIONS.tenants}` is granted, which typically means host admin access.
+          This temporary environment directory is available only when `{PERMISSIONS.tenants}` is granted and helps frame the current cross-environment monitoring scope.
         </Paragraph>
         <Table<ITenantListItem>
           rowKey="id"
@@ -62,7 +62,7 @@ const TenantsPageContent = () => {
           className={styles.table}
           columns={[
             {
-              title: "Tenant",
+              title: "Environment",
               dataIndex: "name",
               key: "name",
               render: (_, record) => (
@@ -73,12 +73,12 @@ const TenantsPageContent = () => {
               ),
             },
             {
-              title: "ID",
+              title: "Environment ID",
               dataIndex: "id",
               key: "id",
             },
             {
-              title: "Status",
+              title: "State",
               dataIndex: "isActive",
               key: "isActive",
               render: (isActive: boolean) => (

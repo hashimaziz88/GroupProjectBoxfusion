@@ -4,7 +4,11 @@ export const useStyles = createStyles(() => ({
   shell: css`
     min-height: 100vh;
     background:
-      radial-gradient(circle at top left, rgba(31, 111, 235, 0.12) 0%, transparent 28%),
+      radial-gradient(
+        circle at top left,
+        rgba(31, 111, 235, 0.12) 0%,
+        transparent 28%
+      ),
       linear-gradient(180deg, #f4f7fb 0%, #edf3fb 100%);
   `,
 

@@ -11,14 +11,14 @@ const { Paragraph, Title } = Typography;
 
 const resolveAccessSummary = (roles?: string[] | null) => {
   if (isHostAdmin(roles)) {
-    return "Host administrators can see host-wide tenants management and all tenant-independent administration screens.";
+    return "Platform administrators can review cross-environment monitoring scope, host-level configuration, and tenant-wide security operations.";
   }
 
   if (isTenantAdmin(roles)) {
-    return "Tenant administrators can manage users and roles inside the active tenant context.";
+    return "Environment administrators can manage identities, review access-sensitive activity, and coordinate investigations inside the active tenant workspace.";
   }
 
-  return "Regular tenant users land here and only see routes granted by permissions returned from ABP.";
+  return "Security analysts land here to review the monitoring workspace and only see routes granted by the current permission set.";
 };
 
 const HomePageContent = () => {
@@ -27,22 +27,22 @@ const HomePageContent = () => {
 
   return (
     <AppShell
-      title="Home"
-      subtitle="This is the default logged-in landing route when the current user does not have a higher-priority admin page."
+      title="Monitoring Overview"
+      subtitle="A quick view of the current DataSentinel workspace, including monitoring scope, signed-in operator context, and loaded controls."
     >
       <div className={styles.statGrid}>
         <div className={styles.statCard}>
-          <span className={styles.statLabel}>Tenant context</span>
+          <span className={styles.statLabel}>Monitoring scope</span>
           <span className={styles.statValue}>
             {currentTenant?.tenancyName ?? "Host"}
           </span>
           <span className={styles.statHint}>
-            Tenant resolution follows subdomain or explicit tenant selection.
+            This is the active environment used for alert review, anomaly triage, and permission-aware monitoring.
           </span>
         </div>
 
         <div className={styles.statCard}>
-          <span className={styles.statLabel}>Signed in as</span>
+          <span className={styles.statLabel}>Active operator</span>
           <span className={styles.statValue}>{user?.userName ?? "Unknown"}</span>
           <span className={styles.statHint}>
             {user?.name} {user?.surname}
@@ -50,17 +50,17 @@ const HomePageContent = () => {
         </div>
 
         <div className={styles.statCard}>
-          <span className={styles.statLabel}>Permissions</span>
+          <span className={styles.statLabel}>Granted controls</span>
           <span className={styles.statValue}>{permissions?.length ?? 0}</span>
           <span className={styles.statHint}>
-            Effective ABP permissions loaded from user configuration.
+            Effective permissions currently loaded for investigation and administration workflows.
           </span>
         </div>
       </div>
 
       <Card className={styles.pageCard}>
         <Title level={4} className={styles.sectionTitle}>
-          Access profile
+          Operational access profile
         </Title>
         <Paragraph className={styles.sectionLead}>
           {resolveAccessSummary(user?.roles)}

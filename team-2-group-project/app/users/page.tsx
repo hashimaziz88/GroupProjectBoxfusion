@@ -36,8 +36,8 @@ const UsersPageContent = () => {
 
   return (
     <AppShell
-      title="Users"
-      subtitle="Permission-gated to the same ABP users surface used by the Angular app."
+      title="Identities"
+      subtitle="Review the user identities currently visible in this tenant-aware monitoring workspace."
     >
       {errorMessage ? (
         <Alert
@@ -50,10 +50,10 @@ const UsersPageContent = () => {
 
       <Card className={styles.pageCard}>
         <Title level={4} className={styles.sectionTitle}>
-          Tenant users
+          Monitored user identities
         </Title>
         <Paragraph className={styles.sectionLead}>
-          This page is available only when `{PERMISSIONS.users}` is granted.
+          This temporary analyst view is available only when `{PERMISSIONS.users}` is granted and helps verify who can access the current environment.
         </Paragraph>
         <Table<IUserListItem>
           rowKey="id"
@@ -62,7 +62,7 @@ const UsersPageContent = () => {
           className={styles.table}
           columns={[
             {
-              title: "User",
+              title: "Identity",
               dataIndex: "fullName",
               key: "fullName",
               render: (_, record) => (
@@ -78,7 +78,7 @@ const UsersPageContent = () => {
               key: "emailAddress",
             },
             {
-              title: "Status",
+              title: "Access state",
               dataIndex: "isActive",
               key: "isActive",
               render: (isActive: boolean) => (
@@ -88,7 +88,7 @@ const UsersPageContent = () => {
               ),
             },
             {
-              title: "Roles",
+              title: "Assigned roles",
               dataIndex: "roleNames",
               key: "roleNames",
               render: (roleNames?: string[] | null) =>
@@ -101,7 +101,7 @@ const UsersPageContent = () => {
                 ),
             },
             {
-              title: "Last login",
+              title: "Last activity",
               dataIndex: "lastLoginTime",
               key: "lastLoginTime",
               render: (value?: string | null) => formatDateTime(value),

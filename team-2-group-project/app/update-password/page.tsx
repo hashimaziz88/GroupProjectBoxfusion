@@ -55,8 +55,8 @@ const UpdatePasswordPageContent = () => {
 
   return (
     <AppShell
-      title="Update Password"
-      subtitle="This form follows the Angular password update route and uses the same ABP change password endpoint."
+      title="Account Security"
+      subtitle="Protect your DataSentinel account by rotating your password through the secured backend workflow."
     >
       {successMessage ? (
         <Alert
@@ -78,10 +78,10 @@ const UpdatePasswordPageContent = () => {
 
       <Card className={styles.pageCard}>
         <Title level={4} className={styles.sectionTitle}>
-          Change your password
+          Update your password
         </Title>
         <Paragraph className={styles.sectionLead}>
-          The new password must be at least 8 characters and include uppercase, lowercase, and numeric characters.
+          Use a strong password to keep access to anomaly reviews, alert triage, and security administration protected.
         </Paragraph>
 
         <Form<IUpdatePasswordForm>

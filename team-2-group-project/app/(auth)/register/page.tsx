@@ -48,16 +48,16 @@ export default function RegisterPage() {
 
   return (
     <AuthLayout
-      asideTitle="Create a tenant user the same way the Angular client does."
-      asideText="Self-registration is enabled only inside a selected tenant. Successful registration will sign the user in automatically when the backend allows it."
+      asideTitle="Create a secure monitoring account."
+      asideText="Self-registration is available only inside a selected tenant environment. When enabled by the backend, new users can join the DataSentinel workspace immediately after registration."
     >
       <AuthHeader
-        title="Register"
-        subtitle="Create a user inside the active tenant context using the ABP account registration endpoint."
+        title="Create account"
+        subtitle="Register a user for the active monitoring environment."
         tenantLabel={
           currentTenant?.tenancyName
-            ? `Tenant: ${currentTenant.tenancyName}`
-            : "Registration unavailable in host context"
+            ? `Environment: ${currentTenant.tenancyName}`
+            : "Registration unavailable in host workspace"
         }
       />
 
@@ -65,15 +65,15 @@ export default function RegisterPage() {
         <>
           <section className={styles.sectionCard}>
             <Title level={5} className={styles.tenantName}>
-              No tenant selected
+              No environment selected
             </Title>
             <Paragraph className={styles.tenantHint}>
-              Angular only exposes self-registration in tenant context. Select a tenant on the login page first.
+              Self-registration is only available in a tenant environment. Choose the correct environment on the sign-in page first.
             </Paragraph>
           </section>
           <AuthFooterLink
-            question="Need to choose a tenant first?"
-            label="Back to login"
+            question="Need to choose an environment first?"
+            label="Back to sign in"
             href="/login"
           />
         </>
@@ -145,15 +145,15 @@ export default function RegisterPage() {
                   loading={isPending}
                   className={styles.primaryButton}
                 >
-                  Register
+                  Create account
                 </Button>
               </div>
             </div>
           </Form>
 
           <AuthFooterLink
-            question="Already have an account?"
-            label="Back to login"
+            question="Already have access?"
+            label="Back to sign in"
             href="/login"
           />
         </>

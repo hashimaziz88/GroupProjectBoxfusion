@@ -23,5 +23,5 @@ export default function EntryPage() {
     router.replace(selectBestAuthenticatedRoute(user));
   }, [isAuthenticated, isReady, router, user]);
 
-  return <AppSpinner label="Preparing your workspace..." />;
+  return <AppSpinner label="Preparing DataSentinel..." />;
 }
