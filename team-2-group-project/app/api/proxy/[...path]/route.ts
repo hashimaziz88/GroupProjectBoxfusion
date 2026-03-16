@@ -2,12 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 
 const BACKEND_URL = process.env.API_BACKEND_URL || "https://groupprojectboxfusion.onrender.com";
 
+const getTenantId = (request: NextRequest) =>
+  request.headers.get("abp.tenantid") ??
+  request.headers.get("Abp.TenantId") ??
+  request.cookies.get("Abp.TenantId")?.value ??
+  null;
+
 async function handleRequest(
   request: NextRequest,
   context: { params: Promise<{ path: string[] }> }
 ) {
   const { path } = await context.params;
   const targetUrl = `${BACKEND_URL}/${path.join("/")}`;
+  const tenantId = getTenantId(request);
 
   const body =
     request.method === "GET" || request.method === "HEAD"
@@ -21,8 +28,11 @@ async function handleRequest(
       ...(request.headers.get("authorization")
         ? { Authorization: request.headers.get("authorization")! }
         : {}),
-      ...(request.headers.get("abp.tenantid")
-        ? { "Abp.TenantId": request.headers.get("abp.tenantid")! }
+      ...(tenantId
+        ? {
+            "Abp.TenantId": tenantId,
+            Cookie: `Abp.TenantId=${encodeURIComponent(tenantId)}`,
+          }
         : {}),
     },
     body,
