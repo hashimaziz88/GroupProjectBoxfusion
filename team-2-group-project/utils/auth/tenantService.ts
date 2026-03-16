@@ -145,7 +145,7 @@ export const resolveTenantNameFromLocation = () => {
 export const isTenantAvailable = async (tenancyName: string) => {
   const baseURL = process.env.NEXT_PUBLIC_API_LINK;
   const response = await axios.post<IAbpResponse<IIsTenantAvailableResponse>>(
-    `${baseURL}api/services/app/Account/IsTenantAvailable`,
+    `${baseURL}/api/services/app/Account/IsTenantAvailable`,
     {
       tenancyName,
     },
