@@ -24,6 +24,15 @@ export const isTenantAdmin = (roles?: string[] | null) =>
 export const isAdminOrManager = (roles?: string[] | null) =>
   isHostAdmin(roles) || isTenantAdmin(roles);
 
+export const isSecurityAnalyst = (roles?: string[] | null) =>
+  hasRole(roles, STATIC_ROLES.securityAnalyst);
+
+export const isDatabaseAdministrator = (roles?: string[] | null) =>
+  hasRole(roles, STATIC_ROLES.databaseAdministrator);
+
+export const isOperationsManager = (roles?: string[] | null) =>
+  hasRole(roles, STATIC_ROLES.operationsManager);
+
 export const canAccessUsers = (permissions?: string[] | null) =>
   hasPermission(permissions, PERMISSIONS.users);
 
@@ -33,11 +42,26 @@ export const canAccessRoles = (permissions?: string[] | null) =>
 export const canAccessTenants = (permissions?: string[] | null) =>
   hasPermission(permissions, PERMISSIONS.tenants);
 
+export const canAccessDataSentinelDashboard = (permissions?: string[] | null) =>
+  hasPermission(permissions, PERMISSIONS.datasentinelDashboard);
+
 export const selectBestAuthenticatedRoute = (
   user?: IRouteSelectorUser | null,
 ) => {
+  if (canAccessDataSentinelDashboard(user?.permissions)) {
+    return "/home";
+  }
+
   if (canAccessUsers(user?.permissions)) {
     return "/users";
+  }
+
+  if (canAccessRoles(user?.permissions)) {
+    return "/roles";
+  }
+
+  if (canAccessTenants(user?.permissions)) {
+    return "/tenants";
   }
 
   return "/home";

@@ -10,6 +10,7 @@ using Microsoft.Extensions.Options;
 using Team2GroupProject.Authorization;
 using Team2GroupProject.Authorization.Roles;
 using Team2GroupProject.Authorization.Users;
+using Team2GroupProject.DataSentinel;
 
 namespace Team2GroupProject.EntityFrameworkCore.Seed.Tenants
 {
@@ -49,6 +50,7 @@ namespace Team2GroupProject.EntityFrameworkCore.Seed.Tenants
             GrantPermissions(opsManagerRole, DataSentinelRolePermissionDefaults.OperationsManager);
 
             CreateAdminUser(adminRole);
+            SeedDataSentinelDefaults();
         }
 
         private Role CreateStaticRole(string roleName)
@@ -125,6 +127,92 @@ namespace Team2GroupProject.EntityFrameworkCore.Seed.Tenants
 
             _context.UserRoles.Add(new UserRole(_tenantId, adminUser.Id, adminRole.Id));
             _context.SaveChanges();
+        }
+
+        private void SeedDataSentinelDefaults()
+        {
+            foreach (var serverDefinition in DataSentinelDefaults.GetServerDefinitions())
+            {
+                var server = _context.MonitoredServers.IgnoreQueryFilters()
+                    .FirstOrDefault(monitoredServer =>
+                        monitoredServer.TenantId == _tenantId &&
+                        monitoredServer.Name == serverDefinition.Name);
+
+                if (server == null)
+                {
+                    server = _context.MonitoredServers.Add(new MonitoredServer
+                    {
+                        TenantId = _tenantId,
+                        Name = serverDefinition.Name,
+                        HostName = serverDefinition.HostName,
+                        EnvironmentName = serverDefinition.EnvironmentName,
+                        Region = serverDefinition.Region,
+                        Description = serverDefinition.Description,
+                        IsActive = true
+                    }).Entity;
+
+                    _context.SaveChanges();
+                }
+            }
+
+            foreach (var databaseDefinition in DataSentinelDefaults.GetDatabaseDefinitions())
+            {
+                var server = _context.MonitoredServers.IgnoreQueryFilters()
+                    .Single(monitoredServer =>
+                        monitoredServer.TenantId == _tenantId &&
+                        monitoredServer.Name == databaseDefinition.ServerName);
+
+                var database = _context.MonitoredDatabases.IgnoreQueryFilters()
+                    .FirstOrDefault(monitoredDatabase =>
+                        monitoredDatabase.TenantId == _tenantId &&
+                        monitoredDatabase.ServerId == server.Id &&
+                        monitoredDatabase.Name == databaseDefinition.Name);
+
+                if (database != null)
+                {
+                    continue;
+                }
+
+                _context.MonitoredDatabases.Add(new MonitoredDatabase
+                {
+                    TenantId = _tenantId,
+                    ServerId = server.Id,
+                    Name = databaseDefinition.Name,
+                    Engine = databaseDefinition.Engine,
+                    Owner = databaseDefinition.Owner,
+                    Description = databaseDefinition.Description,
+                    IsActive = true
+                });
+
+                _context.SaveChanges();
+            }
+
+            foreach (var ruleDefinition in DataSentinelDefaults.GetRuleDefinitions())
+            {
+                var existingRule = _context.AlertRules.IgnoreQueryFilters()
+                    .FirstOrDefault(rule => rule.TenantId == _tenantId && rule.Name == ruleDefinition.Name);
+
+                if (existingRule != null)
+                {
+                    continue;
+                }
+
+                _context.AlertRules.Add(new AlertRule
+                {
+                    TenantId = _tenantId,
+                    Name = ruleDefinition.Name,
+                    Description = ruleDefinition.Description,
+                    IsEnabled = true,
+                    RuleType = ruleDefinition.RuleType,
+                    EventType = ruleDefinition.EventType,
+                    WindowMinutes = ruleDefinition.WindowMinutes,
+                    ThresholdCount = ruleDefinition.ThresholdCount,
+                    GroupByField = ruleDefinition.GroupByField,
+                    Severity = ruleDefinition.Severity
+                });
+
+                _context.SaveChanges();
+            }
         }
     }
 }

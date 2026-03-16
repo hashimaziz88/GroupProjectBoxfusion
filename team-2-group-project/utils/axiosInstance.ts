@@ -5,7 +5,7 @@ import { getTenantId } from "@/utils/auth/tenantService";
 export const axiosInstance = () => {
   const token = typeof window !== "undefined" ? getAccessToken() : null;
   const tenantId = typeof window !== "undefined" ? getTenantId() : null;
-  const baseURL = process.env.NEXT_PUBLIC_API_LINK;
+  const baseURL = process.env.NEXT_PUBLIC_API_LINK || "/api/proxy";
 
   return axios.create({
     baseURL,

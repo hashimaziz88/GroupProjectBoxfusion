@@ -21,7 +21,9 @@ namespace Team2GroupProject.EntityFrameworkCore
 
         public DbSet<IncidentNote> IncidentNotes { get; set; }
 
-        public DbSet<AlertStatusHistory> AlertStatusHistory { get; set; }
+        public DbSet<AlertStatusHistory> AlertStatusHistories { get; set; }
+
+        public DbSet<AlertStatusHistory> AlertStatusHistory => AlertStatusHistories;
 
         public Team2GroupProjectDbContext(DbContextOptions<Team2GroupProjectDbContext> options)
             : base(options)

@@ -1,11 +1,16 @@
 "use client";
 
-import type { ReactNode } from "react";
 import { Button, Layout, Menu, Tag, Typography } from "antd";
 import { usePathname, useRouter } from "next/navigation";
 import { getVisibleNavigationItems } from "@/constants/navigation";
 import { useAuthActions, useAuthState } from "@/providers/authProvider";
-import { isHostAdmin, isTenantAdmin } from "@/utils/auth/roles";
+import {
+  isDatabaseAdministrator,
+  isHostAdmin,
+  isOperationsManager,
+  isSecurityAnalyst,
+  isTenantAdmin,
+} from "@/utils/auth/roles";
 import { useStyles } from "@/app/style/style";
 import { IAppShellProps } from "@/interfaces/auth/authProps";
 
@@ -19,6 +24,18 @@ const resolveRoleLabel = (roles?: string[] | null) => {
 
   if (isTenantAdmin(roles)) {
     return "Environment admin";
+  }
+
+  if (isDatabaseAdministrator(roles)) {
+    return "Database administrator";
+  }
+
+  if (isOperationsManager(roles)) {
+    return "Operations manager";
+  }
+
+  if (isSecurityAnalyst(roles)) {
+    return "Security analyst";
   }
 
   return "Security analyst";

@@ -1,8 +1,5 @@
 import {
-  
-  canAccessRoles,
-  canAccessTenants,
-  canAccessUsers,
+  hasPermission,
 } from "@/utils/auth/roles";
 import { PERMISSIONS } from "./auth/roles";
 
@@ -15,14 +12,51 @@ export interface INavigationItem {
 
 export const NAVIGATION_ITEMS: INavigationItem[] = [
   {
+    key: "home",
+    href: "/home",
+    label: "Dashboard",
+    permission: PERMISSIONS.datasentinelDashboard,
+  },
+  {
+    key: "alerts",
+    href: "/datasentinel/alerts",
+    label: "Security Alerts",
+    permission: PERMISSIONS.datasentinelAlertsView,
+  },
+  {
+    key: "activity",
+    href: "/datasentinel/activity",
+    label: "Activity Events",
+    permission: PERMISSIONS.datasentinelDashboard,
+  },
+  {
+    key: "analytics",
+    href: "/datasentinel/analytics",
+    label: "Analytics",
+    permission: PERMISSIONS.datasentinelAnalytics,
+  },
+  {
+    key: "rules",
+    href: "/datasentinel/rules",
+    label: "Alert Rules",
+    permission: PERMISSIONS.datasentinelRulesView,
+  },
+  {
+    key: "intake",
+    href: "/datasentinel/intake",
+    label: "Demo Intake",
+    permission: PERMISSIONS.datasentinelIntake,
+  },
+  {
+    key: "assets",
+    href: "/datasentinel/assets",
+    label: "Servers & Databases",
+    permission: PERMISSIONS.datasentinelDashboard,
+  },
+  {
     key: "about",
     href: "/about",
     label: "Platform",
-  },
-  {
-    key: "home",
-    href: "/home",
-    label: "Overview",
   },
   {
     key: "roles",
@@ -50,17 +84,5 @@ export const getVisibleNavigationItems = (permissions?: string[] | null) =>
       return true;
     }
 
-    if (item.permission === PERMISSIONS.users) {
-      return canAccessUsers(permissions);
-    }
-
-    if (item.permission === PERMISSIONS.roles) {
-      return canAccessRoles(permissions);
-    }
-
-    if (item.permission === PERMISSIONS.tenants) {
-      return canAccessTenants(permissions);
-    }
-
-    return false;
+    return hasPermission(permissions, item.permission);
   });
