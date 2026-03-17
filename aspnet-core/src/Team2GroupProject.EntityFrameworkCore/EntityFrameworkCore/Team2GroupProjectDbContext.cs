@@ -25,6 +25,10 @@ namespace Team2GroupProject.EntityFrameworkCore
 
         public DbSet<SecurityAlert> SecurityAlerts { get; set; }
 
+        public DbSet<IncidentNote> IncidentNotes { get; set; }
+
+        public DbSet<AlertStatusHistory> AlertStatusHistoryEntries { get; set; }
+
         public Team2GroupProjectDbContext(DbContextOptions<Team2GroupProjectDbContext> options)
             : base(options)
         {
@@ -40,6 +44,8 @@ namespace Team2GroupProject.EntityFrameworkCore
             modelBuilder.ApplyConfiguration(new ActivityEventConfiguration());
             modelBuilder.ApplyConfiguration(new AlertRuleConfiguration());
             modelBuilder.ApplyConfiguration(new SecurityAlertConfiguration());
+            modelBuilder.ApplyConfiguration(new IncidentNoteConfiguration());
+            modelBuilder.ApplyConfiguration(new AlertStatusHistoryConfiguration());
         }
     }
 }

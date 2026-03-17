@@ -24,6 +24,8 @@ namespace Team2GroupProject.EntityFrameworkCore.DataSentinel.Repositories
                 .Include(x => x.Server)
                 .Include(x => x.Database)
                 .Include(x => x.Table)
+                .Include(x => x.Notes)
+                .Include(x => x.StatusHistoryEntries)
                 .FirstOrDefaultAsync(x => x.Id == id);
         }
 

@@ -62,6 +62,16 @@ namespace Team2GroupProject.EntityFrameworkCore.DataSentinel.Configurations
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.SetNull);
 
+            builder.HasMany(x => x.Notes)
+                .WithOne(x => x.Alert)
+                .HasForeignKey(x => x.AlertId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasMany(x => x.StatusHistoryEntries)
+                .WithOne(x => x.Alert)
+                .HasForeignKey(x => x.AlertId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             builder.HasIndex(x => new { x.TenantId, x.Status, x.Severity, x.TriggeredAt });
             builder.HasIndex(x => new { x.TenantId, x.RuleId, x.TriggeredAt });
             builder.HasIndex(x => new { x.TenantId, x.DatabaseId, x.TriggeredAt });
