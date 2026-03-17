@@ -10,6 +10,8 @@ namespace Team2GroupProject.DataSentinel
         public const int EnvironmentMaxLength = 64;
         public const int EngineMaxLength = 64;
         public const int DescriptionMaxLength = 1024;
+        public const int AlertTitleMaxLength = 256;
+        public const int AlertSummaryMaxLength = 2048;
 
         // ActivityEvent field lengths
         public const int ActorUserMaxLength = 256;
