@@ -5,6 +5,7 @@ using Team2GroupProject.Authorization.Users;
 using Team2GroupProject.DataSentinel.ActivityEvents;
 using Team2GroupProject.DataSentinel.AlertRules;
 using Team2GroupProject.DataSentinel.Monitoring;
+using Team2GroupProject.DataSentinel.SecurityAlerts;
 using Team2GroupProject.EntityFrameworkCore.DataSentinel.Configurations;
 using Team2GroupProject.MultiTenancy;
 
@@ -22,6 +23,8 @@ namespace Team2GroupProject.EntityFrameworkCore
 
         public DbSet<AlertRule> AlertRules { get; set; }
 
+        public DbSet<SecurityAlert> SecurityAlerts { get; set; }
+
         public Team2GroupProjectDbContext(DbContextOptions<Team2GroupProjectDbContext> options)
             : base(options)
         {
@@ -36,6 +39,7 @@ namespace Team2GroupProject.EntityFrameworkCore
             modelBuilder.ApplyConfiguration(new MonitoredTableConfiguration());
             modelBuilder.ApplyConfiguration(new ActivityEventConfiguration());
             modelBuilder.ApplyConfiguration(new AlertRuleConfiguration());
+            modelBuilder.ApplyConfiguration(new SecurityAlertConfiguration());
         }
     }
 }
