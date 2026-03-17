@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Abp.Application.Services.Dto;
 using Abp.Auditing;
 using Abp.Authorization;
 using Abp.Extensions;
@@ -870,6 +871,160 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
         {
             return SensitiveEvidenceFragments.Any(fragment =>
                 key.IndexOf(fragment, StringComparison.OrdinalIgnoreCase) >= 0);
+        }
+
+        // ── Query endpoints ────────────────────────────────────────────────────
+
+        [AbpAuthorize(PermissionNames.Pages_DataSentinel_ActivityEvents_View)]
+        public async Task<PagedResultDto<ActivityEventDto>> GetPagedAsync(GetActivityEventsInput input)
+        {
+            var tenantId = AbpSession.GetTenantId();
+
+            var query = BuildFilteredQuery(tenantId, input);
+
+            var totalCount = await query.CountAsync();
+
+            var rows = await (
+                from e in query.OrderByDescending(x => x.EventTime).Skip(input.SkipCount).Take(input.MaxResultCount)
+                join d in _monitoredDatabaseRepository.GetAll() on e.DatabaseId equals d.Id into databaseJoin
+                from db in databaseJoin.DefaultIfEmpty()
+                select new { Event = e, DatabaseName = (string)db.Name }
+            ).ToListAsync();
+
+            var items = rows.Select(x => MapToDto(x.Event, x.DatabaseName)).ToList();
+
+            return new PagedResultDto<ActivityEventDto>(totalCount, items);
+        }
+
+        [AbpAuthorize(PermissionNames.Pages_DataSentinel_ActivityEvents_View)]
+        public async Task<ActivityEventSummaryDto> GetSummaryAsync()
+        {
+            var tenantId = AbpSession.GetTenantId();
+            var events = _activityEventRepository.GetAll().Where(x => x.TenantId == tenantId);
+
+            var summary = await events
+                .GroupBy(_ => 1)
+                .Select(g => new ActivityEventSummaryDto
+                {
+                    TotalEvents = g.Count(),
+                    ReadOps = g.Count(x => x.EventType == ActivityEventType.Read),
+                    WriteOps = g.Count(x => x.EventType == ActivityEventType.Write),
+                    AuthEvents = g.Count(x => x.EventType == ActivityEventType.Login || x.EventType == ActivityEventType.Logout),
+                    PrivilegedOps = g.Count(x => x.EventType == ActivityEventType.PrivilegedAction),
+                    SuspiciousActivityCount = g.Count(x => x.Severity >= ActivitySeverity.Medium),
+                    FailedEventsCount = g.Count(x => !x.IsSuccess)
+                })
+                .FirstOrDefaultAsync();
+
+            return summary ?? new ActivityEventSummaryDto();
+        }
+
+        [AbpAuthorize(PermissionNames.Pages_DataSentinel_ActivityEvents_View)]
+        public async Task<ActivityEventFilterOptionsDto> GetFilterOptionsAsync()
+        {
+            var tenantId = AbpSession.GetTenantId();
+            var events = _activityEventRepository.GetAll().Where(x => x.TenantId == tenantId);
+
+            var databaseIds = await events
+                .Where(x => x.DatabaseId.HasValue)
+                .Select(x => x.DatabaseId.Value)
+                .Distinct()
+                .ToListAsync();
+
+            var databases = await _monitoredDatabaseRepository.GetAll()
+                .Where(x => x.TenantId == tenantId && databaseIds.Contains(x.Id))
+                .OrderBy(x => x.Name)
+                .Select(x => new DatabaseOptionDto { Id = x.Id, Name = x.Name })
+                .ToListAsync();
+
+            var users = await events
+                .Where(x => !string.IsNullOrEmpty(x.ActorUser))
+                .Select(x => x.ActorUser)
+                .Distinct()
+                .OrderBy(x => x)
+                .ToListAsync();
+
+            return new ActivityEventFilterOptionsDto
+            {
+                Databases = databases,
+                Users = users
+            };
+        }
+
+        private IQueryable<ActivityEvent> BuildFilteredQuery(int tenantId, GetActivityEventsInput input)
+        {
+            var query = _activityEventRepository.GetAll().Where(x => x.TenantId == tenantId);
+
+            if (!input.Keyword.IsNullOrWhiteSpace())
+            {
+                var keyword = input.Keyword.Trim().ToLower();
+                query = query.Where(x =>
+                    (x.ActorUser != null && x.ActorUser.ToLower().Contains(keyword)) ||
+                    (x.ObjectName != null && x.ObjectName.ToLower().Contains(keyword)) ||
+                    (x.Operation != null && x.Operation.ToLower().Contains(keyword)) ||
+                    (x.FailureReason != null && x.FailureReason.ToLower().Contains(keyword)));
+            }
+
+            if (input.EventType.HasValue)
+            {
+                query = query.Where(x => x.EventType == input.EventType.Value);
+            }
+
+            if (input.DatabaseId.HasValue)
+            {
+                query = query.Where(x => x.DatabaseId == input.DatabaseId.Value);
+            }
+
+            if (!input.ActorUser.IsNullOrWhiteSpace())
+            {
+                query = query.Where(x => x.ActorUser == input.ActorUser.Trim());
+            }
+
+            query = input.Tab switch
+            {
+                ActivityEventTab.SuspiciousActivity => query.Where(x => x.Severity >= ActivitySeverity.Medium),
+                ActivityEventTab.FailedEvents => query.Where(x => !x.IsSuccess),
+                _ => query
+            };
+
+            return query;
+        }
+
+        private static ActivityEventDto MapToDto(ActivityEvent e, string databaseName)
+        {
+            return new ActivityEventDto
+            {
+                Id = e.Id,
+                EventId = $"EVT-{e.EventTime:yyyyMMdd-HHmmss}",
+                EventTime = e.EventTime,
+                EventType = e.EventType,
+                Severity = e.Severity,
+                ActorUser = e.ActorUser,
+                ActorIp = e.ActorIp,
+                ObjectName = e.ObjectName,
+                Operation = e.Operation,
+                RowsAffected = e.RowsAffected,
+                DurationMs = e.DurationMs,
+                IsOutOfHours = e.IsOutOfHours,
+                IsSuccess = e.IsSuccess,
+                FailureReason = e.FailureReason,
+                DatabaseId = e.DatabaseId,
+                DatabaseName = databaseName,
+                ServerId = e.ServerId,
+                QueryPreview = BuildQueryPreview(e.Operation, e.ObjectName)
+            };
+        }
+
+        private static string BuildQueryPreview(string operation, string objectName)
+        {
+            if (operation.IsNullOrWhiteSpace())
+            {
+                return null;
+            }
+
+            return objectName.IsNullOrWhiteSpace()
+                ? operation
+                : $"{operation} {objectName}";
         }
     }
 }

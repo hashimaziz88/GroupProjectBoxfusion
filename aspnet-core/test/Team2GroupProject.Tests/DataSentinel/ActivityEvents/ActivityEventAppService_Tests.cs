@@ -273,6 +273,365 @@ namespace Team2GroupProject.Tests.DataSentinel.ActivityEvents
             }
         }
 
+        // ── GetPaged tests ────────────────────────────────────────────────────
+
+        [Fact]
+        public async Task GetPagedAsync_should_return_all_events_for_current_tenant()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            await SeedEventsAsync(tenantId, 5);
+
+            var result = await _activityEventAppService.GetPagedAsync(new GetActivityEventsInput
+            {
+                MaxResultCount = 50
+            });
+
+            result.TotalCount.ShouldBe(5);
+            result.Items.Count.ShouldBe(5);
+            result.Items.ShouldAllBe(x => x.EventId.StartsWith("EVT-"));
+        }
+
+        [Fact]
+        public async Task GetPagedAsync_keyword_filter_matches_on_actor_user()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            await SeedEventsAsync(tenantId, 3, new SeedOptions { ActorUser = "regular_user" });
+            await SeedEventsAsync(tenantId, 2, new SeedOptions { ActorUser = "admin_ops" });
+
+            var result = await _activityEventAppService.GetPagedAsync(new GetActivityEventsInput
+            {
+                Keyword = "admin"
+            });
+
+            result.TotalCount.ShouldBe(2);
+            result.Items.ShouldAllBe(x => x.ActorUser == "admin_ops");
+        }
+
+        [Fact]
+        public async Task GetPagedAsync_keyword_filter_matches_on_operation()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            await SeedEventsAsync(tenantId, 2, new SeedOptions { Operation = "SELECT" });
+            await SeedEventsAsync(tenantId, 3, new SeedOptions { Operation = "INSERT" });
+
+            var result = await _activityEventAppService.GetPagedAsync(new GetActivityEventsInput
+            {
+                Keyword = "SELECT"
+            });
+
+            result.TotalCount.ShouldBe(2);
+            result.Items.ShouldAllBe(x => x.Operation == "SELECT");
+        }
+
+        [Fact]
+        public async Task GetPagedAsync_event_type_filter_returns_only_matching_type()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            await SeedEventsAsync(tenantId, 3, new SeedOptions { EventType = ActivityEventType.Read });
+            await SeedEventsAsync(tenantId, 2, new SeedOptions { EventType = ActivityEventType.Write });
+
+            var result = await _activityEventAppService.GetPagedAsync(new GetActivityEventsInput
+            {
+                EventType = ActivityEventType.Read
+            });
+
+            result.TotalCount.ShouldBe(3);
+            result.Items.ShouldAllBe(x => x.EventType == ActivityEventType.Read);
+        }
+
+        [Fact]
+        public async Task GetPagedAsync_database_id_filter_returns_only_matching_database()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            var database = await CreateDatabaseAsync(tenantId);
+
+            await SeedEventsAsync(tenantId, 2, new SeedOptions { DatabaseId = database.Id });
+            await SeedEventsAsync(tenantId, 3);
+
+            var result = await _activityEventAppService.GetPagedAsync(new GetActivityEventsInput
+            {
+                DatabaseId = database.Id
+            });
+
+            result.TotalCount.ShouldBe(2);
+            result.Items.ShouldAllBe(x => x.DatabaseId == database.Id);
+        }
+
+        [Fact]
+        public async Task GetPagedAsync_database_id_filter_includes_database_name()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            var database = await CreateDatabaseAsync(tenantId);
+
+            await SeedEventsAsync(tenantId, 1, new SeedOptions { DatabaseId = database.Id });
+
+            var result = await _activityEventAppService.GetPagedAsync(new GetActivityEventsInput
+            {
+                DatabaseId = database.Id
+            });
+
+            result.Items.Single().DatabaseName.ShouldBe("DemoDb");
+        }
+
+        [Fact]
+        public async Task GetPagedAsync_actor_user_filter_returns_only_matching_user()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            await SeedEventsAsync(tenantId, 3, new SeedOptions { ActorUser = "john.doe" });
+            await SeedEventsAsync(tenantId, 2, new SeedOptions { ActorUser = "jane.smith" });
+
+            var result = await _activityEventAppService.GetPagedAsync(new GetActivityEventsInput
+            {
+                ActorUser = "john.doe"
+            });
+
+            result.TotalCount.ShouldBe(3);
+            result.Items.ShouldAllBe(x => x.ActorUser == "john.doe");
+        }
+
+        [Fact]
+        public async Task GetPagedAsync_tab_suspicious_activity_returns_medium_and_above_severity_only()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            await SeedEventsAsync(tenantId, 2, new SeedOptions { Severity = ActivitySeverity.Info });
+            await SeedEventsAsync(tenantId, 2, new SeedOptions { Severity = ActivitySeverity.Low });
+            await SeedEventsAsync(tenantId, 3, new SeedOptions { Severity = ActivitySeverity.Medium });
+            await SeedEventsAsync(tenantId, 1, new SeedOptions { Severity = ActivitySeverity.High });
+
+            var result = await _activityEventAppService.GetPagedAsync(new GetActivityEventsInput
+            {
+                Tab = ActivityEventTab.SuspiciousActivity
+            });
+
+            result.TotalCount.ShouldBe(4);
+            result.Items.ShouldAllBe(x => x.Severity >= ActivitySeverity.Medium);
+        }
+
+        [Fact]
+        public async Task GetPagedAsync_tab_failed_events_returns_only_unsuccessful_events()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            await SeedEventsAsync(tenantId, 4, new SeedOptions { IsSuccess = true });
+            await SeedEventsAsync(tenantId, 2, new SeedOptions { IsSuccess = false });
+
+            var result = await _activityEventAppService.GetPagedAsync(new GetActivityEventsInput
+            {
+                Tab = ActivityEventTab.FailedEvents
+            });
+
+            result.TotalCount.ShouldBe(2);
+            result.Items.ShouldAllBe(x => !x.IsSuccess);
+        }
+
+        [Fact]
+        public async Task GetPagedAsync_pagination_skip_and_take_are_applied_correctly()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            await SeedEventsAsync(tenantId, 10);
+
+            var firstPage = await _activityEventAppService.GetPagedAsync(new GetActivityEventsInput
+            {
+                SkipCount = 0,
+                MaxResultCount = 3
+            });
+
+            var secondPage = await _activityEventAppService.GetPagedAsync(new GetActivityEventsInput
+            {
+                SkipCount = 3,
+                MaxResultCount = 3
+            });
+
+            firstPage.TotalCount.ShouldBe(10);
+            firstPage.Items.Count.ShouldBe(3);
+            secondPage.Items.Count.ShouldBe(3);
+
+            var firstPageIds = firstPage.Items.Select(x => x.Id).ToList();
+            var secondPageIds = secondPage.Items.Select(x => x.Id).ToList();
+            firstPageIds.Intersect(secondPageIds).ShouldBeEmpty();
+        }
+
+        [Fact]
+        public async Task GetPagedAsync_filters_can_be_combined()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            await SeedEventsAsync(tenantId, 2, new SeedOptions { ActorUser = "analyst", EventType = ActivityEventType.Read, IsSuccess = true });
+            await SeedEventsAsync(tenantId, 3, new SeedOptions { ActorUser = "analyst", EventType = ActivityEventType.Write, IsSuccess = true });
+            await SeedEventsAsync(tenantId, 1, new SeedOptions { ActorUser = "analyst", EventType = ActivityEventType.Login, IsSuccess = false });
+
+            var result = await _activityEventAppService.GetPagedAsync(new GetActivityEventsInput
+            {
+                ActorUser = "analyst",
+                EventType = ActivityEventType.Read,
+                Tab = ActivityEventTab.All
+            });
+
+            result.TotalCount.ShouldBe(2);
+            result.Items.ShouldAllBe(x => x.ActorUser == "analyst" && x.EventType == ActivityEventType.Read);
+        }
+
+        // ── GetSummary tests ──────────────────────────────────────────────────
+
+        [Fact]
+        public async Task GetSummaryAsync_counts_each_event_type_correctly()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            await SeedEventsAsync(tenantId, 3, new SeedOptions { EventType = ActivityEventType.Read });
+            await SeedEventsAsync(tenantId, 2, new SeedOptions { EventType = ActivityEventType.Write });
+            await SeedEventsAsync(tenantId, 2, new SeedOptions { EventType = ActivityEventType.Login });
+            await SeedEventsAsync(tenantId, 1, new SeedOptions { EventType = ActivityEventType.Logout });
+            await SeedEventsAsync(tenantId, 1, new SeedOptions { EventType = ActivityEventType.PrivilegedAction });
+
+            var summary = await _activityEventAppService.GetSummaryAsync();
+
+            summary.TotalEvents.ShouldBe(9);
+            summary.ReadOps.ShouldBe(3);
+            summary.WriteOps.ShouldBe(2);
+            summary.AuthEvents.ShouldBe(3); // Login + Logout
+            summary.PrivilegedOps.ShouldBe(1);
+        }
+
+        [Fact]
+        public async Task GetSummaryAsync_tab_badge_counts_are_correct()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            await SeedEventsAsync(tenantId, 2, new SeedOptions { Severity = ActivitySeverity.Info, IsSuccess = true });
+            await SeedEventsAsync(tenantId, 3, new SeedOptions { Severity = ActivitySeverity.Medium, IsSuccess = true });
+            await SeedEventsAsync(tenantId, 2, new SeedOptions { Severity = ActivitySeverity.High, IsSuccess = false });
+
+            var summary = await _activityEventAppService.GetSummaryAsync();
+
+            summary.SuspiciousActivityCount.ShouldBe(5); // Medium + High
+            summary.FailedEventsCount.ShouldBe(2);
+        }
+
+        [Fact]
+        public async Task GetSummaryAsync_returns_zero_summary_when_no_events_exist()
+        {
+            var summary = await _activityEventAppService.GetSummaryAsync();
+
+            summary.TotalEvents.ShouldBe(0);
+            summary.ReadOps.ShouldBe(0);
+            summary.WriteOps.ShouldBe(0);
+            summary.AuthEvents.ShouldBe(0);
+            summary.PrivilegedOps.ShouldBe(0);
+            summary.SuspiciousActivityCount.ShouldBe(0);
+            summary.FailedEventsCount.ShouldBe(0);
+        }
+
+        // ── GetFilterOptions tests ────────────────────────────────────────────
+
+        [Fact]
+        public async Task GetFilterOptionsAsync_returns_only_databases_that_have_events()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            var dbWithEvents = await CreateDatabaseAsync(tenantId);
+            await CreateDatabaseAsync(tenantId); // second database, no events
+
+            await SeedEventsAsync(tenantId, 2, new SeedOptions { DatabaseId = dbWithEvents.Id });
+
+            var options = await _activityEventAppService.GetFilterOptionsAsync();
+
+            options.Databases.ShouldContain(x => x.Id == dbWithEvents.Id);
+            options.Databases.Count.ShouldBe(1);
+        }
+
+        [Fact]
+        public async Task GetFilterOptionsAsync_returns_distinct_actor_users_sorted()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            await SeedEventsAsync(tenantId, 2, new SeedOptions { ActorUser = "zach" });
+            await SeedEventsAsync(tenantId, 3, new SeedOptions { ActorUser = "alice" });
+            await SeedEventsAsync(tenantId, 1, new SeedOptions { ActorUser = "alice" }); // duplicate — should appear once
+
+            var options = await _activityEventAppService.GetFilterOptionsAsync();
+
+            options.Users.ShouldContain("alice");
+            options.Users.ShouldContain("zach");
+            options.Users.Count(x => x == "alice").ShouldBe(1);
+            options.Users[0].ShouldBe("alice"); // sorted ascending
+        }
+
+        // ── Authorization tests ───────────────────────────────────────────────
+
+        [Fact]
+        public async Task GetPagedAsync_should_require_authenticated_user()
+        {
+            var previousTenantId = AbpSession.TenantId;
+            var previousUserId = AbpSession.UserId;
+
+            try
+            {
+                AbpSession.TenantId = 1;
+                AbpSession.UserId = null;
+
+                await Should.ThrowAsync<AbpAuthorizationException>(() =>
+                    _activityEventAppService.GetPagedAsync(new GetActivityEventsInput()));
+            }
+            finally
+            {
+                AbpSession.TenantId = previousTenantId;
+                AbpSession.UserId = previousUserId;
+            }
+        }
+
+        [Fact]
+        public async Task GetSummaryAsync_should_require_authenticated_user()
+        {
+            var previousTenantId = AbpSession.TenantId;
+            var previousUserId = AbpSession.UserId;
+
+            try
+            {
+                AbpSession.TenantId = 1;
+                AbpSession.UserId = null;
+
+                await Should.ThrowAsync<AbpAuthorizationException>(() =>
+                    _activityEventAppService.GetSummaryAsync());
+            }
+            finally
+            {
+                AbpSession.TenantId = previousTenantId;
+                AbpSession.UserId = previousUserId;
+            }
+        }
+
+        // ── Helpers ───────────────────────────────────────────────────────────
+
+        private sealed class SeedOptions
+        {
+            public ActivityEventType EventType = ActivityEventType.Read;
+            public ActivitySeverity Severity = ActivitySeverity.Info;
+            public string ActorUser = "test_user";
+            public string Operation = "SELECT";
+            public bool IsSuccess = true;
+            public Guid? DatabaseId = null;
+        }
+
+        private async Task SeedEventsAsync(int tenantId, int count, SeedOptions opts = null)
+        {
+            opts ??= new SeedOptions();
+
+            for (var i = 0; i < count; i++)
+            {
+                var e = new ActivityEvent(
+                    tenantId,
+                    DateTime.UtcNow.AddSeconds(-i),
+                    opts.EventType,
+                    opts.ActorUser,
+                    opts.Severity,
+                    opts.IsSuccess)
+                {
+                    Operation = opts.Operation,
+                    DatabaseId = opts.DatabaseId
+                };
+
+                await UsingDbContextAsync(async context =>
+                {
+                    await context.ActivityEvents.AddAsync(e);
+                });
+            }
+        }
+
         private async Task<MonitoredDatabase> CreateDatabaseAsync(int tenantId)
         {
             var server = new MonitoredServer(tenantId, "Demo Server", "pg-demo-01", "Demo", "Demo monitored server.");

@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Abp.Application.Services;
+using Abp.Application.Services.Dto;
 using Team2GroupProject.DataSentinel.ActivityEvents.Dto;
 
 namespace Team2GroupProject.DataSentinel.ActivityEvents
@@ -11,5 +12,11 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
         Task<ActivityEventIngestionResultDto> IngestAbpAuditLogsAsync(IngestAbpAuditLogsInput input);
 
         Task<ActivityEventIngestionResultDto> SeedSimulatedAbpAuditLogsAsync(SeedSimulatedAbpAuditLogsInput input);
+
+        Task<PagedResultDto<ActivityEventDto>> GetPagedAsync(GetActivityEventsInput input);
+
+        Task<ActivityEventSummaryDto> GetSummaryAsync();
+
+        Task<ActivityEventFilterOptionsDto> GetFilterOptionsAsync();
     }
 }
