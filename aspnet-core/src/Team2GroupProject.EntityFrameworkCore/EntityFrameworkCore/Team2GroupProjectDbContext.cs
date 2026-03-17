@@ -1,18 +1,33 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Abp.Zero.EntityFrameworkCore;
 using Team2GroupProject.Authorization.Roles;
 using Team2GroupProject.Authorization.Users;
+using Team2GroupProject.DataSentinel.Monitoring;
+using Team2GroupProject.EntityFrameworkCore.DataSentinel.Configurations;
 using Team2GroupProject.MultiTenancy;
 
 namespace Team2GroupProject.EntityFrameworkCore
 {
     public class Team2GroupProjectDbContext : AbpZeroDbContext<Tenant, Role, User, Team2GroupProjectDbContext>
     {
-        /* Define a DbSet for each entity of the application */
-        
+        public DbSet<MonitoredServer> MonitoredServers { get; set; }
+
+        public DbSet<MonitoredDatabase> MonitoredDatabases { get; set; }
+
+        public DbSet<MonitoredTable> MonitoredTables { get; set; }
+
         public Team2GroupProjectDbContext(DbContextOptions<Team2GroupProjectDbContext> options)
             : base(options)
         {
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.ApplyConfiguration(new MonitoredServerConfiguration());
+            modelBuilder.ApplyConfiguration(new MonitoredDatabaseConfiguration());
+            modelBuilder.ApplyConfiguration(new MonitoredTableConfiguration());
         }
     }
 }
