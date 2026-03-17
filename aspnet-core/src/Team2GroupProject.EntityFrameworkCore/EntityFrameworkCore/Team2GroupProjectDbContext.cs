@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Abp.Zero.EntityFrameworkCore;
 using Team2GroupProject.Authorization.Roles;
 using Team2GroupProject.Authorization.Users;
+using Team2GroupProject.DataSentinel.ActivityEvents;
 using Team2GroupProject.DataSentinel.Monitoring;
 using Team2GroupProject.EntityFrameworkCore.DataSentinel.Configurations;
 using Team2GroupProject.MultiTenancy;
@@ -16,6 +17,8 @@ namespace Team2GroupProject.EntityFrameworkCore
 
         public DbSet<MonitoredTable> MonitoredTables { get; set; }
 
+        public DbSet<ActivityEvent> ActivityEvents { get; set; }
+
         public Team2GroupProjectDbContext(DbContextOptions<Team2GroupProjectDbContext> options)
             : base(options)
         {
@@ -28,6 +31,7 @@ namespace Team2GroupProject.EntityFrameworkCore
             modelBuilder.ApplyConfiguration(new MonitoredServerConfiguration());
             modelBuilder.ApplyConfiguration(new MonitoredDatabaseConfiguration());
             modelBuilder.ApplyConfiguration(new MonitoredTableConfiguration());
+            modelBuilder.ApplyConfiguration(new ActivityEventConfiguration());
         }
     }
 }
