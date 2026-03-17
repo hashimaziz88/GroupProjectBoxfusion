@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Abp.Domain.Entities;
 using Abp.Domain.Entities.Auditing;
 using Abp.Extensions;
@@ -68,8 +69,14 @@ namespace Team2GroupProject.DataSentinel.SecurityAlerts
 
         public MonitoredTable Table { get; set; }
 
+        public ICollection<IncidentNote> Notes { get; set; }
+
+        public ICollection<AlertStatusHistory> StatusHistoryEntries { get; set; }
+
         protected SecurityAlert()
         {
+            Notes = new List<IncidentNote>();
+            StatusHistoryEntries = new List<AlertStatusHistory>();
         }
 
         public SecurityAlert(
@@ -82,6 +89,7 @@ namespace Team2GroupProject.DataSentinel.SecurityAlerts
             DateTime eventTimeStart,
             DateTime eventTimeEnd,
             int relatedEventCount)
+            : this()
         {
             Id = Guid.NewGuid();
             TenantId = tenantId;
