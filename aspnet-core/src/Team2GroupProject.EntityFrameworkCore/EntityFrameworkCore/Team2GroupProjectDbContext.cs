@@ -6,6 +6,7 @@ using Team2GroupProject.DataSentinel.ActivityEvents;
 using Team2GroupProject.DataSentinel.AlertRules;
 using Team2GroupProject.DataSentinel.Monitoring;
 using Team2GroupProject.DataSentinel.SecurityAlerts;
+using Team2GroupProject.DataSentinel.UserRiskProfiles;
 using Team2GroupProject.EntityFrameworkCore.DataSentinel.Configurations;
 using Team2GroupProject.MultiTenancy;
 
@@ -29,6 +30,8 @@ namespace Team2GroupProject.EntityFrameworkCore
 
         public DbSet<AlertStatusHistory> AlertStatusHistoryEntries { get; set; }
 
+        public DbSet<UserRiskProfile> UserRiskProfiles { get; set; }
+
         public Team2GroupProjectDbContext(DbContextOptions<Team2GroupProjectDbContext> options)
             : base(options)
         {
@@ -46,6 +49,7 @@ namespace Team2GroupProject.EntityFrameworkCore
             modelBuilder.ApplyConfiguration(new SecurityAlertConfiguration());
             modelBuilder.ApplyConfiguration(new IncidentNoteConfiguration());
             modelBuilder.ApplyConfiguration(new AlertStatusHistoryConfiguration());
+            modelBuilder.ApplyConfiguration(new UserRiskProfileConfiguration());
         }
     }
 }
