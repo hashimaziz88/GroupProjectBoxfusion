@@ -12,6 +12,9 @@
         // DataSentinel permissions
         public const string Pages_DataSentinel = "Pages.DataSentinel";
         public const string Pages_DataSentinel_Dashboard = "Pages.DataSentinel.Dashboard";
+        public const string Pages_DataSentinel_Intake = "Pages.DataSentinel.Intake";
+        public const string Pages_DataSentinel_Infrastructure_View = "Pages.DataSentinel.Infrastructure.View";
+        public const string Pages_DataSentinel_Infrastructure_Manage = "Pages.DataSentinel.Infrastructure.Manage";
         public const string Pages_DataSentinel_ActivityEvents_View = "Pages.DataSentinel.ActivityEvents.View";
         public const string Pages_DataSentinel_Alerts_View = "Pages.DataSentinel.Alerts.View";
         public const string Pages_DataSentinel_Alerts_Review = "Pages.DataSentinel.Alerts.Review";

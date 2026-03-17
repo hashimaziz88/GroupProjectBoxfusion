@@ -16,6 +16,9 @@ namespace Team2GroupProject.Authorization
             // DataSentinel permission hierarchy
             var dataSentinel = context.CreatePermission(PermissionNames.Pages_DataSentinel, L("DataSentinel"));
             dataSentinel.CreateChildPermission(PermissionNames.Pages_DataSentinel_Dashboard, L("DataSentinelDashboard"));
+            dataSentinel.CreateChildPermission(PermissionNames.Pages_DataSentinel_Intake, L("DataSentinelIntake"));
+            var monitoringInfrastructure = dataSentinel.CreateChildPermission(PermissionNames.Pages_DataSentinel_Infrastructure_View, L("DataSentinelInfrastructureView"));
+            monitoringInfrastructure.CreateChildPermission(PermissionNames.Pages_DataSentinel_Infrastructure_Manage, L("DataSentinelInfrastructureManage"));
             dataSentinel.CreateChildPermission(PermissionNames.Pages_DataSentinel_ActivityEvents_View, L("DataSentinelActivityEventsView"));
 
             var alerts = dataSentinel.CreateChildPermission(PermissionNames.Pages_DataSentinel_Alerts_View, L("DataSentinelAlertsView"));
