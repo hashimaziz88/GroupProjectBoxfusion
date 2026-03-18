@@ -21,11 +21,14 @@ namespace Team2GroupProject.DataSentinel.Detection
     public class AnomalyDetectionAppService : Team2GroupProjectAppServiceBase, IAnomalyDetectionAppService
     {
         private readonly IThresholdRuleEvaluator _thresholdRuleEvaluator;
+        private readonly IOutOfHoursRuleEvaluator _outOfHoursRuleEvaluator;
 
         public AnomalyDetectionAppService(
-            IThresholdRuleEvaluator thresholdRuleEvaluator)
+            IThresholdRuleEvaluator thresholdRuleEvaluator,
+            IOutOfHoursRuleEvaluator outOfHoursRuleEvaluator)
         {
             _thresholdRuleEvaluator = thresholdRuleEvaluator;
+            _outOfHoursRuleEvaluator = outOfHoursRuleEvaluator;
         }
 
         public async Task<ThresholdRuleEvaluationResultDto> EvaluateThresholdRulesAsync(EvaluateThresholdRulesInput input)
@@ -41,6 +44,21 @@ namespace Team2GroupProject.DataSentinel.Detection
 
             return result;
         }
+
+        public async Task<OutOfHoursRuleEvaluationResultDto> EvaluateOutOfHoursRulesAsync(EvaluateOutOfHoursRulesInput input)
+        {
+            var tenantId = AbpSession.GetTenantId();
+            var evaluationTimeUtc = NormalizeEvaluationTime(input?.EvaluationTimeUtc ?? Clock.Now);
+            var result = await _outOfHoursRuleEvaluator.EvaluateAsync(tenantId, evaluationTimeUtc, ruleId: input?.RuleId);
+
+            if (result.CreatedAlertIds.Count > 0)
+            {
+                await CurrentUnitOfWork.SaveChangesAsync();
+            }
+
+            return result;
+        }
+
         private static DateTime NormalizeEvaluationTime(DateTime value)
         {
             if (value.Kind == DateTimeKind.Unspecified)

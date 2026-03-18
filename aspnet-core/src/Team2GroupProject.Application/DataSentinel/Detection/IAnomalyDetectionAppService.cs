@@ -7,5 +7,7 @@ namespace Team2GroupProject.DataSentinel.Detection
     public interface IAnomalyDetectionAppService : IApplicationService
     {
         Task<ThresholdRuleEvaluationResultDto> EvaluateThresholdRulesAsync(EvaluateThresholdRulesInput input);
+
+        Task<OutOfHoursRuleEvaluationResultDto> EvaluateOutOfHoursRulesAsync(EvaluateOutOfHoursRulesInput input);
     }
 }

@@ -457,6 +457,43 @@ namespace Team2GroupProject.Tests.DataSentinel.ActivityEvents
         }
 
         [Fact]
+        public async Task ImportBatchAsync_should_trigger_out_of_hours_detection_for_risky_out_of_hours_events()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            var database = await CreateDatabaseAsync(tenantId);
+            var outOfHoursTime = ConvertLocalTimeToUtc(new DateTime(2026, 3, 21, 23, 30, 0));
+            var rule = await CreateOutOfHoursRuleAsync(tenantId, "Out Of Hours Write", ActivitySeverity.High);
+
+            var result = await _activityEventAppService.ImportBatchAsync(new IngestActivityEventsInput
+            {
+                Events = new List<ActivityEventIngestionItemDto>
+                {
+                    CreateWriteEvent(database.Id, outOfHoursTime, "night-writer", "ooh-write-1")
+                }
+            });
+
+            result.AcceptedCount.ShouldBe(1);
+            result.DetectionSummary.EvaluatedAnchorCount.ShouldBe(2);
+            result.DetectionSummary.CreatedAlertCount.ShouldBe(1);
+            result.DetectionSummary.DuplicateAlertCount.ShouldBe(0);
+            result.DetectionSummary.CreatedAlertIds.Count.ShouldBe(1);
+
+            var alert = await UsingDbContextAsync(async context =>
+                await context.SecurityAlerts.FindAsync(result.DetectionSummary.CreatedAlertIds.Single()));
+            var profile = await UsingDbContextAsync(async context =>
+                await Task.FromResult(context.UserRiskProfiles.Single(x => x.ActorUser == "night-writer")));
+
+            alert.ShouldNotBeNull();
+            alert.RuleId.ShouldBe(rule.Id);
+            alert.PrimaryActorUser.ShouldBe("night-writer");
+            alert.RelatedEventCount.ShouldBe(1);
+
+            profile.AlertCount.ShouldBe(1);
+            profile.HighSeverityAlertCount.ShouldBe(1);
+            profile.OutOfHoursEventCount.ShouldBe(1);
+        }
+
+        [Fact]
         public async Task ImportBatchAsync_should_trigger_detection_for_historical_batches_using_event_time_anchors()
         {
             var tenantId = AbpSession.TenantId!.Value;
@@ -1259,6 +1296,22 @@ namespace Team2GroupProject.Tests.DataSentinel.ActivityEvents
             return rule;
         }
 
+        private async Task<AlertRule> CreateOutOfHoursRuleAsync(
+            int tenantId,
+            string name,
+            ActivitySeverity severity,
+            bool isEnabled = true)
+        {
+            var rule = new AlertRule(tenantId, name, AlertRuleType.OutOfHours, severity, 0, 1, isEnabled: isEnabled);
+
+            await UsingDbContextAsync(async context =>
+            {
+                await context.AlertRules.AddAsync(rule);
+            });
+
+            return rule;
+        }
+
         private static ActivityEventIngestionItemDto CreateWriteEvent(
             Guid databaseId,
             DateTime eventTime,
@@ -1299,6 +1352,13 @@ namespace Team2GroupProject.Tests.DataSentinel.ActivityEvents
                 ExceptionMessage = "Login failed!",
                 Exception = "Abp.UI.UserFriendlyException: Login failed!"
             };
+        }
+
+        private static DateTime ConvertLocalTimeToUtc(DateTime localTime)
+        {
+            return TimeZoneInfo.ConvertTimeToUtc(
+                DateTime.SpecifyKind(localTime, DateTimeKind.Unspecified),
+                TimeZoneInfo.Local);
         }
     }
 }
