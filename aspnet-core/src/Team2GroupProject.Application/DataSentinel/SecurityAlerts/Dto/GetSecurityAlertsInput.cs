@@ -18,6 +18,12 @@ namespace Team2GroupProject.DataSentinel.SecurityAlerts.Dto
         /// <summary>Filter by monitored database ID (maps to the "All Databases" dropdown).</summary>
         public Guid? DatabaseId { get; set; }
 
+        /// <summary>Return only alerts triggered at or after this UTC datetime.</summary>
+        public DateTime? StartDate { get; set; }
+
+        /// <summary>Return only alerts triggered at or before this UTC datetime.</summary>
+        public DateTime? EndDate { get; set; }
+
         public int SkipCount { get; set; }
 
         public int MaxResultCount { get; set; } = 50;

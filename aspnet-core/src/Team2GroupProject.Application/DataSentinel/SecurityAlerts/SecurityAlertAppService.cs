@@ -194,6 +194,16 @@ namespace Team2GroupProject.DataSentinel.SecurityAlerts
                 query = query.Where(x => x.DatabaseId == input.DatabaseId.Value);
             }
 
+            if (input.StartDate.HasValue)
+            {
+                query = query.Where(x => x.TriggeredAt >= input.StartDate.Value);
+            }
+
+            if (input.EndDate.HasValue)
+            {
+                query = query.Where(x => x.TriggeredAt <= input.EndDate.Value);
+            }
+
             return query;
         }
 
