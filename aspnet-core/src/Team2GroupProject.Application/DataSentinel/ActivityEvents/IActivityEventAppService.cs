@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Abp.Application.Services;
+using Abp.Application.Services.Dto;
 using Team2GroupProject.DataSentinel.ActivityEvents.Dto;
 
 namespace Team2GroupProject.DataSentinel.ActivityEvents
@@ -26,5 +27,11 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
         /// Generates a deterministic batch of simulated ABP audit logs and imports them as activity events.
         /// </summary>
         Task<ActivityEventIngestionResultDto> SeedSimulatedAbpAuditLogsAsync(SeedSimulatedAbpAuditLogsInput input);
+
+        Task<PagedResultDto<ActivityEventDto>> GetPagedAsync(GetActivityEventsInput input);
+
+        Task<ActivityEventSummaryDto> GetSummaryAsync();
+
+        Task<ActivityEventFilterOptionsDto> GetFilterOptionsAsync();
     }
 }
