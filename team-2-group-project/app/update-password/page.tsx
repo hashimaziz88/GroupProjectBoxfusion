@@ -56,7 +56,7 @@ const UpdatePasswordPageContent = () => {
   return (
     <AppShell
       title="Update Password"
-      subtitle="This form follows the Angular password update route and uses the same ABP change password endpoint."
+      subtitle="Update your account password. You will need your current password to set a new one."
     >
       {successMessage ? (
         <Alert

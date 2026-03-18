@@ -141,8 +141,8 @@ export default function LoginPage() {
 
   return (
     <AuthLayout
-      asideTitle="Sign in with tenant-aware ABP authentication."
-      asideText="The login flow resolves tenant context first, then authenticates against the same backend endpoints used by the Angular client."
+      asideTitle="Database activity monitoring starts here."
+      asideText="Sign in to your DataSentinel workspace to access real-time activity monitoring, audit trails, and security intelligence for your databases."
     >
       <AuthHeader
         title="Log in"

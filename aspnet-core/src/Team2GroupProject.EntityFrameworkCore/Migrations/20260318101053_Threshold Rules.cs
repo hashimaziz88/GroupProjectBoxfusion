@@ -22,16 +22,41 @@ namespace Team2GroupProject.Migrations
                 table: "DataSentinelActivityEvents",
                 type: "character varying(128)",
                 maxLength: 128,
-                nullable: false,
-                defaultValue: "");
+                nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "SourceSystem",
                 table: "DataSentinelActivityEvents",
                 type: "character varying(64)",
                 maxLength: 64,
+                nullable: true);
+
+            migrationBuilder.Sql(
+                @"UPDATE ""DataSentinelActivityEvents""
+                  SET ""SourceSystem"" = COALESCE(NULLIF(""SourceSystem"", ''), 'LegacyActivityEvent'),
+                      ""SourceEventKey"" = COALESCE(NULLIF(""SourceEventKey"", ''), ""Id""::text);");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "SourceEventKey",
+                table: "DataSentinelActivityEvents",
+                type: "character varying(128)",
+                maxLength: 128,
                 nullable: false,
-                defaultValue: "");
+                oldClrType: typeof(string),
+                oldType: "character varying(128)",
+                oldMaxLength: 128,
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<string>(
+                name: "SourceSystem",
+                table: "DataSentinelActivityEvents",
+                type: "character varying(64)",
+                maxLength: 64,
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "character varying(64)",
+                oldMaxLength: 64,
+                oldNullable: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_DataSentinelSecurityAlerts_TenantId_CorrelationKey",

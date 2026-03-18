@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Team 2 Group Project Frontend",
-  description: "Next.js frontend scaffold with provider-pattern project rules.",
+  title: "DataSentinel — Database Activity Monitoring",
+  description: "Real-time database activity monitoring and security intelligence platform.",
 };
 
 export default function RootLayout({
