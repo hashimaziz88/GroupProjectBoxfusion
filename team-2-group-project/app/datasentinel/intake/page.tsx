@@ -158,15 +158,15 @@ const ActivityIntakePageContent = () => {
 
   const buildUploadHandler =
     (form: FormFieldSetter, fieldName: string): UploadProps["beforeUpload"] =>
-    async (file) => {
-      const text = await file.text();
-      form.setFieldValue(fieldName, text);
-      setActionMessage({
-        type: "success",
-        text: `${file.name} loaded into the editor.`,
-      });
-      return false;
-    };
+      async (file) => {
+        const text = await file.text();
+        form.setFieldValue(fieldName, text);
+        setActionMessage({
+          type: "success",
+          text: `${file.name} loaded into the editor.`,
+        });
+        return false;
+      };
 
   const errorColumns = [
     {
@@ -199,7 +199,7 @@ const ActivityIntakePageContent = () => {
         <Alert
           type="info"
           showIcon
-          message="DataSentinel intake is tenant-scoped. Switch into a tenant before ingesting or seeding activity."
+          title="DataSentinel intake is tenant-scoped. Switch into a tenant before ingesting or seeding activity."
           className={styles.alert}
         />
       </AppShell>
@@ -212,14 +212,14 @@ const ActivityIntakePageContent = () => {
       subtitle="Send manual activity batches, upload ABP audit logs, or seed simulated data through the currently available DataSentinel intake endpoints."
     >
       {errorMessage ? (
-        <Alert type="error" showIcon message={errorMessage} className={styles.alert} />
+        <Alert type="error" showIcon title={errorMessage} className={styles.alert} />
       ) : null}
 
       {actionMessage ? (
         <Alert
           type={actionMessage.type}
           showIcon
-          message={actionMessage.text}
+          title={actionMessage.text}
           className={styles.alert}
         />
       ) : null}

@@ -1,6 +1,5 @@
 "use client";
 
-import type { ReactNode } from "react";
 import { Button, Layout, Menu, Tag, Typography } from "antd";
 import { usePathname, useRouter } from "next/navigation";
 import { getVisibleNavigationItems } from "@/constants/navigation";

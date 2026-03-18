@@ -22,7 +22,6 @@ import {
   IMonitoredTableListItem,
 } from "@/interfaces/datasentinel/monitoring";
 import {
-  MonitoringInfrastructureProvider,
   useMonitoringInfrastructureActions,
   useMonitoringInfrastructureState,
 } from "@/providers/monitoringInfrastructureProvider";
@@ -202,7 +201,7 @@ const MonitoringInfrastructurePage = () => {
         <Alert
           type="info"
           showIcon
-          message="DataSentinel infrastructure is tenant-scoped. Switch into a tenant before managing monitoring references."
+          title="DataSentinel infrastructure is tenant-scoped. Switch into a tenant before managing monitoring references."
           className={styles.alert}
         />
       </AppShell>
@@ -215,14 +214,14 @@ const MonitoringInfrastructurePage = () => {
       subtitle="Inspect tenant-scoped monitored servers, databases, and tables, then create or bootstrap the references required by DataSentinel intake."
     >
       {errorMessage ? (
-        <Alert type="error" showIcon message={errorMessage} className={styles.alert} />
+        <Alert type="error" showIcon title={errorMessage} className={styles.alert} />
       ) : null}
 
       {actionMessage ? (
         <Alert
           type={actionMessage.type}
           showIcon
-          message={actionMessage.text}
+          title={actionMessage.text}
           className={styles.alert}
         />
       ) : null}
@@ -500,7 +499,7 @@ const MonitoringInfrastructurePage = () => {
           <Alert
             type="info"
             showIcon
-            message="You can view monitored infrastructure here, but creating or bootstrapping references requires Pages.DataSentinel.Infrastructure.Manage."
+            title="You can view monitored infrastructure here, but creating or bootstrapping references requires Pages.DataSentinel.Infrastructure.Manage."
           />
         )}
       </Card>
@@ -549,7 +548,7 @@ const MonitoringInfrastructurePage = () => {
               <Alert
                 type="info"
                 showIcon
-                message="Demo bootstrap is available once the current user also has infrastructure manage permission."
+                title="Demo bootstrap is available once the current user also has infrastructure manage permission."
               />
             )}
           </Card>

@@ -1,7 +1,7 @@
 "use client";
 
 import axios from "axios";
-import { useEffect, useEffectEvent, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Alert,
   Button,
@@ -153,31 +153,34 @@ const ActivityMonitoringPageContent = () => {
     label: `${database.name} (${database.serverName})`,
   }));
 
-  const buildRequestFilters = (): IActivityEventFilters => ({
-    keyword: appliedFilters.keyword.trim() || undefined,
-    serverId: appliedFilters.serverId,
-    databaseId: appliedFilters.databaseId,
-    eventType: appliedFilters.eventType,
-    severity: appliedFilters.severity,
-    isSuccessful:
-      appliedFilters.status === "success"
-        ? true
-        : appliedFilters.status === "failure"
-          ? false
-          : undefined,
-    isOutOfHours:
-      appliedFilters.outOfHours === "yes"
-        ? true
-        : appliedFilters.outOfHours === "no"
-          ? false
-          : undefined,
-    dateFromUtc: toUtcIsoString(appliedFilters.dateFrom),
-    dateToUtc: toUtcIsoString(appliedFilters.dateTo),
-    skipCount: (currentPage - 1) * pageSize,
-    maxResultCount: pageSize,
-  });
+  const buildRequestFilters = useCallback(
+    (): IActivityEventFilters => ({
+      keyword: appliedFilters.keyword.trim() || undefined,
+      serverId: appliedFilters.serverId,
+      databaseId: appliedFilters.databaseId,
+      eventType: appliedFilters.eventType,
+      severity: appliedFilters.severity,
+      isSuccessful:
+        appliedFilters.status === "success"
+          ? true
+          : appliedFilters.status === "failure"
+            ? false
+            : undefined,
+      isOutOfHours:
+        appliedFilters.outOfHours === "yes"
+          ? true
+          : appliedFilters.outOfHours === "no"
+            ? false
+            : undefined,
+      dateFromUtc: toUtcIsoString(appliedFilters.dateFrom),
+      dateToUtc: toUtcIsoString(appliedFilters.dateTo),
+      skipCount: (currentPage - 1) * pageSize,
+      maxResultCount: pageSize,
+    }),
+    [appliedFilters, currentPage, pageSize],
+  );
 
-  const loadReferenceData = useEffectEvent(async () => {
+  const loadReferenceData = useCallback(async () => {
     try {
       const result = await getMonitoredServers();
       setMonitoredServers(toArray(result.items));
@@ -193,9 +196,9 @@ const ActivityMonitoringPageContent = () => {
       setMonitoredServers([]);
       setReferenceErrorMessage(message);
     }
-  });
+  }, []);
 
-  const loadActivityEvents = useEffectEvent(async (refreshing = false) => {
+  const loadActivityEvents = useCallback(async (refreshing = false) => {
     if (refreshing) {
       setIsRefreshing(true);
     } else {
@@ -215,7 +218,7 @@ const ActivityMonitoringPageContent = () => {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  });
+  }, [buildRequestFilters]);
 
   useEffect(() => {
     if (!hasTenantContext) {
@@ -226,7 +229,7 @@ const ActivityMonitoringPageContent = () => {
     }
 
     void loadReferenceData();
-  }, [hasTenantContext]);
+  }, [hasTenantContext, loadReferenceData]);
 
   useEffect(() => {
     if (!hasTenantContext) {
@@ -238,7 +241,7 @@ const ActivityMonitoringPageContent = () => {
     }
 
     void loadActivityEvents();
-  }, [appliedFilters, currentPage, pageSize, hasTenantContext]);
+  }, [hasTenantContext, loadActivityEvents]);
 
   const failedCount = events.filter((event) => !event.isSuccess).length;
   const outOfHoursCount = events.filter((event) => event.isOutOfHours).length;
@@ -252,7 +255,7 @@ const ActivityMonitoringPageContent = () => {
         <Alert
           type="info"
           showIcon
-          message="DataSentinel activity monitoring is tenant-scoped. Switch into a tenant before opening this page."
+          title="DataSentinel activity monitoring is tenant-scoped. Switch into a tenant before opening this page."
           className={styles.alert}
         />
       </AppShell>
@@ -268,7 +271,7 @@ const ActivityMonitoringPageContent = () => {
         <Alert
           type="error"
           showIcon
-          message={errorMessage}
+          title={errorMessage}
           className={styles.alert}
         />
       ) : null}
@@ -277,7 +280,7 @@ const ActivityMonitoringPageContent = () => {
         <Alert
           type="warning"
           showIcon
-          message={referenceErrorMessage}
+          title={referenceErrorMessage}
           className={styles.alert}
         />
       ) : null}

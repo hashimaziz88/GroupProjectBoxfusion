@@ -38,11 +38,8 @@ export default function LoginPage() {
   } = useAuthState();
 
   const [tenantName, setTenantName] = useState(currentTenant?.tenancyName ?? "");
+  const [hasEditedTenantName, setHasEditedTenantName] = useState(false);
   const [tenantFeedback, setTenantFeedback] = useState<TenantFeedbackState>(null);
-
-  useEffect(() => {
-    setTenantName(currentTenant?.tenancyName ?? "");
-  }, [currentTenant?.tenancyName]);
 
   useEffect(() => {
     if (!isReady || !isAuthenticated) {
@@ -61,6 +58,9 @@ export default function LoginPage() {
   );
 
   const registrationEnabled = Boolean(currentTenant?.tenantId);
+  const resolvedTenantName = hasEditedTenantName
+    ? tenantName
+    : currentTenant?.tenancyName ?? tenantName;
   const showRegisteredMessage = searchParams.get("registered") === "1";
   const localApiConfigurationWarning = useMemo(() => {
     if (typeof window === "undefined") {
@@ -95,9 +95,11 @@ export default function LoginPage() {
   }, []);
 
   const handleTenantChange = async () => {
-    const result = await changeTenant(tenantName.trim() || null);
+    const result = await changeTenant(resolvedTenantName.trim() || null);
 
     if (result.state === "available") {
+      setTenantName(result.tenancyName ?? "");
+      setHasEditedTenantName(false);
       setTenantFeedback({
         type: "success",
         message: `Tenant changed to ${result.tenancyName}.`,
@@ -106,6 +108,8 @@ export default function LoginPage() {
     }
 
     if (result.state === "host") {
+      setTenantName("");
+      setHasEditedTenantName(false);
       setTenantFeedback({
         type: "success",
         message: "Tenant context cleared. You are now in the host context.",
@@ -197,8 +201,11 @@ export default function LoginPage() {
             <div>
               <Text className={styles.fieldLabel}>Tenant name</Text>
               <Input
-                value={tenantName}
-                onChange={(event) => setTenantName(event.target.value)}
+                value={resolvedTenantName}
+                onChange={(event) => {
+                  setTenantName(event.target.value);
+                  setHasEditedTenantName(true);
+                }}
                 placeholder="Enter a tenancy name"
               />
             </div>
@@ -214,6 +221,7 @@ export default function LoginPage() {
               <Button
                 onClick={() => {
                   setTenantName("");
+                  setHasEditedTenantName(false);
                   void changeTenant(null).then(() => {
                     setTenantFeedback({
                       type: "success",

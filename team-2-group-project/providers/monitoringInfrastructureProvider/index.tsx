@@ -1,9 +1,9 @@
 "use client";
 
 import React, {
+  useCallback,
   useContext,
   useEffect,
-  useEffectEvent,
   useMemo,
   useState,
 } from "react";
@@ -86,12 +86,14 @@ export const MonitoringInfrastructureProvider: React.FC<{
     INITIAL_STATE.isTableLoading,
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(
-    INITIAL_STATE.errorMessage,
+    INITIAL_STATE.errorMessage ?? null,
   );
   const [actionMessage, setActionMessage] =
-    useState<IMonitoringActionMessage | null>(INITIAL_STATE.actionMessage);
+    useState<IMonitoringActionMessage | null>(INITIAL_STATE.actionMessage ?? null);
   const [bootstrapResult, setBootstrapResult] =
-    useState<IBootstrapMonitoringDemoResult | null>(INITIAL_STATE.bootstrapResult);
+    useState<IBootstrapMonitoringDemoResult | null>(
+      INITIAL_STATE.bootstrapResult ?? null,
+    );
 
   const hasTenantContext = Boolean(currentTenant?.tenantId);
   const canManageInfrastructure = hasPermission(
@@ -129,7 +131,7 @@ export const MonitoringInfrastructureProvider: React.FC<{
     setSelectedDatabaseIdState(databaseId);
   };
 
-  const loadInfrastructure = useEffectEvent(async (refreshing = false) => {
+  const loadInfrastructure = useCallback(async (refreshing = false) => {
     if (refreshing) {
       setIsRefreshing(true);
     } else {
@@ -163,9 +165,9 @@ export const MonitoringInfrastructureProvider: React.FC<{
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  });
+  }, [selectedDatabaseId, selectedServerId]);
 
-  const loadScopedDatabases = useEffectEvent(async (serverId?: string) => {
+  const loadScopedDatabases = useCallback(async (serverId?: string) => {
     if (!serverId) {
       setDatabaseItems(allDatabases);
       return;
@@ -183,9 +185,9 @@ export const MonitoringInfrastructureProvider: React.FC<{
     } finally {
       setIsDatabaseLoading(false);
     }
-  });
+  }, [allDatabases]);
 
-  const loadScopedTables = useEffectEvent(async (databaseId?: string) => {
+  const loadScopedTables = useCallback(async (databaseId?: string) => {
     if (!databaseId) {
       if (selectedServerId) {
         const scopedDatabaseIds = allDatabases
@@ -213,7 +215,7 @@ export const MonitoringInfrastructureProvider: React.FC<{
     } finally {
       setIsTableLoading(false);
     }
-  });
+  }, [allDatabases, allTables, selectedServerId]);
 
   useEffect(() => {
     if (!hasTenantContext) {
@@ -233,7 +235,7 @@ export const MonitoringInfrastructureProvider: React.FC<{
     }
 
     void loadInfrastructure();
-  }, [hasTenantContext]);
+  }, [hasTenantContext, loadInfrastructure]);
 
   useEffect(() => {
     if (!hasTenantContext) {
@@ -246,7 +248,7 @@ export const MonitoringInfrastructureProvider: React.FC<{
     }
 
     void loadScopedDatabases(selectedServerId);
-  }, [allDatabases, hasTenantContext, selectedServerId]);
+  }, [allDatabases, hasTenantContext, loadScopedDatabases, selectedServerId]);
 
   useEffect(() => {
     if (!hasTenantContext) {
@@ -267,7 +269,13 @@ export const MonitoringInfrastructureProvider: React.FC<{
     }
 
     void loadScopedTables(selectedDatabaseId);
-  }, [allDatabases, hasTenantContext, selectedDatabaseId, selectedServerId]);
+  }, [
+    allDatabases,
+    hasTenantContext,
+    loadScopedTables,
+    selectedDatabaseId,
+    selectedServerId,
+  ]);
 
   const performMutation = async (
     mutation: () => Promise<void>,
