@@ -59,31 +59,35 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
         }
 
         [DisableAuditing]
+        public async Task<ActivityEventIngestionResultDto> ImportBatchAsync(IngestActivityEventsInput input)
+        {
+            var items = GetValidatedActivityEventBatchItems(input);
+            return await IngestInternalAsync(AbpSession.GetTenantId(), items);
+        }
+
+        [DisableAuditing]
         public async Task<ActivityEventIngestionResultDto> IngestAsync(IngestActivityEventsInput input)
         {
-            return await IngestInternalAsync(AbpSession.GetTenantId(), input.Events);
+            return await ImportBatchAsync(input);
         }
 
         [DisableAuditing]
         public async Task<ActivityEventIngestionResultDto> IngestAbpAuditLogsAsync(IngestAbpAuditLogsInput input)
         {
-            if (input.AbpAuditLogs.Count > MaxBatchSize)
-            {
-                throw new UserFriendlyException($"Batch size cannot exceed {MaxBatchSize} audit log items.");
-            }
+            var auditLogs = GetValidatedAuditLogBatchItems(input);
 
             var tenantId = AbpSession.GetTenantId();
             var result = new ActivityEventIngestionResultDto
             {
-                ReceivedCount = input.AbpAuditLogs.Count
+                ReceivedCount = auditLogs.Count
             };
 
             var mappedEvents = new List<ActivityEventIngestionItemDto>();
             var sourceIndexes = new List<int>();
 
-            for (var index = 0; index < input.AbpAuditLogs.Count; index++)
+            for (var index = 0; index < auditLogs.Count; index++)
             {
-                var auditLog = input.AbpAuditLogs[index];
+                var auditLog = auditLogs[index];
                 var validationErrors = ValidateAuditLogItem(auditLog, tenantId);
 
                 if (validationErrors.Count > 0)
@@ -132,10 +136,7 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
             IReadOnlyList<ActivityEventIngestionItemDto> items,
             IReadOnlyList<int> sourceIndexes = null)
         {
-            if (items.Count > MaxBatchSize)
-            {
-                throw new UserFriendlyException($"Batch size cannot exceed {MaxBatchSize} activity events.");
-            }
+            EnsureBatchSizeWithinLimit(items.Count, "activity events");
 
             var result = new ActivityEventIngestionResultDto
             {
@@ -144,6 +145,7 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
 
             var servers = await LoadServersAsync(tenantId, items);
             var databases = await LoadDatabasesAsync(tenantId, items);
+            var validEvents = new List<ActivityEvent>();
 
             for (var index = 0; index < items.Count; index++)
             {
@@ -181,14 +183,66 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
                     EvidenceJson = SanitizeEvidence(item.Evidence)
                 };
 
-                await _activityEventRepository.InsertAsync(activityEvent);
+                validEvents.Add(activityEvent);
                 result.CreatedEventIds.Add(activityEvent.Id);
+            }
+
+            foreach (var activityEvent in validEvents)
+            {
+                await _activityEventRepository.InsertAsync(activityEvent);
+            }
+
+            if (validEvents.Count > 0)
+            {
+                await CurrentUnitOfWork.SaveChangesAsync();
             }
 
             result.AcceptedCount = result.CreatedEventIds.Count;
             result.RejectedCount = result.Errors.Count;
 
             return result;
+        }
+
+        private static IReadOnlyList<ActivityEventIngestionItemDto> GetValidatedActivityEventBatchItems(IngestActivityEventsInput input)
+        {
+            if (input == null)
+            {
+                throw new UserFriendlyException("Batch import payload is required.");
+            }
+
+            if (input.Events == null || input.Events.Count == 0)
+            {
+                throw new UserFriendlyException("Batch import payload must include at least one activity event.");
+            }
+
+            EnsureBatchSizeWithinLimit(input.Events.Count, "activity events");
+
+            return input.Events;
+        }
+
+        private static IReadOnlyList<AbpAuditLogIngestionItemDto> GetValidatedAuditLogBatchItems(IngestAbpAuditLogsInput input)
+        {
+            if (input == null)
+            {
+                throw new UserFriendlyException("Audit log import payload is required.");
+            }
+
+            if (input.AbpAuditLogs == null || input.AbpAuditLogs.Count == 0)
+            {
+                throw new UserFriendlyException("Audit log import payload must include at least one audit log item.");
+            }
+
+            EnsureBatchSizeWithinLimit(input.AbpAuditLogs.Count, "audit log items");
+
+            return input.AbpAuditLogs;
+        }
+
+        private static void EnsureBatchSizeWithinLimit(int count, string batchItemDescription)
+        {
+            if (count > MaxBatchSize)
+            {
+                throw new UserFriendlyException($"Batch size cannot exceed {MaxBatchSize} {batchItemDescription}.");
+            }
         }
 
         private async Task<Dictionary<Guid, MonitoredServer>> LoadServersAsync(
