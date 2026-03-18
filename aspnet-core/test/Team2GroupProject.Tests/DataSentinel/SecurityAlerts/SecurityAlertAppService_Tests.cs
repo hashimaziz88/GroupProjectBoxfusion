@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Abp.Authorization;
 using Abp.Runtime.Session;
+using Microsoft.EntityFrameworkCore;
 using Shouldly;
 using Team2GroupProject.DataSentinel.ActivityEvents;
 using Team2GroupProject.DataSentinel.AlertRules;
@@ -295,6 +296,31 @@ namespace Team2GroupProject.Tests.DataSentinel.SecurityAlerts
 
             persisted.Status.ShouldBe(SecurityAlertStatus.Resolved);
             persisted.ResolvedAt.ShouldNotBeNull();
+        }
+
+        [Fact]
+        public async Task UpdateStatusAsync_should_persist_status_history_entry()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            var rule = await CreateRuleAsync(tenantId);
+            var alert = await SeedAlertAsync(tenantId, rule.Id);
+
+            await _securityAlertAppService.UpdateStatusAsync(new UpdateAlertStatusInput
+            {
+                AlertId = alert.Id,
+                NewStatus = SecurityAlertStatus.Acknowledged,
+                Comment = "Starting review"
+            });
+
+            var history = await UsingDbContextAsync(async context =>
+                await context.AlertStatusHistoryEntries
+                    .Where(x => x.AlertId == alert.Id)
+                    .ToListAsync());
+
+            history.Count.ShouldBe(1);
+            history[0].FromStatus.ShouldBe(SecurityAlertStatus.New);
+            history[0].ToStatus.ShouldBe(SecurityAlertStatus.Acknowledged);
+            history[0].Comment.ShouldBe("Starting review");
         }
 
         [Fact]

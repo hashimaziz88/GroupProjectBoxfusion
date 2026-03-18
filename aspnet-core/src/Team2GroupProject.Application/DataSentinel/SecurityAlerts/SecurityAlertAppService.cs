@@ -27,15 +27,18 @@ namespace Team2GroupProject.DataSentinel.SecurityAlerts
         };
 
         private readonly ISecurityAlertRepository _securityAlertRepository;
+        private readonly IAlertStatusHistoryRepository _alertStatusHistoryRepository;
         private readonly IMonitoredDatabaseRepository _monitoredDatabaseRepository;
         private readonly IMonitoredTableRepository _monitoredTableRepository;
 
         public SecurityAlertAppService(
             ISecurityAlertRepository securityAlertRepository,
+            IAlertStatusHistoryRepository alertStatusHistoryRepository,
             IMonitoredDatabaseRepository monitoredDatabaseRepository,
             IMonitoredTableRepository monitoredTableRepository)
         {
             _securityAlertRepository = securityAlertRepository;
+            _alertStatusHistoryRepository = alertStatusHistoryRepository;
             _monitoredDatabaseRepository = monitoredDatabaseRepository;
             _monitoredTableRepository = monitoredTableRepository;
         }
@@ -114,6 +117,7 @@ namespace Team2GroupProject.DataSentinel.SecurityAlerts
 
             var now = DateTime.UtcNow;
             var userId = AbpSession.UserId;
+            var fromStatus = alert.Status;
 
             switch (input.NewStatus)
             {
@@ -134,6 +138,9 @@ namespace Team2GroupProject.DataSentinel.SecurityAlerts
             }
 
             await _securityAlertRepository.UpdateAsync(alert);
+
+            var historyEntry = new AlertStatusHistory(tenantId, alert.Id, fromStatus, alert.Status, input.Comment);
+            await _alertStatusHistoryRepository.InsertAsync(historyEntry);
         }
 
         public async Task<SecurityAlertFilterOptionsDto> GetFilterOptionsAsync()
