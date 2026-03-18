@@ -2,6 +2,7 @@ using System;
 using Abp.Domain.Entities;
 using Abp.Domain.Entities.Auditing;
 using Abp.Extensions;
+using Abp.UI;
 using Team2GroupProject.DataSentinel.ActivityEvents;
 
 namespace Team2GroupProject.DataSentinel.AlertRules
@@ -70,6 +71,52 @@ namespace Team2GroupProject.DataSentinel.AlertRules
             WindowMinutes = windowMinutes;
             ThresholdCount = thresholdCount;
             IsEnabled = isEnabled;
+
+            NormalizeForRuleType();
+            EnsureConfigurationIsValid();
+        }
+
+        public void EnsureConfigurationIsValid()
+        {
+            if (Name.IsNullOrWhiteSpace())
+            {
+                throw new UserFriendlyException("Alert rule name is required.");
+            }
+
+            switch (RuleType)
+            {
+                case AlertRuleType.ThresholdBased:
+                case AlertRuleType.RepeatedFailure:
+                case AlertRuleType.BulkOperation:
+                    if (WindowMinutes <= 0)
+                    {
+                        throw new UserFriendlyException($"{RuleType} rules require WindowMinutes to be greater than 0.");
+                    }
+
+                    if (ThresholdCount <= 0)
+                    {
+                        throw new UserFriendlyException($"{RuleType} rules require ThresholdCount to be greater than 0.");
+                    }
+
+                    break;
+
+                case AlertRuleType.OutOfHours:
+                case AlertRuleType.PrivilegedAction:
+                    NormalizeForRuleType();
+                    break;
+
+                default:
+                    throw new UserFriendlyException($"Unsupported alert rule type: {RuleType}.");
+            }
+        }
+
+        private void NormalizeForRuleType()
+        {
+            if (RuleType == AlertRuleType.OutOfHours || RuleType == AlertRuleType.PrivilegedAction)
+            {
+                WindowMinutes = 0;
+                ThresholdCount = 1;
+            }
         }
     }
 }

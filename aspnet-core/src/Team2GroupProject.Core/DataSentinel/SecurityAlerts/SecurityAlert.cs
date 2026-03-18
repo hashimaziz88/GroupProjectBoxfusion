@@ -49,6 +49,11 @@ namespace Team2GroupProject.DataSentinel.SecurityAlerts
 
         public string EvidenceSummaryJson { get; set; }
 
+        /// <summary>
+        /// Deterministic correlation key used by the detection engine to make alert creation idempotent.
+        /// </summary>
+        public string CorrelationKey { get; set; }
+
         public DateTime? LastStatusChangedAt { get; private set; }
 
         public long? LastStatusChangedByUserId { get; private set; }

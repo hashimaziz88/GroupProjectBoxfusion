@@ -26,6 +26,14 @@ namespace Team2GroupProject.EntityFrameworkCore.DataSentinel.Configurations
             builder.Property(x => x.FailureReason)
                 .HasMaxLength(DataSentinelConsts.FailureReasonMaxLength);
 
+            builder.Property(x => x.SourceSystem)
+                .IsRequired()
+                .HasMaxLength(DataSentinelConsts.SourceSystemMaxLength);
+
+            builder.Property(x => x.SourceEventKey)
+                .IsRequired()
+                .HasMaxLength(DataSentinelConsts.SourceEventKeyMaxLength);
+
             // EvidenceJson is unbounded text — no HasMaxLength
             builder.Property(x => x.EvidenceJson)
                 .HasColumnType("text");
@@ -68,6 +76,10 @@ namespace Team2GroupProject.EntityFrameworkCore.DataSentinel.Configurations
 
             // Failed event queries (repeated failure detection rule)
             builder.HasIndex(x => new { x.TenantId, x.IsSuccess, x.EventTime });
+
+            // Import dedupe and replay safety
+            builder.HasIndex(x => new { x.TenantId, x.SourceSystem, x.SourceEventKey })
+                .IsUnique();
         }
     }
 }

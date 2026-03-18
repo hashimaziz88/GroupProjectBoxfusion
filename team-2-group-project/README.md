@@ -99,8 +99,9 @@ Do not copy Angular structure into this repo. Recreate the flow using the Next.j
 ## Setup
 
 1. Copy `.env.example` to `.env.local`.
-2. Set `NEXT_PUBLIC_API_LINK` to the ASP.NET Core host base URL.
-3. Run:
+2. For local development, point `NEXT_PUBLIC_API_LINK` at the ABP host base URL. In this repo that is typically `https://localhost:44311`.
+3. Restart the Next.js dev server after changing env files so tenant-aware auth and session bootstrap use the updated backend.
+4. Run:
 
 ```bash
 npm install

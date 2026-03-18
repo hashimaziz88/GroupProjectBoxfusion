@@ -8,5 +8,7 @@ namespace Team2GroupProject.DataSentinel.SecurityAlerts
     public interface IAlertStatusHistoryRepository : IRepository<AlertStatusHistory, Guid>
     {
         Task<List<AlertStatusHistory>> GetByAlertAsync(Guid alertId);
+
+        Task<List<AlertStatusHistory>> GetByAlertAsync(int tenantId, Guid alertId);
     }
 }

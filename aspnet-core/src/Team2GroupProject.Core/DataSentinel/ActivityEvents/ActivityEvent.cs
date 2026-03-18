@@ -25,6 +25,12 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
 
         public ActivityEventType EventType { get; set; }
 
+        /// <summary>Normalized source system label used for dedupe and replay safety.</summary>
+        public string SourceSystem { get; set; }
+
+        /// <summary>Deterministic event key within the source system.</summary>
+        public string SourceEventKey { get; set; }
+
         /// <summary>The database user or login that performed the action.</summary>
         public string ActorUser { get; set; }
 
@@ -77,6 +83,8 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
             TenantId = tenantId;
             EventTime = eventTime;
             EventType = eventType;
+            SourceSystem = "Internal";
+            SourceEventKey = Id.ToString("N");
             ActorUser = actorUser.IsNullOrWhiteSpace() ? null : actorUser.Trim();
             Severity = severity;
             IsSuccess = isSuccess;

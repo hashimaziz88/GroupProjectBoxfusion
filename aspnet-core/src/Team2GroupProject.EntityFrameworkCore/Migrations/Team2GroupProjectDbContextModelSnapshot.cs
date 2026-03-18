@@ -1642,6 +1642,16 @@ namespace Team2GroupProject.Migrations
                     b.Property<int>("Severity")
                         .HasColumnType("integer");
 
+                    b.Property<string>("SourceEventKey")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("SourceSystem")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.Property<int>("TenantId")
                         .HasColumnType("integer");
 
@@ -1662,6 +1672,9 @@ namespace Team2GroupProject.Migrations
                     b.HasIndex("TenantId", "IsSuccess", "EventTime");
 
                     b.HasIndex("TenantId", "Severity", "EventTime");
+
+                    b.HasIndex("TenantId", "SourceSystem", "SourceEventKey")
+                        .IsUnique();
 
                     b.ToTable("DataSentinelActivityEvents", (string)null);
                 });
@@ -2010,6 +2023,10 @@ namespace Team2GroupProject.Migrations
                     b.Property<DateTime?>("AcknowledgedAt")
                         .HasColumnType("timestamp without time zone");
 
+                    b.Property<string>("CorrelationKey")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
                     b.Property<DateTime>("CreationTime")
                         .HasColumnType("timestamp without time zone");
 
@@ -2110,6 +2127,10 @@ namespace Team2GroupProject.Migrations
                     b.HasIndex("TableId");
 
                     b.HasIndex("TriggeringActivityEventId");
+
+                    b.HasIndex("TenantId", "CorrelationKey")
+                        .IsUnique()
+                        .HasFilter("\"CorrelationKey\" IS NOT NULL");
 
                     b.HasIndex("TenantId", "DatabaseId", "TriggeredAt");
 

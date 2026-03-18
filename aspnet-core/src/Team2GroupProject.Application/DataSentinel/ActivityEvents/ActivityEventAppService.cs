@@ -22,6 +22,8 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
     [AbpAuthorize(PermissionNames.Pages_DataSentinel_Intake)]
     public class ActivityEventAppService : Team2GroupProjectAppServiceBase, IActivityEventAppService
     {
+        private const string BatchImportSourceSystem = "BatchImport";
+        private const string AbpAuditLogSourceSystem = "AbpAuditLog";
         private const int MaxBatchSize = 500;
         private const int MaxEvidenceEntries = 25;
         private const int MaxEvidenceKeyLength = 64;
@@ -61,31 +63,35 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
 
 
         [DisableAuditing]
+        public async Task<ActivityEventIngestionResultDto> ImportBatchAsync(IngestActivityEventsInput input)
+        {
+            var items = GetValidatedActivityEventBatchItems(input);
+            return await IngestInternalAsync(AbpSession.GetTenantId(), items);
+        }
+
+        [DisableAuditing]
         public async Task<ActivityEventIngestionResultDto> IngestAsync(IngestActivityEventsInput input)
         {
-            return await IngestInternalAsync(AbpSession.GetTenantId(), input.Events);
+            return await ImportBatchAsync(input);
         }
 
         [DisableAuditing]
         public async Task<ActivityEventIngestionResultDto> IngestAbpAuditLogsAsync(IngestAbpAuditLogsInput input)
         {
-            if (input.AbpAuditLogs.Count > MaxBatchSize)
-            {
-                throw new UserFriendlyException($"Batch size cannot exceed {MaxBatchSize} audit log items.");
-            }
+            var auditLogs = GetValidatedAuditLogBatchItems(input);
 
             var tenantId = AbpSession.GetTenantId();
             var result = new ActivityEventIngestionResultDto
             {
-                ReceivedCount = input.AbpAuditLogs.Count
+                ReceivedCount = auditLogs.Count
             };
 
             var mappedEvents = new List<ActivityEventIngestionItemDto>();
             var sourceIndexes = new List<int>();
 
-            for (var index = 0; index < input.AbpAuditLogs.Count; index++)
+            for (var index = 0; index < auditLogs.Count; index++)
             {
-                var auditLog = input.AbpAuditLogs[index];
+                var auditLog = auditLogs[index];
                 var validationErrors = ValidateAuditLogItem(auditLog, tenantId);
 
                 if (validationErrors.Count > 0)
@@ -134,10 +140,7 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
             IReadOnlyList<ActivityEventIngestionItemDto> items,
             IReadOnlyList<int> sourceIndexes = null)
         {
-            if (items.Count > MaxBatchSize)
-            {
-                throw new UserFriendlyException($"Batch size cannot exceed {MaxBatchSize} activity events.");
-            }
+            EnsureBatchSizeWithinLimit(items.Count, "activity events");
 
             var result = new ActivityEventIngestionResultDto
             {
@@ -146,6 +149,8 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
 
             var servers = await LoadServersAsync(tenantId, items);
             var databases = await LoadDatabasesAsync(tenantId, items);
+            var seenSourceIdentities = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var validEvents = new List<ActivityEvent>();
 
             for (var index = 0; index < items.Count; index++)
             {
@@ -162,35 +167,136 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
                     continue;
                 }
 
+                var normalizedEventTime = NormalizeEventTime(item.EventTime.Value);
+                var normalizedActorUser = NormalizeOptional(item.ActorUser, DataSentinelConsts.ActorUserMaxLength);
+                var normalizedActorIp = NormalizeOptional(item.ActorIp, DataSentinelConsts.ActorIpMaxLength);
+                var normalizedObjectName = NormalizeOptional(item.ObjectName, DataSentinelConsts.ObjectNameMaxLength);
+                var normalizedOperation = NormalizeOperation(item.Operation);
+                var normalizedFailureReason = item.IsSuccess.Value
+                    ? null
+                    : NormalizeOptional(item.FailureReason, DataSentinelConsts.FailureReasonMaxLength);
+                var sanitizedEvidenceJson = SanitizeEvidence(item.Evidence);
+                var normalizedSourceSystem = NormalizeSourceSystem(item.SourceSystem);
+                var normalizedSourceEventKey = ResolveSourceEventKey(
+                    item,
+                    normalizedSourceSystem,
+                    normalizedEventTime,
+                    normalizedActorUser,
+                    normalizedActorIp,
+                    normalizedObjectName,
+                    normalizedOperation,
+                    normalizedFailureReason,
+                    sanitizedEvidenceJson);
+                var sourceIdentity = ComposeSourceIdentity(normalizedSourceSystem, normalizedSourceEventKey);
+
+                if (!seenSourceIdentities.Add(sourceIdentity))
+                {
+                    result.Errors.Add(new ActivityEventIngestionErrorDto
+                    {
+                        ItemIndex = ResolveSourceIndex(sourceIndexes, index),
+                        Errors = new List<string> { "Duplicate source event detected in the submitted batch." }
+                    });
+                    continue;
+                }
+
+                var existingEvent = await _activityEventRepository.FindBySourceAsync(
+                    tenantId,
+                    normalizedSourceSystem,
+                    normalizedSourceEventKey);
+
+                if (existingEvent != null)
+                {
+                    result.Errors.Add(new ActivityEventIngestionErrorDto
+                    {
+                        ItemIndex = ResolveSourceIndex(sourceIndexes, index),
+                        Errors = new List<string> { "Source event has already been imported for this tenant." }
+                    });
+                    continue;
+                }
+
                 var database = item.DatabaseId.HasValue ? databases[item.DatabaseId.Value] : null;
                 var activityEvent = new ActivityEvent(
                     tenantId,
-                    item.EventTime.Value,
+                    normalizedEventTime,
                     item.EventType.Value,
-                    NormalizeOptional(item.ActorUser, DataSentinelConsts.ActorUserMaxLength),
+                    normalizedActorUser,
                     item.Severity.Value,
                     item.IsSuccess.Value)
                 {
+                    SourceSystem = normalizedSourceSystem,
+                    SourceEventKey = normalizedSourceEventKey,
                     ServerId = item.ServerId ?? database?.ServerId,
                     DatabaseId = item.DatabaseId,
-                    ActorIp = NormalizeOptional(item.ActorIp, DataSentinelConsts.ActorIpMaxLength),
-                    ObjectName = NormalizeOptional(item.ObjectName, DataSentinelConsts.ObjectNameMaxLength),
-                    Operation = NormalizeOperation(item.Operation),
+                    ActorIp = normalizedActorIp,
+                    ObjectName = normalizedObjectName,
+                    Operation = normalizedOperation,
                     RowsAffected = item.RowsAffected,
                     DurationMs = item.DurationMs,
-                    IsOutOfHours = item.IsOutOfHours ?? false,
-                    FailureReason = item.IsSuccess.Value ? null : NormalizeOptional(item.FailureReason, DataSentinelConsts.FailureReasonMaxLength),
-                    EvidenceJson = SanitizeEvidence(item.Evidence)
+                    IsOutOfHours = DetermineIsOutOfHours(normalizedEventTime),
+                    FailureReason = normalizedFailureReason,
+                    EvidenceJson = sanitizedEvidenceJson
                 };
 
-                await _activityEventRepository.InsertAsync(activityEvent);
+                validEvents.Add(activityEvent);
                 result.CreatedEventIds.Add(activityEvent.Id);
+            }
+
+            foreach (var activityEvent in validEvents)
+            {
+                await _activityEventRepository.InsertAsync(activityEvent);
+            }
+
+            if (validEvents.Count > 0)
+            {
+                await CurrentUnitOfWork.SaveChangesAsync();
             }
 
             result.AcceptedCount = result.CreatedEventIds.Count;
             result.RejectedCount = result.Errors.Count;
 
             return result;
+        }
+
+        private static IReadOnlyList<ActivityEventIngestionItemDto> GetValidatedActivityEventBatchItems(IngestActivityEventsInput input)
+        {
+            if (input == null)
+            {
+                throw new UserFriendlyException("Batch import payload is required.");
+            }
+
+            if (input.Events == null || input.Events.Count == 0)
+            {
+                throw new UserFriendlyException("Batch import payload must include at least one activity event.");
+            }
+
+            EnsureBatchSizeWithinLimit(input.Events.Count, "activity events");
+
+            return input.Events;
+        }
+
+        private static IReadOnlyList<AbpAuditLogIngestionItemDto> GetValidatedAuditLogBatchItems(IngestAbpAuditLogsInput input)
+        {
+            if (input == null)
+            {
+                throw new UserFriendlyException("Audit log import payload is required.");
+            }
+
+            if (input.AbpAuditLogs == null || input.AbpAuditLogs.Count == 0)
+            {
+                throw new UserFriendlyException("Audit log import payload must include at least one audit log item.");
+            }
+
+            EnsureBatchSizeWithinLimit(input.AbpAuditLogs.Count, "audit log items");
+
+            return input.AbpAuditLogs;
+        }
+
+        private static void EnsureBatchSizeWithinLimit(int count, string batchItemDescription)
+        {
+            if (count > MaxBatchSize)
+            {
+                throw new UserFriendlyException($"Batch size cannot exceed {MaxBatchSize} {batchItemDescription}.");
+            }
         }
 
         private async Task<Dictionary<Guid, MonitoredServer>> LoadServersAsync(
@@ -354,6 +460,8 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
                 DatabaseId = input.DatabaseId,
                 EventTime = normalizedTime,
                 EventType = DetermineEventType(item.ServiceName, item.MethodName),
+                SourceSystem = AbpAuditLogSourceSystem,
+                SourceEventKey = ResolveAuditLogSourceEventKey(item, normalizedTime),
                 ActorUser = ResolveActorUser(item, parsedParameters),
                 ActorIp = item.ClientIpAddress,
                 ObjectName = item.ServiceName,
@@ -382,6 +490,78 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
         {
             var normalized = NormalizeOptional(operation, DataSentinelConsts.OperationMaxLength);
             return normalized?.ToUpperInvariant();
+        }
+
+        private static string NormalizeSourceSystem(string sourceSystem)
+        {
+            return NormalizeOptional(sourceSystem, DataSentinelConsts.SourceSystemMaxLength) ?? BatchImportSourceSystem;
+        }
+
+        private static string ResolveSourceEventKey(
+            ActivityEventIngestionItemDto item,
+            string normalizedSourceSystem,
+            DateTime normalizedEventTime,
+            string normalizedActorUser,
+            string normalizedActorIp,
+            string normalizedObjectName,
+            string normalizedOperation,
+            string normalizedFailureReason,
+            string sanitizedEvidenceJson)
+        {
+            var providedKey = NormalizeOptional(item.SourceEventKey, DataSentinelConsts.SourceEventKeyMaxLength);
+            if (!providedKey.IsNullOrWhiteSpace())
+            {
+                return providedKey;
+            }
+
+            var fingerprintInput = string.Join("|", new[]
+            {
+                normalizedSourceSystem,
+                normalizedEventTime.ToUniversalTime().ToString("O"),
+                item.EventType?.ToString() ?? string.Empty,
+                normalizedActorUser ?? string.Empty,
+                normalizedActorIp ?? string.Empty,
+                normalizedObjectName ?? string.Empty,
+                normalizedOperation ?? string.Empty,
+                item.ServerId?.ToString() ?? string.Empty,
+                item.DatabaseId?.ToString() ?? string.Empty,
+                item.RowsAffected?.ToString() ?? string.Empty,
+                item.DurationMs?.ToString() ?? string.Empty,
+                item.Severity?.ToString() ?? string.Empty,
+                item.IsSuccess?.ToString() ?? string.Empty,
+                normalizedFailureReason ?? string.Empty,
+                sanitizedEvidenceJson ?? string.Empty
+            });
+
+            return DataSentinelHashingHelper.ComputeSha256(fingerprintInput);
+        }
+
+        private static string ResolveAuditLogSourceEventKey(AbpAuditLogIngestionItemDto item, DateTime normalizedTime)
+        {
+            if (item.Id.HasValue)
+            {
+                return NormalizeOptional(item.Id.Value.ToString(), DataSentinelConsts.SourceEventKeyMaxLength);
+            }
+
+            var fingerprintInput = string.Join("|", new[]
+            {
+                item.TenantId?.ToString() ?? string.Empty,
+                item.UserId?.ToString() ?? string.Empty,
+                normalizedTime.ToUniversalTime().ToString("O"),
+                item.ServiceName ?? string.Empty,
+                item.MethodName ?? string.Empty,
+                item.ClientIpAddress ?? string.Empty,
+                item.Parameters ?? string.Empty,
+                item.ExceptionMessage ?? string.Empty,
+                item.Exception ?? string.Empty
+            });
+
+            return DataSentinelHashingHelper.ComputeSha256(fingerprintInput);
+        }
+
+        private static string ComposeSourceIdentity(string normalizedSourceSystem, string normalizedSourceEventKey)
+        {
+            return $"{normalizedSourceSystem}:{normalizedSourceEventKey}";
         }
 
         private static int ResolveSourceIndex(IReadOnlyList<int> sourceIndexes, int index)
