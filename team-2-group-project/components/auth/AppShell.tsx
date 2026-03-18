@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { getVisibleNavigationItems } from "@/constants/navigation";
 import { useAuthActions, useAuthState } from "@/providers/authProvider";
 import { isHostAdmin, isTenantAdmin } from "@/utils/auth/roles";
-import { useStyles } from "@/app/style/style";
+import { useStyles } from "@/components/auth/style/style";
 import { IAppShellProps } from "@/interfaces/auth/authProps";
 
 const { Content, Header, Sider } = Layout;

@@ -15,12 +15,12 @@ Environment: copy `.env.example` to `.env.local` and set `NEXT_PUBLIC_API_LINK` 
 
 ## Tech Stack
 
-- **Next.js 16** (App Router only — no Pages Router)
+- **Next.js 16** (App Router only — no Pages Router), React 19 compiler enabled
 - **React 19** + **TypeScript 5** (strict mode)
 - **Ant Design 6** + **antd-style** (CSS-in-JS — all styles in `style.ts` files, never inline)
 - **Axios** (single factory, never create additional instances)
 - **React Context + redux-actions + useReducer** (state management pattern)
-- **Backend:** ASP.NET Core with ABP framework (multi-tenant)
+- **Backend:** ASP.NET Core with ABP framework (multi-tenant); full API schema in `.codex/swagger.json`
 
 ## Architecture
 
@@ -41,6 +41,8 @@ Actions always follow the pending → success → error pattern:
 enum FeatureActionEnums { actionPending, actionSuccess, actionError }
 ```
 
+Existing providers: `authProvider`, `adminProvider`, `monitoringInfrastructureProvider`, `activityMonitoringProvider`.
+
 ### Auth & Multi-Tenancy
 
 The auth flow (in `providers/authProvider/`) initializes on mount:
@@ -56,11 +58,14 @@ Both are automatically injected by the Axios factory — never set them manually
 
 **Single Axios factory:** `utils/axiosInstance.ts` — creates an instance per-call with `Authorization` and `Abp.TenantId` headers. Never import axios directly in components or pages.
 
-Feature wrappers in `utils/auth/`:
-- `authService.ts` — `authenticate()`, `register()`, token management
-- `tenantService.ts` — `isTenantAvailable()`, tenant persistence
-- `sessionService.ts` — `getCurrentLoginInformations()`, `getUserConfiguration()`
-- `adminService.ts` — users, roles, tenants, change password
+Feature wrappers:
+- `utils/auth/authService.ts` — `authenticate()`, `register()`, token management
+- `utils/auth/tenantService.ts` — `isTenantAvailable()`, tenant persistence, subdomain resolution
+- `utils/auth/sessionService.ts` — `getCurrentLoginInformations()`, `getUserConfiguration()`
+- `utils/auth/adminService.ts` — users, roles, tenants, change password
+- `utils/datasentinel/monitoringService.ts` — monitoring infrastructure CRUD (servers, databases, tables)
+- `utils/datasentinel/activityService.ts` — activity monitoring endpoints
+- `utils/datasentinel/intakeService.ts` — intake endpoints
 
 All responses follow ABP's `{ success, result, error }` shape — use `unwrapAbpResponse()` from `utils/abp.ts`.
 
@@ -68,7 +73,8 @@ All responses follow ABP's `{ success, result, error }` shape — use `unwrapAbp
 
 - `app/page.tsx` — root redirect based on auth state
 - `app/(auth)/` — unauthenticated routes (login, register)
-- All other routes — protected by `withAuth` HOC (in `hoc/withAuth.tsx`)
+- `app/datasentinel/` — DataSentinel domain routes (activity, infrastructure, intake)
+- All other routes — protected by `withAuth` HOC (`hoc/withAuth.tsx`)
 
 **Pages are orchestration-only** — no API calls, business logic, or inline styles in page files. Pages compose providers and components.
 
@@ -78,12 +84,17 @@ export default withAuth(Page);                         // Auth required
 export default withAuth(Page, PERMISSIONS.users);      // Auth + permission required
 ```
 
+Permission constants live in `constants/` and are referenced as `PERMISSIONS.<key>`. Role helpers (`isHostAdmin`, `isTenantAdmin`, `hasPermission`, `selectBestAuthenticatedRoute`) live in `utils/auth/roles.ts`.
+
+### Component Conventions
+
+Authenticated pages wrap content in `<AppShell title="..." subtitle="...">` from `components/auth/AppShell`. The loading state uses `<AppSpinner label="..." />` from `components/spinner/AppSpinner`.
+
 ### Styling
 
-All styles use `antd-style`'s `createStyles`:
+All styles use `antd-style`'s `createStyles`, co-located at `app/<route>/style/style.ts`:
 ```tsx
-// In app/feature/style/style.ts
-import { createStyles, css } from "antd-style";
+import { createStyles } from "antd-style";
 export const useStyles = createStyles(({ token }) => ({ ... }));
 ```
 
@@ -98,11 +109,13 @@ import { axiosInstance } from "@/utils/axiosInstance";
 
 ## Key Contracts
 
-The `.codex/` directory contains binding contracts:
+Read `.codex/` in this order for full context: `context.md` → `rules.md` → `auth-multi-tenancy.md` → `provider-pattern-contract.md` → `review-checklist.md`.
+
 - `.codex/rules.md` — non-negotiable rules and forbidden patterns
 - `.codex/auth-multi-tenancy.md` — backend endpoint shapes and auth flow order
-- `.codex/provider-pattern-contract.md` — exact provider structure with examples
-- `.codex/review-checklist.md` — pre-handoff checklist (74 items)
+- `.codex/provider-pattern-contract.md` — exact provider structure with code examples
+- `.codex/review-checklist.md` — 74-item pre-merge checklist
+- `.codex/swagger.json` — authoritative backend API schema
 
 **Forbidden patterns** (from `.codex/rules.md`):
 - Multiple Axios instances or factories
