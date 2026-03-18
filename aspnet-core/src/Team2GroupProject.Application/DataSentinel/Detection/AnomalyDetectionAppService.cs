@@ -21,16 +21,19 @@ namespace Team2GroupProject.DataSentinel.Detection
     public class AnomalyDetectionAppService : Team2GroupProjectAppServiceBase, IAnomalyDetectionAppService
     {
         private readonly IThresholdRuleEvaluator _thresholdRuleEvaluator;
+        private readonly IOutOfHoursRuleEvaluator _outOfHoursRuleEvaluator;
         private readonly IRepeatedFailureEvaluator _repeatedFailureEvaluator;
-
+        
         public AnomalyDetectionAppService(
             IThresholdRuleEvaluator thresholdRuleEvaluator,
+            IOutOfHoursRuleEvaluator outOfHoursRuleEvaluator,
             IRepeatedFailureEvaluator repeatedFailureEvaluator)
         {
             _thresholdRuleEvaluator = thresholdRuleEvaluator;
+            _outOfHoursRuleEvaluator = outOfHoursRuleEvaluator;
             _repeatedFailureEvaluator = repeatedFailureEvaluator;
+               
         }
-
         public async Task<ThresholdRuleEvaluationResultDto> EvaluateThresholdRulesAsync(EvaluateThresholdRulesInput input)
         {
             var tenantId = AbpSession.GetTenantId();
@@ -44,6 +47,21 @@ namespace Team2GroupProject.DataSentinel.Detection
 
             return result;
         }
+
+        public async Task<OutOfHoursRuleEvaluationResultDto> EvaluateOutOfHoursRulesAsync(EvaluateOutOfHoursRulesInput input)
+        {
+            var tenantId = AbpSession.GetTenantId();
+            var evaluationTimeUtc = NormalizeEvaluationTime(input?.EvaluationTimeUtc ?? Clock.Now);
+            var result = await _outOfHoursRuleEvaluator.EvaluateAsync(tenantId, evaluationTimeUtc, ruleId: input?.RuleId);
+
+            if (result.CreatedAlertIds.Count > 0)
+            {
+                await CurrentUnitOfWork.SaveChangesAsync();
+            }
+
+            return result;
+        }
+
         private static DateTime NormalizeEvaluationTime(DateTime value)
         {
             if (value.Kind == DateTimeKind.Unspecified)

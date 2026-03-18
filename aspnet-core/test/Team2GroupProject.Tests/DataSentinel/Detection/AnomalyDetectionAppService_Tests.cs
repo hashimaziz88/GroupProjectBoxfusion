@@ -135,19 +135,196 @@ namespace Team2GroupProject.Tests.DataSentinel.Detection
             alertCount.ShouldBe(1);
         }
 
+        [Fact]
+        public async Task EvaluateOutOfHoursRulesAsync_should_create_an_alert_for_a_risky_out_of_hours_event()
+        {
+            var tenantId = AbpSession.GetTenantId();
+            var evaluationTime = new DateTime(2026, 3, 21, 1, 30, 0, DateTimeKind.Utc);
+            var server = new MonitoredServer(tenantId, "Out Of Hours Server", "pg-ooh-01", "Demo", "Out-of-hours test server.");
+            var database = new MonitoredDatabase(tenantId, server.Id, "NightOpsDb", "PostgreSQL", "Out-of-hours test database.");
+            var rule = new AlertRule(tenantId, "Out Of Hours Write", AlertRuleType.OutOfHours, ActivitySeverity.High, 0, 1);
+
+            server.Databases.Add(database);
+
+            var matchingEvent = CreateActivityEvent(
+                tenantId,
+                server.Id,
+                database.Id,
+                evaluationTime,
+                "night-writer",
+                ActivityEventType.Write,
+                isOutOfHours: true);
+            var nonMatchingEvent = CreateActivityEvent(
+                tenantId,
+                server.Id,
+                database.Id,
+                evaluationTime,
+                "day-reader",
+                ActivityEventType.Read,
+                isOutOfHours: true);
+
+            await UsingDbContextAsync(async context =>
+            {
+                await context.MonitoredServers.AddAsync(server);
+                await context.AlertRules.AddAsync(rule);
+                await context.ActivityEvents.AddAsync(matchingEvent);
+                await context.ActivityEvents.AddAsync(nonMatchingEvent);
+            });
+
+            var result = await _anomalyDetectionAppService.EvaluateOutOfHoursRulesAsync(new EvaluateOutOfHoursRulesInput
+            {
+                EvaluationTimeUtc = evaluationTime
+            });
+
+            result.EvaluatedRuleCount.ShouldBe(1);
+            result.CreatedAlertCount.ShouldBe(1);
+            result.DuplicateAlertCount.ShouldBe(0);
+            result.CandidateGroupCount.ShouldBe(1);
+
+            var alert = await UsingDbContextAsync(async context =>
+                await context.SecurityAlerts.FindAsync(result.CreatedAlertIds.Single()));
+            var riskProfile = await UsingDbContextAsync(async context =>
+                await Task.FromResult(context.UserRiskProfiles.Single(x => x.ActorUser == "night-writer")));
+
+            alert.ShouldNotBeNull();
+            alert.RuleId.ShouldBe(rule.Id);
+            alert.RelatedEventCount.ShouldBe(1);
+            alert.PrimaryActorUser.ShouldBe("night-writer");
+            alert.TriggeringActivityEventId.ShouldBe(matchingEvent.Id);
+            alert.CorrelationKey.ShouldNotBeNullOrWhiteSpace();
+
+            riskProfile.AlertCount.ShouldBe(1);
+            riskProfile.HighSeverityAlertCount.ShouldBe(1);
+            riskProfile.OutOfHoursEventCount.ShouldBe(1);
+            riskProfile.RiskScore.ShouldBeGreaterThan(0);
+        }
+
+        [Fact]
+        public async Task EvaluateOutOfHoursRulesAsync_should_not_duplicate_alerts_for_the_same_event()
+        {
+            var tenantId = AbpSession.GetTenantId();
+            var evaluationTime = new DateTime(2026, 3, 21, 2, 0, 0, DateTimeKind.Utc);
+            var rule = new AlertRule(tenantId, "Out Of Hours Privileged Action", AlertRuleType.OutOfHours, ActivitySeverity.Medium, 0, 1);
+            var activityEvent = new ActivityEvent(tenantId, evaluationTime, ActivityEventType.PrivilegedAction, "night-admin", ActivitySeverity.High, true)
+            {
+                IsOutOfHours = true,
+                Operation = "ALTER ROLE"
+            };
+
+            await UsingDbContextAsync(async context =>
+            {
+                await context.AlertRules.AddAsync(rule);
+                await context.ActivityEvents.AddAsync(activityEvent);
+            });
+
+            var firstRun = await _anomalyDetectionAppService.EvaluateOutOfHoursRulesAsync(new EvaluateOutOfHoursRulesInput
+            {
+                EvaluationTimeUtc = evaluationTime
+            });
+            var secondRun = await _anomalyDetectionAppService.EvaluateOutOfHoursRulesAsync(new EvaluateOutOfHoursRulesInput
+            {
+                EvaluationTimeUtc = evaluationTime
+            });
+
+            firstRun.CreatedAlertCount.ShouldBe(1);
+            secondRun.CreatedAlertCount.ShouldBe(0);
+            secondRun.DuplicateAlertCount.ShouldBe(1);
+
+            var alertCount = await UsingDbContextAsync(async context =>
+                await Task.FromResult(context.SecurityAlerts.Count(x => x.RuleId == rule.Id)));
+
+            alertCount.ShouldBe(1);
+        }
+
+        [Fact]
+        public async Task EvaluateOutOfHoursRulesAsync_should_ignore_in_hours_events_and_low_signal_event_types()
+        {
+            var tenantId = AbpSession.GetTenantId();
+            var evaluationTime = new DateTime(2026, 3, 21, 3, 0, 0, DateTimeKind.Utc);
+            var rule = new AlertRule(tenantId, "Out Of Hours Rule", AlertRuleType.OutOfHours, ActivitySeverity.Medium, 0, 1);
+
+            var inHoursWrite = new ActivityEvent(tenantId, evaluationTime, ActivityEventType.Write, "writer-in-hours", ActivitySeverity.Low, true)
+            {
+                IsOutOfHours = false,
+                Operation = "UPDATE"
+            };
+            var outOfHoursRead = new ActivityEvent(tenantId, evaluationTime, ActivityEventType.Read, "reader-after-hours", ActivitySeverity.Low, true)
+            {
+                IsOutOfHours = true,
+                Operation = "SELECT"
+            };
+
+            await UsingDbContextAsync(async context =>
+            {
+                await context.AlertRules.AddAsync(rule);
+                await context.ActivityEvents.AddAsync(inHoursWrite);
+                await context.ActivityEvents.AddAsync(outOfHoursRead);
+            });
+
+            var result = await _anomalyDetectionAppService.EvaluateOutOfHoursRulesAsync(new EvaluateOutOfHoursRulesInput
+            {
+                EvaluationTimeUtc = evaluationTime
+            });
+
+            result.EvaluatedRuleCount.ShouldBe(1);
+            result.CandidateGroupCount.ShouldBe(0);
+            result.CreatedAlertCount.ShouldBe(0);
+            result.DuplicateAlertCount.ShouldBe(0);
+
+            var alertCount = await UsingDbContextAsync(async context =>
+                await Task.FromResult(context.SecurityAlerts.Count(x => x.RuleId == rule.Id)));
+
+            alertCount.ShouldBe(0);
+        }
+
+        [Fact]
+        public async Task EvaluateOutOfHoursRulesAsync_should_ignore_disabled_rules()
+        {
+            var tenantId = AbpSession.GetTenantId();
+            var evaluationTime = new DateTime(2026, 3, 21, 4, 0, 0, DateTimeKind.Utc);
+            var rule = new AlertRule(tenantId, "Disabled Out Of Hours", AlertRuleType.OutOfHours, ActivitySeverity.High, 0, 1, isEnabled: false);
+            var activityEvent = new ActivityEvent(tenantId, evaluationTime, ActivityEventType.Write, "disabled-user", ActivitySeverity.High, true)
+            {
+                IsOutOfHours = true,
+                Operation = "UPDATE"
+            };
+
+            await UsingDbContextAsync(async context =>
+            {
+                await context.AlertRules.AddAsync(rule);
+                await context.ActivityEvents.AddAsync(activityEvent);
+            });
+
+            var result = await _anomalyDetectionAppService.EvaluateOutOfHoursRulesAsync(new EvaluateOutOfHoursRulesInput
+            {
+                EvaluationTimeUtc = evaluationTime
+            });
+
+            result.EvaluatedRuleCount.ShouldBe(0);
+            result.CreatedAlertCount.ShouldBe(0);
+
+            var alertCount = await UsingDbContextAsync(async context =>
+                await Task.FromResult(context.SecurityAlerts.Count(x => x.RuleId == rule.Id)));
+
+            alertCount.ShouldBe(0);
+        }
+
         private static ActivityEvent CreateActivityEvent(
             int tenantId,
             Guid serverId,
             Guid databaseId,
             DateTime eventTime,
-            string actorUser)
+            string actorUser,
+            ActivityEventType eventType = ActivityEventType.Write,
+            bool isOutOfHours = false)
         {
-            return new ActivityEvent(tenantId, eventTime, ActivityEventType.Write, actorUser, ActivitySeverity.Low, true)
+            return new ActivityEvent(tenantId, eventTime, eventType, actorUser, ActivitySeverity.Low, true)
             {
                 ServerId = serverId,
                 DatabaseId = databaseId,
-                Operation = "UPDATE",
-                ObjectName = "public.orders"
+                Operation = eventType == ActivityEventType.PrivilegedAction ? "ALTER ROLE" : "UPDATE",
+                ObjectName = "public.orders",
+                IsOutOfHours = isOutOfHours
             };
         }
     }

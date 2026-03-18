@@ -52,17 +52,20 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
         private readonly IMonitoredServerRepository _monitoredServerRepository;
         private readonly IMonitoredDatabaseRepository _monitoredDatabaseRepository;
         private readonly IThresholdRuleEvaluator _thresholdRuleEvaluator;
+        private readonly IOutOfHoursRuleEvaluator _outOfHoursRuleEvaluator;
 
         public ActivityEventAppService(
             IActivityEventRepository activityEventRepository,
             IMonitoredServerRepository monitoredServerRepository,
             IMonitoredDatabaseRepository monitoredDatabaseRepository,
-            IThresholdRuleEvaluator thresholdRuleEvaluator)
+            IThresholdRuleEvaluator thresholdRuleEvaluator,
+            IOutOfHoursRuleEvaluator outOfHoursRuleEvaluator)
         {
             _activityEventRepository = activityEventRepository;
             _monitoredServerRepository = monitoredServerRepository;
             _monitoredDatabaseRepository = monitoredDatabaseRepository;
             _thresholdRuleEvaluator = thresholdRuleEvaluator;
+            _outOfHoursRuleEvaluator = outOfHoursRuleEvaluator;
         }
 
 
@@ -258,12 +261,12 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
 
             result.AcceptedCount = result.CreatedEventIds.Count;
             result.RejectedCount = result.Errors.Count;
-            result.DetectionSummary = await RunThresholdDetectionAsync(tenantId, validEvents);
+            result.DetectionSummary = await RunDetectionAsync(tenantId, validEvents);
 
             return result;
         }
 
-        private async Task<IngestionDetectionSummaryDto> RunThresholdDetectionAsync(
+        private async Task<IngestionDetectionSummaryDto> RunDetectionAsync(
             int tenantId,
             IReadOnlyCollection<ActivityEvent> acceptedEvents)
         {
@@ -302,10 +305,42 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
                 }
             }
 
+            var outOfHoursAnchors = acceptedEvents
+                .Where(IsRiskyOutOfHoursCandidate)
+                .Select(x => x.EventTime)
+                .Distinct()
+                .OrderBy(x => x)
+                .ToList();
+
+            foreach (var anchor in outOfHoursAnchors)
+            {
+                var evaluation = await _outOfHoursRuleEvaluator.EvaluateAsync(tenantId, anchor);
+
+                summary.EvaluatedAnchorCount++;
+                summary.DuplicateAlertCount += evaluation.DuplicateAlertCount;
+
+                foreach (var alertId in evaluation.CreatedAlertIds)
+                {
+                    createdAlertIds.Add(alertId);
+                }
+
+                if (evaluation.CreatedAlertIds.Count > 0)
+                {
+                    await CurrentUnitOfWork.SaveChangesAsync();
+                }
+            }
+
             summary.CreatedAlertIds = createdAlertIds.OrderBy(x => x).ToList();
             summary.CreatedAlertCount = summary.CreatedAlertIds.Count;
 
             return summary;
+        }
+
+        private static bool IsRiskyOutOfHoursCandidate(ActivityEvent activityEvent)
+        {
+            return activityEvent.IsOutOfHours &&
+                   (activityEvent.EventType == ActivityEventType.Write ||
+                    activityEvent.EventType == ActivityEventType.PrivilegedAction);
         }
 
         private static IReadOnlyList<ActivityEventIngestionItemDto> GetValidatedActivityEventBatchItems(IngestActivityEventsInput input)
