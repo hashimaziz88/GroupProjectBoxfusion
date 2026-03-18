@@ -24,17 +24,20 @@ namespace Team2GroupProject.DataSentinel.Detection
         private readonly IActivityEventRepository _activityEventRepository;
         private readonly ISecurityAlertRepository _securityAlertRepository;
         private readonly IUserRiskProfileRepository _userRiskProfileRepository;
+        private readonly IRepeatedFailureEvaluator _repeatedFailureEvaluator;
 
         public AnomalyDetectionAppService(
             IAlertRuleRepository alertRuleRepository,
             IActivityEventRepository activityEventRepository,
             ISecurityAlertRepository securityAlertRepository,
-            IUserRiskProfileRepository userRiskProfileRepository)
+            IUserRiskProfileRepository userRiskProfileRepository,
+            IRepeatedFailureEvaluator repeatedFailureEvaluator)
         {
             _alertRuleRepository = alertRuleRepository;
             _activityEventRepository = activityEventRepository;
             _securityAlertRepository = securityAlertRepository;
             _userRiskProfileRepository = userRiskProfileRepository;
+            _repeatedFailureEvaluator = repeatedFailureEvaluator;
         }
 
         public async Task<ThresholdRuleEvaluationResultDto> EvaluateThresholdRulesAsync(EvaluateThresholdRulesInput input)
@@ -89,6 +92,47 @@ namespace Team2GroupProject.DataSentinel.Detection
 
                     result.CreatedAlertIds.Add(alert.Id);
                 }
+            }
+
+            if (result.CreatedAlertIds.Count > 0)
+            {
+                await CurrentUnitOfWork.SaveChangesAsync();
+            }
+
+            result.CreatedAlertCount = result.CreatedAlertIds.Count;
+            return result;
+        }
+
+        /// <summary>
+        /// Evaluates repeated failure rules by delegating detection to <see cref="IRepeatedFailureEvaluator"/>.
+        /// The orchestrator owns duplicate suppression, persistence, risk profile updates, and SaveChangesAsync.
+        /// </summary>
+        public async Task<RepeatedFailureRuleEvaluationResultDto> EvaluateRepeatedFailureRulesAsync(EvaluateRepeatedFailureRulesInput input)
+        {
+            var tenantId = AbpSession.GetTenantId();
+            var evaluatorOutput = await _repeatedFailureEvaluator.EvaluateAsync(tenantId, input);
+
+            var result = new RepeatedFailureRuleEvaluationResultDto
+            {
+                EvaluationTimeUtc = evaluatorOutput.EvaluationTimeUtc,
+                EvaluatedRuleCount = evaluatorOutput.EvaluatedRuleCount,
+                SkippedRuleCount = evaluatorOutput.SkippedRuleCount,
+                CandidateGroupCount = evaluatorOutput.CandidateGroupCount
+            };
+
+            foreach (var candidate in evaluatorOutput.AlertCandidates)
+            {
+                var existingAlert = await _securityAlertRepository.FindByCorrelationKeyAsync(tenantId, candidate.Alert.CorrelationKey);
+                if (existingAlert != null)
+                {
+                    result.DuplicateAlertCount++;
+                    continue;
+                }
+
+                await _securityAlertRepository.InsertAsync(candidate.Alert);
+                await UpdateRiskProfileAsync(tenantId, candidate.Alert, evaluatorOutput.EvaluationTimeUtc);
+
+                result.CreatedAlertIds.Add(candidate.Alert.Id);
             }
 
             if (result.CreatedAlertIds.Count > 0)

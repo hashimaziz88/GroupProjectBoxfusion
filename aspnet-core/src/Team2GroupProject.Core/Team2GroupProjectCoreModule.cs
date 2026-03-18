@@ -2,12 +2,14 @@
 using Abp.Modules;
 using Abp.Reflection.Extensions;
 using Abp.Runtime.Security;
+using Abp.Threading.BackgroundWorkers;
 using Abp.Timing;
 using Abp.Zero;
 using Abp.Zero.Configuration;
 using Team2GroupProject.Authorization.Roles;
 using Team2GroupProject.Authorization.Users;
 using Team2GroupProject.Configuration;
+using Team2GroupProject.DataSentinel.RulesetEngine;
 using Team2GroupProject.Localization;
 using Team2GroupProject.MultiTenancy;
 using Team2GroupProject.Timing;
@@ -51,6 +53,9 @@ namespace Team2GroupProject
         public override void PostInitialize()
         {
             IocManager.Resolve<AppTimes>().StartupTime = Clock.Now;
+
+            var workerManager = IocManager.Resolve<IBackgroundWorkerManager>();
+            workerManager.Add(IocManager.Resolve<RulesetEngineBackgroundWorker>());
         }
     }
 }
