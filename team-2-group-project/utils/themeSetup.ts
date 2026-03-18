@@ -2,8 +2,8 @@ import type { ThemeConfig } from "antd";
 
 export const appTheme: ThemeConfig = {
   token: {
-    colorPrimary: "#1f6feb",
-    colorInfo: "#1f6feb",
+    colorPrimary: "#0891b2",
+    colorInfo: "#0891b2",
     colorSuccess: "#2f9e44",
     colorWarning: "#f08c00",
     colorError: "#d6336c",
@@ -14,22 +14,22 @@ export const appTheme: ThemeConfig = {
   components: {
     Layout: {
       bodyBg: "#f3f6fb",
-      headerBg: "#0f172a",
-      siderBg: "#0f172a",
-      triggerBg: "#0f172a",
+      headerBg: "#0c1a2e",
+      siderBg: "#0c1a2e",
+      triggerBg: "#0c1a2e",
     },
     Card: {
       borderRadiusLG: 20,
     },
     Table: {
-      headerBg: "#e8eef8",
-      rowHoverBg: "#f6f9ff",
+      headerBg: "#e4f0f5",
+      rowHoverBg: "#f4fbfd",
     },
     Menu: {
-      darkItemBg: "#0f172a",
-      darkSubMenuItemBg: "#0f172a",
-      darkItemSelectedBg: "#1f2937",
-      darkItemHoverBg: "#172036",
+      darkItemBg: "#0c1a2e",
+      darkSubMenuItemBg: "#0c1a2e",
+      darkItemSelectedBg: "#0e3347",
+      darkItemHoverBg: "#122840",
     },
   },
 };

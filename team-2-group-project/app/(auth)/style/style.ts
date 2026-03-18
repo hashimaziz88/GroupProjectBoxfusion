@@ -6,9 +6,9 @@ export const useStyles = createStyles(({ token }) => ({
     display: grid;
     grid-template-columns: minmax(300px, 1.05fr) minmax(380px, 0.95fr);
     background:
-      radial-gradient(circle at top left, rgba(31, 111, 235, 0.24) 0%, transparent 34%),
-      radial-gradient(circle at bottom right, rgba(214, 51, 108, 0.16) 0%, transparent 28%),
-      linear-gradient(160deg, #f5f9ff 0%, #eef3fb 48%, #f9fbfd 100%);
+      radial-gradient(circle at top left, rgba(8, 145, 178, 0.20) 0%, transparent 34%),
+      radial-gradient(circle at bottom right, rgba(8, 145, 178, 0.08) 0%, transparent 28%),
+      linear-gradient(160deg, #f2f8fb 0%, #eaf4f8 48%, #f6fbfd 100%);
 
     @media (max-width: 980px) {
       grid-template-columns: 1fr;
@@ -97,8 +97,8 @@ export const useStyles = createStyles(({ token }) => ({
       width: fit-content;
       border-radius: 999px;
       border: none;
-      background: rgba(31, 111, 235, 0.14);
-      color: #164b96;
+      background: rgba(8, 145, 178, 0.14);
+      color: #0c4a58;
       padding: 6px 12px;
       font-weight: 600;
     }
@@ -176,16 +176,16 @@ export const useStyles = createStyles(({ token }) => ({
       min-width: 148px;
       height: 44px;
       border-radius: 999px;
-      background: linear-gradient(135deg, #1f6feb 0%, #3251a8 100%);
+      background: linear-gradient(135deg, #0891b2 0%, #0e4f6b 100%);
       color: white;
       font-weight: 600;
-      box-shadow: 0 16px 32px rgba(31, 111, 235, 0.24);
+      box-shadow: 0 16px 32px rgba(8, 145, 178, 0.28);
     }
 
     &.ant-btn:hover,
     &.ant-btn:focus {
       color: white !important;
-      background: linear-gradient(135deg, #2563eb 0%, #2f4aa0 100%) !important;
+      background: linear-gradient(135deg, #0e9fc3 0%, #0f5a7a 100%) !important;
     }
   `,
 
@@ -194,8 +194,8 @@ export const useStyles = createStyles(({ token }) => ({
       height: 44px;
       border-radius: 999px;
       font-weight: 600;
-      border-color: #cbd5e1;
-      color: #0f172a;
+      border-color: #b0cfd8;
+      color: #0c1a2e;
       background: white;
     }
   `,
@@ -219,11 +219,11 @@ export const useStyles = createStyles(({ token }) => ({
   `,
 
   footerLink: css`
-    color: #1f6feb;
+    color: #0891b2;
     font-weight: 600;
 
     &:hover {
-      color: #164b96;
+      color: #0c4a58;
     }
   `,
 }));

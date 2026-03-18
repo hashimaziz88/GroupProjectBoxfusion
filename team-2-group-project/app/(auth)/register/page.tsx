@@ -48,12 +48,12 @@ export default function RegisterPage() {
 
   return (
     <AuthLayout
-      asideTitle="Create a tenant user the same way the Angular client does."
-      asideText="Self-registration is enabled only inside a selected tenant. Successful registration will sign the user in automatically when the backend allows it."
+      asideTitle="Create your DataSentinel account."
+      asideText="Self-registration is available within a selected tenant. Once registered, you will have access to monitoring and audit features granted by your administrator."
     >
       <AuthHeader
         title="Register"
-        subtitle="Create a user inside the active tenant context using the ABP account registration endpoint."
+        subtitle="Create a new account inside the active tenant to gain access to DataSentinel."
         tenantLabel={
           currentTenant?.tenancyName
             ? `Tenant: ${currentTenant.tenancyName}`
@@ -68,7 +68,7 @@ export default function RegisterPage() {
               No tenant selected
             </Title>
             <Paragraph className={styles.tenantHint}>
-              Angular only exposes self-registration in tenant context. Select a tenant on the login page first.
+              Self-registration is only available within a tenant. Select a tenant on the login page first.
             </Paragraph>
           </section>
           <AuthFooterLink

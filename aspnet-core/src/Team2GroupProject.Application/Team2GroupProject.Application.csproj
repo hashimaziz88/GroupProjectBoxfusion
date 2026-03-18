@@ -13,6 +13,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.8" />
+    <PackageReference Include="QuestPDF" Version="2026.2.3" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Team2GroupProject.Core\Team2GroupProject.Core.csproj" />

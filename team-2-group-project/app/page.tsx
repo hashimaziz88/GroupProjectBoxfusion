@@ -15,13 +15,13 @@ export default function EntryPage() {
       return;
     }
 
-    if (!isAuthenticated) {
-      router.replace("/login");
+    if (isAuthenticated) {
+      router.replace(selectBestAuthenticatedRoute(user));
       return;
     }
 
-    router.replace(selectBestAuthenticatedRoute(user));
+    router.replace("/landing");
   }, [isAuthenticated, isReady, router, user]);
 
-  return <AppSpinner label="Preparing your workspace..." />;
+  return <AppSpinner label="Loading DataSentinel..." />;
 }
