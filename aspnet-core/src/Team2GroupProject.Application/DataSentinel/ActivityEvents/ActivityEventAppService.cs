@@ -884,8 +884,12 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
 
             var totalCount = await query.CountAsync();
 
+            var ordered = input.SortDescending
+                ? query.OrderByDescending(x => x.EventTime)
+                : query.OrderBy(x => x.EventTime);
+
             var rows = await (
-                from e in query.OrderByDescending(x => x.EventTime).Skip(input.SkipCount).Take(input.MaxResultCount)
+                from e in ordered.Skip(input.SkipCount).Take(input.MaxResultCount)
                 join d in _monitoredDatabaseRepository.GetAll() on e.DatabaseId equals d.Id into databaseJoin
                 from db in databaseJoin.DefaultIfEmpty()
                 select new { Event = e, DatabaseName = (string)db.Name }
@@ -965,9 +969,24 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
                     (x.FailureReason != null && x.FailureReason.ToLower().Contains(keyword)));
             }
 
+            if (input.StartDate.HasValue)
+            {
+                query = query.Where(x => x.EventTime >= input.StartDate.Value);
+            }
+
+            if (input.EndDate.HasValue)
+            {
+                query = query.Where(x => x.EventTime <= input.EndDate.Value);
+            }
+
             if (input.EventType.HasValue)
             {
                 query = query.Where(x => x.EventType == input.EventType.Value);
+            }
+
+            if (input.Severity.HasValue)
+            {
+                query = query.Where(x => x.Severity == input.Severity.Value);
             }
 
             if (input.DatabaseId.HasValue)
@@ -975,9 +994,29 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
                 query = query.Where(x => x.DatabaseId == input.DatabaseId.Value);
             }
 
+            if (input.ServerId.HasValue)
+            {
+                query = query.Where(x => x.ServerId == input.ServerId.Value);
+            }
+
             if (!input.ActorUser.IsNullOrWhiteSpace())
             {
                 query = query.Where(x => x.ActorUser == input.ActorUser.Trim());
+            }
+
+            if (!input.ActorIp.IsNullOrWhiteSpace())
+            {
+                query = query.Where(x => x.ActorIp == input.ActorIp.Trim());
+            }
+
+            if (!input.Operation.IsNullOrWhiteSpace())
+            {
+                query = query.Where(x => x.Operation == input.Operation.Trim().ToUpperInvariant());
+            }
+
+            if (input.IsSuccess.HasValue)
+            {
+                query = query.Where(x => x.IsSuccess == input.IsSuccess.Value);
             }
 
             query = input.Tab switch
