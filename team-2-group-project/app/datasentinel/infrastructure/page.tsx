@@ -22,6 +22,7 @@ import {
   IMonitoredTableListItem,
 } from "@/interfaces/datasentinel/monitoring";
 import {
+  MonitoringInfrastructureProvider,
   useMonitoringInfrastructureActions,
   useMonitoringInfrastructureState,
 } from "@/providers/monitoringInfrastructureProvider";
@@ -604,8 +605,13 @@ const MonitoringInfrastructurePage = () => {
   );
 };
 
+const MonitoringInfrastructurePageRoute = () => (
+  <MonitoringInfrastructureProvider>
+    <MonitoringInfrastructurePage />
+  </MonitoringInfrastructureProvider>
+);
 
 export default withAuth(
-  MonitoringInfrastructurePage,
+  MonitoringInfrastructurePageRoute,
   PERMISSIONS.dataSentinelInfrastructureView,
 );

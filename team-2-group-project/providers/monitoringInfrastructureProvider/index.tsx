@@ -4,19 +4,17 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useReducer,
   useMemo,
-  useState,
 } from "react";
 import { PERMISSIONS } from "@/constants/auth/roles";
 import {
   IBootstrapMonitoringDemoInput,
-  IBootstrapMonitoringDemoResult,
   ICreateMonitoredDatabaseInput,
   ICreateMonitoredServerInput,
   ICreateMonitoredTableInput,
   IMonitoredDatabaseListItem,
   IMonitoredServerListItem,
-  IMonitoredTableListItem,
 } from "@/interfaces/datasentinel/monitoring";
 import { useAuthState } from "@/providers/authProvider";
 import { hasPermission } from "@/utils/auth/roles";
@@ -32,10 +30,16 @@ import {
 import { toArray } from "@/utils/helpers";
 import {
   INITIAL_STATE,
-  IMonitoringActionMessage,
   MonitoringInfrastructureActionContext,
   MonitoringInfrastructureStateContext,
 } from "./context";
+import {
+  resetMonitoringInfrastructureState,
+  setMonitoringInfrastructureMessages,
+  setMonitoringInfrastructureSelections,
+  setMonitoringInfrastructureState,
+} from "./actions";
+import { MonitoringInfrastructureReducer } from "./reducer";
 
 const resolveErrorMessage = (error: unknown) =>
   error instanceof Error
@@ -62,38 +66,10 @@ export const MonitoringInfrastructureProvider: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
   const { currentTenant, permissions } = useAuthState();
-  const [servers, setServers] = useState<IMonitoredServerListItem[]>(
-    INITIAL_STATE.servers,
+  const [state, dispatch] = useReducer(
+    MonitoringInfrastructureReducer,
+    INITIAL_STATE,
   );
-  const [databaseItems, setDatabaseItems] = useState<
-    IMonitoredDatabaseListItem[]
-  >(INITIAL_STATE.databaseItems);
-  const [tableItems, setTableItems] = useState<IMonitoredTableListItem[]>(
-    INITIAL_STATE.tableItems,
-  );
-  const [selectedServerId, setSelectedServerIdState] = useState<
-    string | undefined
-  >(INITIAL_STATE.selectedServerId);
-  const [selectedDatabaseId, setSelectedDatabaseIdState] = useState<
-    string | undefined
-  >(INITIAL_STATE.selectedDatabaseId);
-  const [isLoading, setIsLoading] = useState(INITIAL_STATE.isLoading);
-  const [isRefreshing, setIsRefreshing] = useState(INITIAL_STATE.isRefreshing);
-  const [isDatabaseLoading, setIsDatabaseLoading] = useState(
-    INITIAL_STATE.isDatabaseLoading,
-  );
-  const [isTableLoading, setIsTableLoading] = useState(
-    INITIAL_STATE.isTableLoading,
-  );
-  const [errorMessage, setErrorMessage] = useState<string | null>(
-    INITIAL_STATE.errorMessage ?? null,
-  );
-  const [actionMessage, setActionMessage] =
-    useState<IMonitoringActionMessage | null>(INITIAL_STATE.actionMessage ?? null);
-  const [bootstrapResult, setBootstrapResult] =
-    useState<IBootstrapMonitoringDemoResult | null>(
-      INITIAL_STATE.bootstrapResult ?? null,
-    );
 
   const hasTenantContext = Boolean(currentTenant?.tenantId);
   const canManageInfrastructure = hasPermission(
@@ -102,8 +78,8 @@ export const MonitoringInfrastructureProvider: React.FC<{
   );
 
   const allDatabases = useMemo(
-    () => monitoredDatabasesFromServers(servers),
-    [servers],
+    () => monitoredDatabasesFromServers(state.servers),
+    [state.servers],
   );
   const allTables = useMemo(
     () => monitoredTablesFromDatabases(allDatabases),
@@ -111,190 +87,277 @@ export const MonitoringInfrastructureProvider: React.FC<{
   );
   const availableDatabases = useMemo(
     () =>
-      selectedServerId
-        ? allDatabases.filter((database) => database.serverId === selectedServerId)
+      state.selectedServerId
+        ? allDatabases.filter((database) => database.serverId === state.selectedServerId)
         : allDatabases,
-    [allDatabases, selectedServerId],
+    [allDatabases, state.selectedServerId],
   );
 
   const clearMessages = () => {
-    setErrorMessage(null);
-    setActionMessage(null);
+    dispatch(
+      setMonitoringInfrastructureMessages({
+        errorMessage: null,
+        actionMessage: null,
+        bootstrapResult: state.bootstrapResult,
+      }),
+    );
   };
 
   const setSelectedServerId = (serverId?: string) => {
-    setSelectedServerIdState(serverId);
-    setSelectedDatabaseIdState(undefined);
+    dispatch(
+      setMonitoringInfrastructureSelections({
+        selectedServerId: serverId,
+        selectedDatabaseId: undefined,
+      }),
+    );
   };
 
   const setSelectedDatabaseId = (databaseId?: string) => {
-    setSelectedDatabaseIdState(databaseId);
+    dispatch(
+      setMonitoringInfrastructureSelections({
+        selectedDatabaseId: databaseId,
+        selectedServerId: state.selectedServerId,
+      }),
+    );
   };
 
   const loadInfrastructure = useCallback(async (refreshing = false) => {
     if (refreshing) {
-      setIsRefreshing(true);
+      dispatch(setMonitoringInfrastructureState({ isRefreshing: true }));
     } else {
-      setIsLoading(true);
+      dispatch(setMonitoringInfrastructureState({ isLoading: true }));
     }
 
     try {
       const result = await getMonitoredServers();
       const items = toArray(result.items);
 
-      setServers(items);
-      setErrorMessage(null);
+      dispatch(
+        setMonitoringInfrastructureState({
+          servers: items,
+          errorMessage: null,
+        }),
+      );
 
-      if (selectedServerId && !items.some((server) => server.id === selectedServerId)) {
-        setSelectedServerIdState(undefined);
-        setSelectedDatabaseIdState(undefined);
+      if (state.selectedServerId && !items.some((server) => server.id === state.selectedServerId)) {
+        dispatch(
+          setMonitoringInfrastructureState({
+            selectedServerId: undefined,
+            selectedDatabaseId: undefined,
+          }),
+        );
       } else if (
-        selectedDatabaseId &&
+        state.selectedDatabaseId &&
         !monitoredDatabasesFromServers(items).some(
-          (database) => database.id === selectedDatabaseId,
+          (database) => database.id === state.selectedDatabaseId,
         )
       ) {
-        setSelectedDatabaseIdState(undefined);
+        dispatch(
+          setMonitoringInfrastructureState({
+            selectedDatabaseId: undefined,
+          }),
+        );
       }
     } catch (error: unknown) {
-      setServers([]);
-      setDatabaseItems([]);
-      setTableItems([]);
-      setErrorMessage(resolveErrorMessage(error));
+      dispatch(
+        setMonitoringInfrastructureState({
+          servers: [],
+          databaseItems: [],
+          tableItems: [],
+          errorMessage: resolveErrorMessage(error),
+        }),
+      );
     } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
+      dispatch(
+        setMonitoringInfrastructureState({
+          isLoading: false,
+          isRefreshing: false,
+        }),
+      );
     }
-  }, [selectedDatabaseId, selectedServerId]);
+  }, [state.selectedDatabaseId, state.selectedServerId]);
 
   const loadScopedDatabases = useCallback(async (serverId?: string) => {
     if (!serverId) {
-      setDatabaseItems(allDatabases);
+      dispatch(
+        setMonitoringInfrastructureState({
+          databaseItems: allDatabases,
+        }),
+      );
       return;
     }
 
-    setIsDatabaseLoading(true);
+    dispatch(setMonitoringInfrastructureState({ isDatabaseLoading: true }));
 
     try {
       const result = await getMonitoredDatabases(serverId);
-      setDatabaseItems(toArray(result.items));
-      setErrorMessage(null);
+      dispatch(
+        setMonitoringInfrastructureState({
+          databaseItems: toArray(result.items),
+          errorMessage: null,
+        }),
+      );
     } catch (error: unknown) {
-      setDatabaseItems([]);
-      setErrorMessage(resolveErrorMessage(error));
+      dispatch(
+        setMonitoringInfrastructureState({
+          databaseItems: [],
+          errorMessage: resolveErrorMessage(error),
+        }),
+      );
     } finally {
-      setIsDatabaseLoading(false);
+      dispatch(setMonitoringInfrastructureState({ isDatabaseLoading: false }));
     }
   }, [allDatabases]);
 
   const loadScopedTables = useCallback(async (databaseId?: string) => {
     if (!databaseId) {
-      if (selectedServerId) {
+      if (state.selectedServerId) {
         const scopedDatabaseIds = allDatabases
-          .filter((database) => database.serverId === selectedServerId)
+          .filter((database) => database.serverId === state.selectedServerId)
           .map((database) => database.id);
 
-        setTableItems(
-          allTables.filter((table) => scopedDatabaseIds.includes(table.databaseId)),
+        dispatch(
+          setMonitoringInfrastructureState({
+            tableItems: allTables.filter((table) =>
+              scopedDatabaseIds.includes(table.databaseId),
+            ),
+          }),
         );
       } else {
-        setTableItems(allTables);
+        dispatch(
+          setMonitoringInfrastructureState({
+            tableItems: allTables,
+          }),
+        );
       }
       return;
     }
 
-    setIsTableLoading(true);
+    dispatch(setMonitoringInfrastructureState({ isTableLoading: true }));
 
     try {
       const result = await getMonitoredTables(databaseId);
-      setTableItems(toArray(result.items));
-      setErrorMessage(null);
+      dispatch(
+        setMonitoringInfrastructureState({
+          tableItems: toArray(result.items),
+          errorMessage: null,
+        }),
+      );
     } catch (error: unknown) {
-      setTableItems([]);
-      setErrorMessage(resolveErrorMessage(error));
+      dispatch(
+        setMonitoringInfrastructureState({
+          tableItems: [],
+          errorMessage: resolveErrorMessage(error),
+        }),
+      );
     } finally {
-      setIsTableLoading(false);
+      dispatch(setMonitoringInfrastructureState({ isTableLoading: false }));
     }
-  }, [allDatabases, allTables, selectedServerId]);
+  }, [allDatabases, allTables, state.selectedServerId]);
 
   useEffect(() => {
     if (!hasTenantContext) {
-      setServers([]);
-      setDatabaseItems([]);
-      setTableItems([]);
-      setSelectedServerIdState(undefined);
-      setSelectedDatabaseIdState(undefined);
-      setBootstrapResult(null);
-      setErrorMessage(null);
-      setActionMessage(null);
-      setIsLoading(false);
-      setIsRefreshing(false);
-      setIsDatabaseLoading(false);
-      setIsTableLoading(false);
+      dispatch(
+        resetMonitoringInfrastructureState({
+          isLoading: false,
+          isRefreshing: false,
+          isDatabaseLoading: false,
+          isTableLoading: false,
+        }),
+      );
       return;
     }
 
+    dispatch(
+      setMonitoringInfrastructureState({
+        hasTenantContext,
+        canManageInfrastructure,
+      }),
+    );
     void loadInfrastructure();
-  }, [hasTenantContext, loadInfrastructure]);
+  }, [canManageInfrastructure, hasTenantContext, loadInfrastructure]);
 
   useEffect(() => {
     if (!hasTenantContext) {
       return;
     }
 
-    if (!selectedServerId) {
-      setDatabaseItems(allDatabases);
+    if (!state.selectedServerId) {
+      dispatch(
+        setMonitoringInfrastructureState({
+          databaseItems: allDatabases,
+        }),
+      );
       return;
     }
 
-    void loadScopedDatabases(selectedServerId);
-  }, [allDatabases, hasTenantContext, loadScopedDatabases, selectedServerId]);
+    void loadScopedDatabases(state.selectedServerId);
+  }, [allDatabases, hasTenantContext, loadScopedDatabases, state.selectedServerId]);
 
   useEffect(() => {
     if (!hasTenantContext) {
       return;
     }
 
-    if (!selectedDatabaseId) {
-      if (selectedServerId) {
+    if (!state.selectedDatabaseId) {
+      if (state.selectedServerId) {
         const scopedDatabases = allDatabases.filter(
-          (database) => database.serverId === selectedServerId,
+          (database) => database.serverId === state.selectedServerId,
         );
-        setTableItems(monitoredTablesFromDatabases(scopedDatabases));
+        dispatch(
+          setMonitoringInfrastructureState({
+            tableItems: monitoredTablesFromDatabases(scopedDatabases),
+          }),
+        );
         return;
       }
 
-      setTableItems(monitoredTablesFromDatabases(allDatabases));
+      dispatch(
+        setMonitoringInfrastructureState({
+          tableItems: monitoredTablesFromDatabases(allDatabases),
+        }),
+      );
       return;
     }
 
-    void loadScopedTables(selectedDatabaseId);
+    void loadScopedTables(state.selectedDatabaseId);
   }, [
     allDatabases,
     hasTenantContext,
     loadScopedTables,
-    selectedDatabaseId,
-    selectedServerId,
+    state.selectedDatabaseId,
+    state.selectedServerId,
   ]);
 
   const performMutation = async (
     mutation: () => Promise<void>,
     successText: string,
-  ) => {
+    ) => {
     try {
       await mutation();
-      setActionMessage({
-        type: "success",
-        text: successText,
-      });
-      setErrorMessage(null);
+      dispatch(
+        setMonitoringInfrastructureMessages({
+          actionMessage: {
+            type: "success",
+            text: successText,
+          },
+          errorMessage: null,
+          bootstrapResult: state.bootstrapResult,
+        }),
+      );
       await loadInfrastructure(true);
       return true;
     } catch (error: unknown) {
-      setActionMessage({
-        type: "error",
-        text: resolveErrorMessage(error),
-      });
+      dispatch(
+        setMonitoringInfrastructureMessages({
+          actionMessage: {
+            type: "error",
+            text: resolveErrorMessage(error),
+          },
+          errorMessage: state.errorMessage,
+          bootstrapResult: state.bootstrapResult,
+        }),
+      );
       return false;
     }
   };
@@ -326,19 +389,29 @@ export const MonitoringInfrastructureProvider: React.FC<{
   const bootstrapDemoAction = async (input: IBootstrapMonitoringDemoInput) => {
     try {
       const result = await bootstrapMonitoringDemo(input);
-      setBootstrapResult(result);
-      setActionMessage({
-        type: "success",
-        text: "Demo monitoring infrastructure bootstrap completed.",
-      });
-      setErrorMessage(null);
+      dispatch(
+        setMonitoringInfrastructureMessages({
+          bootstrapResult: result,
+          actionMessage: {
+            type: "success",
+            text: "Demo monitoring infrastructure bootstrap completed.",
+          },
+          errorMessage: null,
+        }),
+      );
       await loadInfrastructure(true);
       return true;
     } catch (error: unknown) {
-      setActionMessage({
-        type: "error",
-        text: resolveErrorMessage(error),
-      });
+      dispatch(
+        setMonitoringInfrastructureMessages({
+          actionMessage: {
+            type: "error",
+            text: resolveErrorMessage(error),
+          },
+          errorMessage: state.errorMessage,
+          bootstrapResult: state.bootstrapResult,
+        }),
+      );
       return false;
     }
   };
@@ -346,23 +419,15 @@ export const MonitoringInfrastructureProvider: React.FC<{
   return (
     <MonitoringInfrastructureStateContext.Provider
       value={{
-        servers,
-        databaseItems,
-        tableItems,
+        ...state,
+        servers: state.servers,
+        databaseItems: state.databaseItems,
+        tableItems: state.tableItems,
         allDatabases,
         allTables,
         availableDatabases,
-        selectedServerId,
-        selectedDatabaseId,
-        isLoading,
-        isRefreshing,
-        isDatabaseLoading,
-        isTableLoading,
         hasTenantContext,
         canManageInfrastructure,
-        errorMessage,
-        actionMessage,
-        bootstrapResult,
       }}
     >
       <MonitoringInfrastructureActionContext.Provider
