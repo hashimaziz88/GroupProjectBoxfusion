@@ -221,14 +221,133 @@ namespace Team2GroupProject.DataSentinel.RulesetEngine
             return candidates;
         }
 
-        private Task<List<AlertCandidate>> EvaluateOutOfHoursAsync(int tenantId, AlertRule rule, Guid? singleEventId)
+        private async Task<List<AlertCandidate>> EvaluateOutOfHoursAsync(int tenantId, AlertRule rule, Guid? singleEventId)
         {
-            return Task.FromResult(new List<AlertCandidate>());
+            var baseQuery = _activityEventRepository.GetAll()
+                .Where(x => x.TenantId == tenantId);
+
+            if (singleEventId.HasValue)
+            {
+                baseQuery = baseQuery.Where(x => x.Id == singleEventId.Value);
+            }
+            else
+            {
+                var catchUpStart = Clock.Now.AddHours(-24);
+                baseQuery = baseQuery.Where(x => x.EventTime >= catchUpStart);
+            }
+
+            if (rule.EventType.HasValue)
+            {
+                baseQuery = baseQuery.Where(x => x.EventType == rule.EventType.Value && x.IsOutOfHours);
+            }
+            else
+            {
+                var sensitiveTypes = new[]
+                {
+                    ActivityEventType.Write,
+                    ActivityEventType.Delete,
+                    ActivityEventType.PrivilegedAction,
+                    ActivityEventType.PermissionChange,
+                    ActivityEventType.SchemaChange,
+                    ActivityEventType.BulkOperation
+                };
+                baseQuery = baseQuery.Where(x => x.IsOutOfHours && sensitiveTypes.Contains(x.EventType));
+            }
+
+            var events = await baseQuery
+                .Select(x => new
+                {
+                    x.Id,
+                    x.ActorUser,
+                    x.ActorIp,
+                    x.EventTime,
+                    x.EventType,
+                    x.DatabaseId,
+                    x.ServerId
+                })
+                .ToListAsync();
+
+            var candidates = new List<AlertCandidate>();
+
+            foreach (var x in events)
+            {
+                candidates.Add(new AlertCandidate
+                {
+                    TriggeringEventId = x.Id,
+                    Title = Truncate($"{rule.Name} \u2014 out-of-hours {x.EventType} activity", DataSentinelConsts.AlertTitleMaxLength),
+                    Summary = Truncate($"{x.ActorUser ?? "unknown"} performed {x.EventType} outside business hours at {x.EventTime:yyyy-MM-dd HH:mm} UTC", DataSentinelConsts.AlertSummaryMaxLength),
+                    PrimaryActorUser = x.ActorUser,
+                    PrimaryActorIp = x.ActorIp,
+                    EventTimeStart = x.EventTime,
+                    EventTimeEnd = x.EventTime,
+                    RelatedEventCount = 1,
+                    DatabaseId = x.DatabaseId,
+                    ServerId = x.ServerId
+                });
+            }
+
+            return candidates;
         }
 
-        private Task<List<AlertCandidate>> EvaluatePrivilegedActionAsync(int tenantId, AlertRule rule, Guid? singleEventId)
+        private async Task<List<AlertCandidate>> EvaluatePrivilegedActionAsync(int tenantId, AlertRule rule, Guid? singleEventId)
         {
-            return Task.FromResult(new List<AlertCandidate>());
+            var baseQuery = _activityEventRepository.GetAll()
+                .Where(x => x.TenantId == tenantId);
+
+            if (singleEventId.HasValue)
+            {
+                baseQuery = baseQuery.Where(x => x.Id == singleEventId.Value);
+            }
+            else
+            {
+                var catchUpStart = Clock.Now.AddHours(-24);
+                baseQuery = baseQuery.Where(x => x.EventTime >= catchUpStart);
+            }
+
+            if (rule.EventType.HasValue)
+            {
+                baseQuery = baseQuery.Where(x => x.EventType == rule.EventType.Value);
+            }
+            else
+            {
+                baseQuery = baseQuery.Where(x =>
+                    x.EventType == ActivityEventType.PrivilegedAction ||
+                    x.EventType == ActivityEventType.PermissionChange);
+            }
+
+            var events = await baseQuery
+                .Select(x => new
+                {
+                    x.Id,
+                    x.ActorUser,
+                    x.ActorIp,
+                    x.EventTime,
+                    x.EventType,
+                    x.DatabaseId,
+                    x.ServerId
+                })
+                .ToListAsync();
+
+            var candidates = new List<AlertCandidate>();
+
+            foreach (var x in events)
+            {
+                candidates.Add(new AlertCandidate
+                {
+                    TriggeringEventId = x.Id,
+                    Title = Truncate($"{rule.Name} \u2014 privileged action recorded", DataSentinelConsts.AlertTitleMaxLength),
+                    Summary = Truncate($"{x.ActorUser ?? "unknown"} performed {x.EventType} at {x.EventTime:yyyy-MM-dd HH:mm} UTC", DataSentinelConsts.AlertSummaryMaxLength),
+                    PrimaryActorUser = x.ActorUser,
+                    PrimaryActorIp = x.ActorIp,
+                    EventTimeStart = x.EventTime,
+                    EventTimeEnd = x.EventTime,
+                    RelatedEventCount = 1,
+                    DatabaseId = x.DatabaseId,
+                    ServerId = x.ServerId
+                });
+            }
+
+            return candidates;
         }
 
         private Task<List<AlertCandidate>> EvaluateBulkOperationAsync(int tenantId, AlertRule rule, Guid? singleEventId)
