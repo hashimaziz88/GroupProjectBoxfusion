@@ -104,6 +104,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const getMe = async () => {
     const token = getAccessToken();
+    const currentTenant = getCurrentTenantContext();
 
     if (!token) {
       dispatch(initializeComplete(undefined));
@@ -112,10 +113,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     dispatch(getMePending());
 
-    await Promise.all([getCurrentLoginInformations(), getUserConfiguration()])
+    await Promise.all([
+      getCurrentLoginInformations(currentTenant?.tenantId),
+      getUserConfiguration(currentTenant?.tenantId),
+    ])
       .then(([currentLoginInformations, userConfiguration]) => {
         const permissions = extractGrantedPermissions(userConfiguration);
-        const currentTenant = getCurrentTenantContext();
         const resolvedUser = buildResolvedUser(
           null,
           currentLoginInformations,
@@ -144,7 +147,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       dispatch(tenantContextCleared());
     }
 
-    const userConfiguration = await getUserConfiguration().catch(() => null);
+    const userConfiguration = await getUserConfiguration(
+      resolvedTenant?.tenantId,
+    ).catch(() => null);
     const permissions = extractGrantedPermissions(userConfiguration);
     const multiTenancyEnabled =
       userConfiguration === null
@@ -172,18 +177,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const login = async (payload: IUserLoginRequest) => {
     dispatch(loginPending());
+    const currentTenant = getCurrentTenantContext();
 
-    await authenticate(payload)
+    await authenticate(payload, currentTenant?.tenantId)
       .then(async (authResult) => {
         storeAccessToken(authResult, Boolean(payload.rememberClient));
 
         const [currentLoginInformations, userConfiguration] = await Promise.all([
-          getCurrentLoginInformations(),
-          getUserConfiguration(),
+          getCurrentLoginInformations(currentTenant?.tenantId),
+          getUserConfiguration(currentTenant?.tenantId),
         ]);
 
         const permissions = extractGrantedPermissions(userConfiguration);
-        const currentTenant = getCurrentTenantContext();
         const resolvedUser = buildResolvedUser(
           authResult,
           currentLoginInformations,
@@ -205,6 +210,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const register = async (payload: IUserRegisterRequest) => {
     dispatch(registerPending());
+    const currentTenant = getCurrentTenantContext();
 
     await registerAccount(payload)
       .then(async (registerResult) => {
@@ -218,17 +224,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           userNameOrEmailAddress: payload.userName,
           password: payload.password,
           rememberClient: false,
-        });
+        }, currentTenant?.tenantId);
 
         storeAccessToken(authResult, false);
 
         const [currentLoginInformations, userConfiguration] = await Promise.all([
-          getCurrentLoginInformations(),
-          getUserConfiguration(),
+          getCurrentLoginInformations(currentTenant?.tenantId),
+          getUserConfiguration(currentTenant?.tenantId),
         ]);
 
         const permissions = extractGrantedPermissions(userConfiguration);
-        const currentTenant = getCurrentTenantContext();
         const resolvedUser = buildResolvedUser(
           authResult,
           currentLoginInformations,

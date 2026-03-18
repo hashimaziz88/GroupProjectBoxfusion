@@ -271,4 +271,125 @@ export const useStyles = createStyles(() => ({
     flex-wrap: wrap;
     gap: 12px;
   `,
+
+  filterGrid: css`
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+
+    @media (max-width: 1280px) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    @media (max-width: 720px) {
+      grid-template-columns: 1fr;
+    }
+  `,
+
+  filterField: css`
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  `,
+
+  filterActionsRow: css`
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 18px;
+  `,
+
+  splitGrid: css`
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+
+    @media (max-width: 960px) {
+      grid-template-columns: 1fr;
+    }
+  `,
+
+  tripleGrid: css`
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+
+    @media (max-width: 1200px) {
+      grid-template-columns: 1fr;
+    }
+  `,
+
+  stackedCards: css`
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  `,
+
+  cellHint: css`
+    color: #64748b;
+    font-size: 12px;
+    margin-top: 4px;
+  `,
+
+  mutedText: css`
+    color: #64748b;
+    font-size: 13px;
+  `,
+
+  monoText: css`
+    font-family: "Consolas", "SFMono-Regular", "Liberation Mono", monospace;
+    font-size: 12px;
+    color: #475569;
+  `,
+
+  jsonTextArea: css`
+    textarea {
+      min-height: 240px;
+      font-family: "Consolas", "SFMono-Regular", "Liberation Mono", monospace;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+  `,
+
+  cardToolbar: css`
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  `,
+
+  inlineActions: css`
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+  `,
+
+  toolbarControl: css`
+    min-width: 220px;
+  `,
+
+  fullWidthControl: css`
+    width: 100%;
+
+    &.ant-input-number,
+    &.ant-select {
+      width: 100%;
+    }
+  `,
+
+  tableToolbar: css`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+
+    @media (max-width: 720px) {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  `,
 }));

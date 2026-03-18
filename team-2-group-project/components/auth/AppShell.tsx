@@ -1,6 +1,5 @@
 "use client";
 
-import type { ReactNode } from "react";
 import { Button, Layout, Menu, Tag, Typography } from "antd";
 import { usePathname, useRouter } from "next/navigation";
 import { getVisibleNavigationItems } from "@/constants/navigation";
@@ -31,7 +30,10 @@ const AppShell = ({ title, subtitle, children }: IAppShellProps) => {
   const { logout } = useAuthActions();
   const { currentTenant, permissions, user } = useAuthState();
 
-  const visibleItems = getVisibleNavigationItems(permissions);
+  const visibleItems = getVisibleNavigationItems(
+    permissions,
+    Boolean(currentTenant?.tenantId),
+  );
   const selectedKey =
     visibleItems.find((item) => pathname.startsWith(item.href))?.key ?? "home";
 
