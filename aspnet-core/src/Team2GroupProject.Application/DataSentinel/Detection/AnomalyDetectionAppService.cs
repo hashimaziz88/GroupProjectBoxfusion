@@ -23,17 +23,24 @@ namespace Team2GroupProject.DataSentinel.Detection
         private readonly IThresholdRuleEvaluator _thresholdRuleEvaluator;
         private readonly IOutOfHoursRuleEvaluator _outOfHoursRuleEvaluator;
         private readonly IRepeatedFailureEvaluator _repeatedFailureEvaluator;
-        
+        private readonly ILargeReadWriteEvaluator _largeReadWriteEvaluator;
+        private readonly IPrivilegedActionEvaluator _privilegedActionEvaluator;
+
         public AnomalyDetectionAppService(
             IThresholdRuleEvaluator thresholdRuleEvaluator,
             IOutOfHoursRuleEvaluator outOfHoursRuleEvaluator,
-            IRepeatedFailureEvaluator repeatedFailureEvaluator)
+            IRepeatedFailureEvaluator repeatedFailureEvaluator,
+            ILargeReadWriteEvaluator largeReadWriteEvaluator,
+            IPrivilegedActionEvaluator privilegedActionEvaluator)
         {
             _thresholdRuleEvaluator = thresholdRuleEvaluator;
             _outOfHoursRuleEvaluator = outOfHoursRuleEvaluator;
             _repeatedFailureEvaluator = repeatedFailureEvaluator;
+            _largeReadWriteEvaluator = largeReadWriteEvaluator;
+            _privilegedActionEvaluator = privilegedActionEvaluator;
                
         }
+
         public async Task<ThresholdRuleEvaluationResultDto> EvaluateThresholdRulesAsync(EvaluateThresholdRulesInput input)
         {
             var tenantId = AbpSession.GetTenantId();
@@ -82,6 +89,38 @@ namespace Team2GroupProject.DataSentinel.Detection
             var evaluationTimeUtc = NormalizeEvaluationTime(input?.EvaluationTimeUtc ?? Clock.Now);
             var result = await _repeatedFailureEvaluator.EvaluateAsync(tenantId, evaluationTimeUtc, ruleId: input?.RuleId);
             if (result.CreatedAlertIds.Count > 0) { await CurrentUnitOfWork.SaveChangesAsync(); }
+            return result;
+        }
+
+        /// <summary>
+        /// Evaluates large read/write rules for the active tenant.
+        /// </summary>
+        public async Task<LargeReadWriteRuleEvaluationResultDto> EvaluateLargeReadWriteRulesAsync(
+            EvaluateLargeReadWriteRulesInput input)
+        {
+            var tenantId = AbpSession.GetTenantId();
+            var evaluationTimeUtc = NormalizeEvaluationTime(input?.EvaluationTimeUtc ?? Clock.Now);
+            var result = await _largeReadWriteEvaluator.EvaluateAsync(tenantId, evaluationTimeUtc, ruleId: input?.RuleId);
+            if (result.CreatedAlertIds.Count > 0)
+            {
+                await CurrentUnitOfWork.SaveChangesAsync();
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Evaluates privileged action rules for the active tenant.
+        /// </summary>
+        public async Task<PrivilegedActionRuleEvaluationResultDto> EvaluatePrivilegedActionRulesAsync(
+            EvaluatePrivilegedActionRulesInput input)
+        {
+            var tenantId = AbpSession.GetTenantId();
+            var evaluationTimeUtc = NormalizeEvaluationTime(input?.EvaluationTimeUtc ?? Clock.Now);
+            var result = await _privilegedActionEvaluator.EvaluateAsync(tenantId, evaluationTimeUtc, ruleId: input?.RuleId);
+            if (result.CreatedAlertIds.Count > 0)
+            {
+                await CurrentUnitOfWork.SaveChangesAsync();
+            }
             return result;
         }
     }
