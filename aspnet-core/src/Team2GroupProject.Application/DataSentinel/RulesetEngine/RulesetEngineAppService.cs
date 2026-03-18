@@ -350,9 +350,63 @@ namespace Team2GroupProject.DataSentinel.RulesetEngine
             return candidates;
         }
 
-        private Task<List<AlertCandidate>> EvaluateBulkOperationAsync(int tenantId, AlertRule rule, Guid? singleEventId)
+        private async Task<List<AlertCandidate>> EvaluateBulkOperationAsync(int tenantId, AlertRule rule, Guid? singleEventId)
         {
-            return Task.FromResult(new List<AlertCandidate>());
+            var baseQuery = _activityEventRepository.GetAll()
+                .Where(x => x.TenantId == tenantId);
+
+            if (singleEventId.HasValue)
+            {
+                baseQuery = baseQuery.Where(x => x.Id == singleEventId.Value);
+            }
+            else
+            {
+                var catchUpStart = Clock.Now.AddHours(-24);
+                baseQuery = baseQuery.Where(x => x.EventTime >= catchUpStart);
+            }
+
+            var query = baseQuery.Where(x =>
+                x.RowsAffected.HasValue &&
+                x.RowsAffected.Value >= rule.ThresholdCount);
+
+            if (rule.EventType.HasValue)
+                query = query.Where(x => x.EventType == rule.EventType.Value);
+
+            var events = await query
+                .Select(x => new
+                {
+                    x.Id,
+                    x.ActorUser,
+                    x.ActorIp,
+                    x.EventTime,
+                    x.EventType,
+                    x.RowsAffected,
+                    x.ObjectName,
+                    x.DatabaseId,
+                    x.ServerId
+                })
+                .ToListAsync();
+
+            var candidates = new List<AlertCandidate>();
+
+            foreach (var x in events)
+            {
+                candidates.Add(new AlertCandidate
+                {
+                    TriggeringEventId = x.Id,
+                    Title = Truncate($"{rule.Name} — bulk operation detected", DataSentinelConsts.AlertTitleMaxLength),
+                    Summary = Truncate($"{x.ActorUser ?? "unknown"} affected {x.RowsAffected} rows on {x.ObjectName ?? "unknown object"} at {x.EventTime:yyyy-MM-dd HH:mm} UTC", DataSentinelConsts.AlertSummaryMaxLength),
+                    PrimaryActorUser = x.ActorUser,
+                    PrimaryActorIp = x.ActorIp,
+                    EventTimeStart = x.EventTime,
+                    EventTimeEnd = x.EventTime,
+                    RelatedEventCount = 1,
+                    DatabaseId = x.DatabaseId,
+                    ServerId = x.ServerId
+                });
+            }
+
+            return candidates;
         }
 
         private static string Truncate(string value, int maxLength)
