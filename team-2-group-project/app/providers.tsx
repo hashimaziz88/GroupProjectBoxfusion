@@ -8,7 +8,9 @@ import { appTheme } from "@/utils/themeSetup";
 export default function Providers({ children }: { children: ReactNode }) {
   return (
     <ConfigProvider theme={appTheme}>
-      <AuthProvider>{children}</AuthProvider>
+      <AuthProvider>
+        {children}
+      </AuthProvider>
     </ConfigProvider>
   );
 }

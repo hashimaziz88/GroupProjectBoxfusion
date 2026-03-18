@@ -38,6 +38,7 @@ export default function LoginPage() {
   } = useAuthState();
 
   const [tenantName, setTenantName] = useState(currentTenant?.tenancyName ?? "");
+  const [hasEditedTenantName, setHasEditedTenantName] = useState(false);
   const [tenantFeedback, setTenantFeedback] = useState<TenantFeedbackState>(null);
 
   useEffect(() => {
@@ -57,12 +58,48 @@ export default function LoginPage() {
   );
 
   const registrationEnabled = Boolean(currentTenant?.tenantId);
+  const resolvedTenantName = hasEditedTenantName
+    ? tenantName
+    : currentTenant?.tenancyName ?? tenantName;
   const showRegisteredMessage = searchParams.get("registered") === "1";
+  const localApiConfigurationWarning = useMemo(() => {
+    if (typeof window === "undefined") {
+      return null;
+    }
+
+    const apiLink = process.env.NEXT_PUBLIC_API_LINK;
+
+    if (!apiLink) {
+      return "The frontend is missing NEXT_PUBLIC_API_LINK, so authentication and tenant resolution cannot work.";
+    }
+
+    try {
+      const apiUrl = new URL(apiLink, window.location.origin);
+      const isLocalFrontend =
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1" ||
+        window.location.hostname === "::1";
+      const isLocalApi =
+        apiUrl.hostname === "localhost" ||
+        apiUrl.hostname === "127.0.0.1" ||
+        apiUrl.hostname === "::1";
+
+      if (isLocalFrontend && !isLocalApi) {
+        return `Local frontend is currently configured to use ${apiUrl.origin}. Switch NEXT_PUBLIC_API_LINK to your local ABP host if you want tenant login to stay local.`;
+      }
+    } catch {
+      return `NEXT_PUBLIC_API_LINK is not a valid URL: ${apiLink}`;
+    }
+
+    return null;
+  }, []);
 
   const handleTenantChange = async () => {
-    const result = await changeTenant(tenantName.trim() || null);
+    const result = await changeTenant(resolvedTenantName.trim() || null);
 
     if (result.state === "available") {
+      setTenantName(result.tenancyName ?? "");
+      setHasEditedTenantName(false);
       setTenantFeedback({
         type: "success",
         message: `Tenant changed to ${result.tenancyName}.`,
@@ -71,6 +108,8 @@ export default function LoginPage() {
     }
 
     if (result.state === "host") {
+      setTenantName("");
+      setHasEditedTenantName(false);
       setTenantFeedback({
         type: "success",
         message: "Tenant context cleared. You are now in the host context.",
@@ -129,6 +168,15 @@ export default function LoginPage() {
         />
       ) : null}
 
+      {localApiConfigurationWarning ? (
+        <Alert
+          type="warning"
+          showIcon
+          title={localApiConfigurationWarning}
+          className={styles.alert}
+        />
+      ) : null}
+
       {isError && errorMessage ? (
         <Alert
           type="error"
@@ -153,8 +201,11 @@ export default function LoginPage() {
             <div>
               <Text className={styles.fieldLabel}>Tenant name</Text>
               <Input
-                value={tenantName}
-                onChange={(event) => setTenantName(event.target.value)}
+                value={resolvedTenantName}
+                onChange={(event) => {
+                  setTenantName(event.target.value);
+                  setHasEditedTenantName(true);
+                }}
                 placeholder="Enter a tenancy name"
               />
             </div>
@@ -170,6 +221,7 @@ export default function LoginPage() {
               <Button
                 onClick={() => {
                   setTenantName("");
+                  setHasEditedTenantName(false);
                   void changeTenant(null).then(() => {
                     setTenantFeedback({
                       type: "success",
