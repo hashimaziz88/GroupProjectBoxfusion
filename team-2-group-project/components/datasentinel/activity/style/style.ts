@@ -45,8 +45,8 @@ export const useStyles = createStyles(() => ({
   statCard: css`
     border-radius: 20px;
     padding: 20px;
-    background: linear-gradient(180deg, #fbfdff 0%, #f4f8ff 100%);
-    border: 1px solid #dbe5f4;
+    background: linear-gradient(180deg, #f8fdff 0%, #eef8fb 100%);
+    border: 1px solid #c8e8f0;
     display: flex;
     flex-direction: column;
     gap: 8px;

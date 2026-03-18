@@ -19,7 +19,7 @@ import { useStyles } from "@/app/datasentinel/style/style";
 
 const PAGE_TITLE = "Activity Intake";
 const PAGE_SUBTITLE =
-  "Send manual activity batches, upload ABP audit logs, or seed simulated data through the currently available DataSentinel intake endpoints.";
+  "Send activity event batches, import audit log exports, or seed simulated data into the DataSentinel monitoring pipeline.";
 
 const ActivityIntakePageContent = () => {
   const { styles } = useStyles();

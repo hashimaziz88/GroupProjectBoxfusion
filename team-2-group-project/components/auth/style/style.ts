@@ -4,14 +4,14 @@ export const useStyles = createStyles(() => ({
   shell: css`
     min-height: 100vh;
     background:
-      radial-gradient(circle at top left, rgba(31, 111, 235, 0.12) 0%, transparent 28%),
-      linear-gradient(180deg, #f4f7fb 0%, #edf3fb 100%);
+      radial-gradient(circle at top left, rgba(8, 145, 178, 0.10) 0%, transparent 30%),
+      linear-gradient(180deg, #f3f7fa 0%, #eaf4f8 100%);
   `,
 
   sider: css`
     &.ant-layout-sider {
-      background: #0f172a;
-      border-right: 1px solid rgba(148, 163, 184, 0.14);
+      background: #0c1a2e;
+      border-right: 1px solid rgba(8, 145, 178, 0.18);
     }
 
     .ant-layout-sider-children {
@@ -28,10 +28,15 @@ export const useStyles = createStyles(() => ({
     gap: 10px;
   `,
 
+  brandLogo: css`
+    filter: brightness(0) invert(1);
+    opacity: 0.92;
+  `,
+
   brandEyebrow: css`
-    color: rgba(255, 255, 255, 0.72);
-    font-size: 12px;
-    letter-spacing: 0.08em;
+    color: rgba(8, 145, 178, 0.9);
+    font-size: 11px;
+    letter-spacing: 0.10em;
     text-transform: uppercase;
     font-weight: 700;
   `,
@@ -40,13 +45,14 @@ export const useStyles = createStyles(() => ({
     &.ant-typography {
       margin: 0;
       color: white;
+      letter-spacing: -0.01em;
     }
   `,
 
   brandText: css`
     &.ant-typography {
       margin: 0;
-      color: rgba(226, 232, 240, 0.72);
+      color: rgba(186, 218, 230, 0.72);
       font-size: 13px;
       line-height: 1.6;
     }
@@ -57,9 +63,9 @@ export const useStyles = createStyles(() => ({
       width: fit-content;
       margin: 0;
       border-radius: 999px;
-      border: 1px solid rgba(148, 163, 184, 0.22);
-      background: rgba(255, 255, 255, 0.08);
-      color: white;
+      border: 1px solid rgba(8, 145, 178, 0.32);
+      background: rgba(8, 145, 178, 0.12);
+      color: #7dd3e8;
       padding: 6px 12px;
     }
   `,
@@ -107,14 +113,14 @@ export const useStyles = createStyles(() => ({
   pageTitle: css`
     &.ant-typography {
       margin: 0;
-      color: #0f172a;
+      color: #0c1a2e;
     }
   `,
 
   pageSubtitle: css`
     &.ant-typography {
       margin: 0;
-      color: #64748b;
+      color: #4a6a7c;
       max-width: 760px;
     }
   `,
@@ -132,8 +138,8 @@ export const useStyles = createStyles(() => ({
       margin: 0;
       border-radius: 999px;
       border: none;
-      background: rgba(15, 23, 42, 0.08);
-      color: #0f172a;
+      background: rgba(8, 145, 178, 0.10);
+      color: #0c4a58;
       padding: 7px 12px;
       font-weight: 600;
     }
@@ -147,7 +153,13 @@ export const useStyles = createStyles(() => ({
       padding-inline: 18px;
       color: white;
       font-weight: 600;
-      background: linear-gradient(135deg, #1f6feb 0%, #3251a8 100%);
+      background: linear-gradient(135deg, #0891b2 0%, #0e4f6b 100%);
+    }
+
+    &.ant-btn:hover,
+    &.ant-btn:focus {
+      color: white !important;
+      background: linear-gradient(135deg, #0e9fc3 0%, #0f5a7a 100%) !important;
     }
   `,
 
@@ -155,8 +167,8 @@ export const useStyles = createStyles(() => ({
     &.ant-btn {
       height: 42px;
       border-radius: 999px;
-      border-color: #cbd5e1;
-      color: #0f172a;
+      border-color: #b0cfd8;
+      color: #0c1a2e;
       font-weight: 600;
       background: white;
     }

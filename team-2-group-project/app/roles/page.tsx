@@ -136,7 +136,7 @@ const RolesPageContent = () => {
   return (
     <AppShell
       title="Roles"
-      subtitle="This route reflects the Angular administration menu and only opens when the ABP role permission is granted."
+      subtitle="Define roles and assign permissions to control what users can access within a tenant."
     >
       {errorMessage ? (
         <Alert

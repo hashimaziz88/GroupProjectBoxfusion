@@ -137,7 +137,7 @@ const TenantsPageContent = () => {
   return (
     <AppShell
       title="Tenants"
-      subtitle="Host-level tenant administration, matching the Angular app's host management route."
+      subtitle="Create and manage tenants from the host context. Each tenant operates in full isolation."
     >
       {errorMessage ? (
         <Alert

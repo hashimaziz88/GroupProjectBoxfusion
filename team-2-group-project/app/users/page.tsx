@@ -187,7 +187,7 @@ const UsersPageContent = () => {
   return (
     <AppShell
       title="Users"
-      subtitle="Permission-gated to the same ABP users surface used by the Angular app."
+      subtitle="Manage user accounts and access within the active tenant or host context."
     >
       {errorMessage ? (
         <Alert

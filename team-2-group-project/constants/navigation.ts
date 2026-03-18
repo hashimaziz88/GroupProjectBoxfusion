@@ -17,11 +17,6 @@ export interface INavigationItem {
 
 export const NAVIGATION_ITEMS: INavigationItem[] = [
   {
-    key: "about",
-    href: "/about",
-    label: "About",
-  },
-  {
     key: "home",
     href: "/home",
     label: "Home",
@@ -61,6 +56,11 @@ export const NAVIGATION_ITEMS: INavigationItem[] = [
     href: "/users",
     label: "Users",
     permission: PERMISSIONS.users,
+  },
+  {
+    key: "profile",
+    href: "/profile",
+    label: "Profile",
   },
 ];
 

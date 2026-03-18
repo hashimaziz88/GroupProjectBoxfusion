@@ -45,8 +45,8 @@ export const useStyles = createStyles(() => ({
   statCard: css`
     border-radius: 20px;
     padding: 20px;
-    background: linear-gradient(180deg, #fbfdff 0%, #f4f8ff 100%);
-    border: 1px solid #dbe5f4;
+    background: linear-gradient(180deg, #f8fdff 0%, #eef8fb 100%);
+    border: 1px solid #c8e8f0;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -119,9 +119,9 @@ export const useStyles = createStyles(() => ({
       margin: 0;
       border-radius: 999px;
       padding: 7px 12px;
-      border: 1px solid #d6e3f8;
-      background: #f7faff;
-      color: #214a84;
+      border: 1px solid #b8dfe8;
+      background: #f0fafd;
+      color: #0c4a58;
     }
   `,
 

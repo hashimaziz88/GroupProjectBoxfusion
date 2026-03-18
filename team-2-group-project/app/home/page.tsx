@@ -11,14 +11,14 @@ const { Paragraph, Title } = Typography;
 
 const resolveAccessSummary = (roles?: string[] | null) => {
   if (isHostAdmin(roles)) {
-    return "Host administrators can see host-wide tenants management and all tenant-independent administration screens.";
+    return "Host administrators have full access to tenant management and platform-wide administration.";
   }
 
   if (isTenantAdmin(roles)) {
-    return "Tenant administrators can manage users and roles inside the active tenant context.";
+    return "Tenant administrators can manage users and roles within the active tenant.";
   }
 
-  return "Regular tenant users land here and only see routes granted by permissions returned from ABP.";
+  return "You have access to the features and routes granted to your account by your administrator.";
 };
 
 const HomePageContent = () => {
@@ -28,7 +28,7 @@ const HomePageContent = () => {
   return (
     <AppShell
       title="Home"
-      subtitle="This is the default logged-in landing route when the current user does not have a higher-priority admin page."
+      subtitle="Welcome to DataSentinel. Use the navigation to access monitoring, infrastructure, and administration features."
     >
       <div className={styles.statGrid}>
         <div className={styles.statCard}>
@@ -37,7 +37,7 @@ const HomePageContent = () => {
             {currentTenant?.tenancyName ?? "Host"}
           </span>
           <span className={styles.statHint}>
-            Tenant resolution follows subdomain or explicit tenant selection.
+            Your active workspace context.
           </span>
         </div>
 
@@ -53,7 +53,7 @@ const HomePageContent = () => {
           <span className={styles.statLabel}>Permissions</span>
           <span className={styles.statValue}>{permissions?.length ?? 0}</span>
           <span className={styles.statHint}>
-            Effective ABP permissions loaded from user configuration.
+            Effective permissions granted to your account.
           </span>
         </div>
       </div>
