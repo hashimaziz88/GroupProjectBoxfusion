@@ -9,7 +9,9 @@ using Abp.UI;
 using Shouldly;
 using Team2GroupProject.DataSentinel.ActivityEvents;
 using Team2GroupProject.DataSentinel.ActivityEvents.Dto;
+using Team2GroupProject.DataSentinel.AlertRules;
 using Team2GroupProject.DataSentinel.Monitoring;
+using Team2GroupProject.DataSentinel.SecurityAlerts;
 using Xunit;
 
 namespace Team2GroupProject.Tests.DataSentinel.ActivityEvents
@@ -374,6 +376,250 @@ namespace Team2GroupProject.Tests.DataSentinel.ActivityEvents
             persisted.ShouldNotBeNull();
             persisted.TenantId.ShouldBe(tenantId);
             persisted.EventType.ShouldBe(ActivityEventType.Read);
+        }
+
+        [Fact]
+        public async Task ImportBatchAsync_should_trigger_threshold_detection_for_ingested_activity_events()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            var database = await CreateDatabaseAsync(tenantId);
+            var baseTime = new DateTime(2026, 3, 18, 12, 0, 0, DateTimeKind.Utc);
+            var rule = await CreateThresholdRuleAsync(
+                tenantId,
+                "Write Spike",
+                ActivityEventType.Write,
+                AlertRuleGroupByField.ActorUser,
+                thresholdCount: 2,
+                windowMinutes: 15,
+                severity: ActivitySeverity.High);
+
+            var result = await _activityEventAppService.ImportBatchAsync(new IngestActivityEventsInput
+            {
+                Events = new List<ActivityEventIngestionItemDto>
+                {
+                    CreateWriteEvent(database.Id, baseTime.AddMinutes(-5), "writer-a", "write-1"),
+                    CreateWriteEvent(database.Id, baseTime.AddMinutes(-1), "writer-a", "write-2")
+                }
+            });
+
+            result.AcceptedCount.ShouldBe(2);
+            result.DetectionSummary.EvaluatedAnchorCount.ShouldBe(2);
+            result.DetectionSummary.CreatedAlertCount.ShouldBe(1);
+            result.DetectionSummary.DuplicateAlertCount.ShouldBe(0);
+            result.DetectionSummary.CreatedAlertIds.Count.ShouldBe(1);
+
+            var alert = await UsingDbContextAsync(async context =>
+                await context.SecurityAlerts.FindAsync(result.DetectionSummary.CreatedAlertIds.Single()));
+
+            alert.ShouldNotBeNull();
+            alert.RuleId.ShouldBe(rule.Id);
+            alert.PrimaryActorUser.ShouldBe("writer-a");
+            alert.RelatedEventCount.ShouldBe(2);
+        }
+
+        [Fact]
+        public async Task IngestAbpAuditLogsAsync_should_trigger_threshold_detection_after_mapping_to_activity_events()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            var database = await CreateDatabaseAsync(tenantId);
+            var baseTime = new DateTime(2026, 3, 18, 13, 0, 0, DateTimeKind.Utc);
+
+            await CreateThresholdRuleAsync(
+                tenantId,
+                "Repeated Login Failure",
+                ActivityEventType.Login,
+                AlertRuleGroupByField.ActorUser,
+                thresholdCount: 2,
+                windowMinutes: 20,
+                severity: ActivitySeverity.High);
+
+            var result = await _activityEventAppService.IngestAbpAuditLogsAsync(new IngestAbpAuditLogsInput
+            {
+                DatabaseId = database.Id,
+                AbpAuditLogs = new List<AbpAuditLogIngestionItemDto>
+                {
+                    CreateAuthenticateAuditLog(tenantId, 1001, baseTime.AddMinutes(-8), "admin"),
+                    CreateAuthenticateAuditLog(tenantId, 1002, baseTime.AddMinutes(-2), "admin")
+                }
+            });
+
+            result.AcceptedCount.ShouldBe(2);
+            result.DetectionSummary.EvaluatedAnchorCount.ShouldBe(2);
+            result.DetectionSummary.CreatedAlertCount.ShouldBe(1);
+            result.DetectionSummary.DuplicateAlertCount.ShouldBe(0);
+
+            var alert = await UsingDbContextAsync(async context =>
+                await context.SecurityAlerts.FindAsync(result.DetectionSummary.CreatedAlertIds.Single()));
+
+            alert.ShouldNotBeNull();
+            alert.PrimaryActorUser.ShouldBe("admin");
+            alert.DatabaseId.ShouldBe(database.Id);
+        }
+
+        [Fact]
+        public async Task ImportBatchAsync_should_trigger_detection_for_historical_batches_using_event_time_anchors()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            var database = await CreateDatabaseAsync(tenantId);
+            var baseTime = new DateTime(2026, 3, 10, 8, 0, 0, DateTimeKind.Utc);
+
+            await CreateThresholdRuleAsync(
+                tenantId,
+                "Historical Write Spike",
+                ActivityEventType.Write,
+                AlertRuleGroupByField.ActorUser,
+                thresholdCount: 2,
+                windowMinutes: 10,
+                severity: ActivitySeverity.Medium);
+
+            var result = await _activityEventAppService.ImportBatchAsync(new IngestActivityEventsInput
+            {
+                Events = new List<ActivityEventIngestionItemDto>
+                {
+                    CreateWriteEvent(database.Id, baseTime, "historical-writer", "historical-1"),
+                    CreateWriteEvent(database.Id, baseTime.AddMinutes(5), "historical-writer", "historical-2")
+                }
+            });
+
+            result.DetectionSummary.CreatedAlertCount.ShouldBe(1);
+
+            var alert = await UsingDbContextAsync(async context =>
+                await context.SecurityAlerts.FindAsync(result.DetectionSummary.CreatedAlertIds.Single()));
+
+            alert.ShouldNotBeNull();
+            alert.TriggeredAt.ShouldBe(baseTime.AddMinutes(5));
+            alert.EventTimeEnd.ShouldBe(baseTime.AddMinutes(5));
+        }
+
+        [Fact]
+        public async Task IngestAsync_should_only_evaluate_accepted_events_for_threshold_detection()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            var database = await CreateDatabaseAsync(tenantId);
+            var baseTime = new DateTime(2026, 3, 18, 14, 0, 0, DateTimeKind.Utc);
+
+            await CreateThresholdRuleAsync(
+                tenantId,
+                "Accepted Writes Only",
+                ActivityEventType.Write,
+                AlertRuleGroupByField.ActorUser,
+                thresholdCount: 3,
+                windowMinutes: 20,
+                severity: ActivitySeverity.High);
+
+            var result = await _activityEventAppService.IngestAsync(new IngestActivityEventsInput
+            {
+                Events = new List<ActivityEventIngestionItemDto>
+                {
+                    CreateWriteEvent(database.Id, baseTime.AddMinutes(-9), "partial-user", "partial-1"),
+                    CreateWriteEvent(database.Id, baseTime.AddMinutes(-5), "partial-user", "partial-2"),
+                    CreateWriteEvent(database.Id, baseTime.AddMinutes(-1), "partial-user", "partial-3"),
+                    new ActivityEventIngestionItemDto
+                    {
+                        DatabaseId = Guid.NewGuid(),
+                        EventTime = baseTime,
+                        EventType = ActivityEventType.Write,
+                        ActorUser = " ",
+                        Severity = ActivitySeverity.High,
+                        IsSuccess = true
+                    }
+                }
+            });
+
+            result.AcceptedCount.ShouldBe(3);
+            result.RejectedCount.ShouldBe(1);
+            result.DetectionSummary.CreatedAlertCount.ShouldBe(1);
+
+            var alert = await UsingDbContextAsync(async context =>
+                await context.SecurityAlerts.FindAsync(result.DetectionSummary.CreatedAlertIds.Single()));
+
+            alert.ShouldNotBeNull();
+            alert.RelatedEventCount.ShouldBe(3);
+        }
+
+        [Fact]
+        public async Task ImportBatchAsync_should_report_duplicate_alerts_when_existing_cluster_is_re_evaluated()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            var database = await CreateDatabaseAsync(tenantId);
+            var firstTime = new DateTime(2026, 3, 18, 15, 0, 0, DateTimeKind.Utc);
+            var secondTime = firstTime.AddMinutes(5);
+
+            await CreateThresholdRuleAsync(
+                tenantId,
+                "Duplicate Check",
+                ActivityEventType.Write,
+                AlertRuleGroupByField.ActorUser,
+                thresholdCount: 2,
+                windowMinutes: 15,
+                severity: ActivitySeverity.Medium);
+
+            var firstImport = await _activityEventAppService.ImportBatchAsync(new IngestActivityEventsInput
+            {
+                Events = new List<ActivityEventIngestionItemDto>
+                {
+                    CreateWriteEvent(database.Id, firstTime, "writer-a", "dup-1"),
+                    CreateWriteEvent(database.Id, secondTime, "writer-a", "dup-2")
+                }
+            });
+
+            var secondImport = await _activityEventAppService.ImportBatchAsync(new IngestActivityEventsInput
+            {
+                Events = new List<ActivityEventIngestionItemDto>
+                {
+                    CreateWriteEvent(database.Id, secondTime, "writer-b", "dup-3")
+                }
+            });
+
+            firstImport.DetectionSummary.CreatedAlertCount.ShouldBe(1);
+            secondImport.DetectionSummary.CreatedAlertCount.ShouldBe(0);
+            secondImport.DetectionSummary.DuplicateAlertCount.ShouldBe(1);
+
+            var alertCount = await UsingDbContextAsync(async context =>
+                await Task.FromResult(context.SecurityAlerts.Count()));
+
+            alertCount.ShouldBe(1);
+        }
+
+        [Fact]
+        public async Task ImportBatchAsync_should_return_zero_detection_summary_when_no_events_are_accepted()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            await CreateThresholdRuleAsync(
+                tenantId,
+                "Never Runs",
+                ActivityEventType.Write,
+                AlertRuleGroupByField.ActorUser,
+                thresholdCount: 1,
+                windowMinutes: 10,
+                severity: ActivitySeverity.Low);
+
+            var result = await _activityEventAppService.ImportBatchAsync(new IngestActivityEventsInput
+            {
+                Events = new List<ActivityEventIngestionItemDto>
+                {
+                    new ActivityEventIngestionItemDto
+                    {
+                        DatabaseId = Guid.NewGuid(),
+                        EventTime = DateTime.UtcNow,
+                        EventType = ActivityEventType.Write,
+                        ActorUser = " ",
+                        Severity = ActivitySeverity.High,
+                        IsSuccess = true
+                    }
+                }
+            });
+
+            result.AcceptedCount.ShouldBe(0);
+            result.RejectedCount.ShouldBe(1);
+            result.DetectionSummary.EvaluatedAnchorCount.ShouldBe(0);
+            result.DetectionSummary.CreatedAlertCount.ShouldBe(0);
+            result.DetectionSummary.DuplicateAlertCount.ShouldBe(0);
+
+            var alertCount = await UsingDbContextAsync(async context =>
+                await Task.FromResult(context.SecurityAlerts.Count()));
+
+            alertCount.ShouldBe(0);
         }
 
         [Fact]
@@ -988,6 +1234,71 @@ namespace Team2GroupProject.Tests.DataSentinel.ActivityEvents
             });
 
             return database;
+        }
+
+        private async Task<AlertRule> CreateThresholdRuleAsync(
+            int tenantId,
+            string name,
+            ActivityEventType eventType,
+            AlertRuleGroupByField groupByField,
+            int thresholdCount,
+            int windowMinutes,
+            ActivitySeverity severity)
+        {
+            var rule = new AlertRule(tenantId, name, AlertRuleType.ThresholdBased, severity, windowMinutes, thresholdCount)
+            {
+                EventType = eventType,
+                GroupByField = groupByField
+            };
+
+            await UsingDbContextAsync(async context =>
+            {
+                await context.AlertRules.AddAsync(rule);
+            });
+
+            return rule;
+        }
+
+        private static ActivityEventIngestionItemDto CreateWriteEvent(
+            Guid databaseId,
+            DateTime eventTime,
+            string actorUser,
+            string sourceEventKey)
+        {
+            return new ActivityEventIngestionItemDto
+            {
+                DatabaseId = databaseId,
+                EventTime = eventTime,
+                EventType = ActivityEventType.Write,
+                ActorUser = actorUser,
+                Severity = ActivitySeverity.Low,
+                IsSuccess = true,
+                Operation = "UPDATE",
+                SourceSystem = "TestImport",
+                SourceEventKey = sourceEventKey
+            };
+        }
+
+        private static AbpAuditLogIngestionItemDto CreateAuthenticateAuditLog(
+            int tenantId,
+            long id,
+            DateTime executionTime,
+            string actorUser)
+        {
+            return new AbpAuditLogIngestionItemDto
+            {
+                Id = id,
+                TenantId = tenantId,
+                ServiceName = "Team2GroupProject.Controllers.TokenAuthController",
+                MethodName = "Authenticate",
+                Parameters = $"{{\"model\":{{\"userNameOrEmailAddress\":\"{actorUser}\",\"password\":\"redacted\"}}}}",
+                ExecutionTime = executionTime,
+                ExecutionDuration = 3500,
+                ClientIpAddress = "::1",
+                BrowserInfo = "Mozilla/5.0",
+                ExceptionMessage = "Login failed!",
+                Exception = "Abp.UI.UserFriendlyException: Login failed!"
+            };
         }
     }
 }
