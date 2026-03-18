@@ -5,8 +5,10 @@ import { ICurrentLoginInformations, IUserConfiguration } from "@/interfaces/auth
 
 
 
-export const getCurrentLoginInformations = async () => {
-  const response = await axiosInstance().get<
+export const getCurrentLoginInformations = async (
+  tenantId?: string | number | null,
+) => {
+  const response = await axiosInstance({ tenantId }).get<
     IAbpResponse<ICurrentLoginInformations>
   >(
     "/api/services/app/Session/GetCurrentLoginInformations",
@@ -15,8 +17,10 @@ export const getCurrentLoginInformations = async () => {
   return unwrapAbpResponse(response.data);
 };
 
-export const getUserConfiguration = async () => {
-  const response = await axiosInstance().get<
+export const getUserConfiguration = async (
+  tenantId?: string | number | null,
+) => {
+  const response = await axiosInstance({ tenantId }).get<
     IUserConfiguration | IAbpResponse<IUserConfiguration>
   >(
     "/AbpUserConfiguration/GetAll",

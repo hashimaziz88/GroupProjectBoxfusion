@@ -33,11 +33,38 @@ export const canAccessRoles = (permissions?: string[] | null) =>
 export const canAccessTenants = (permissions?: string[] | null) =>
   hasPermission(permissions, PERMISSIONS.tenants);
 
+export const canAccessDataSentinelIntake = (permissions?: string[] | null) =>
+  hasPermission(permissions, PERMISSIONS.dataSentinelIntake);
+
+export const canAccessDataSentinelInfrastructure = (
+  permissions?: string[] | null,
+) =>
+  hasPermission(permissions, PERMISSIONS.dataSentinelInfrastructureView) ||
+  hasPermission(permissions, PERMISSIONS.dataSentinelInfrastructureManage);
+
+export const canAccessDataSentinelActivity = (
+  permissions?: string[] | null,
+) => hasPermission(permissions, PERMISSIONS.dataSentinelActivity);
+
 export const selectBestAuthenticatedRoute = (
   user?: IRouteSelectorUser | null,
 ) => {
   if (canAccessUsers(user?.permissions)) {
     return "/users";
+  }
+
+  const hasTenantContext = Boolean(user?.tenantId);
+
+  if (hasTenantContext && canAccessDataSentinelInfrastructure(user?.permissions)) {
+    return "/datasentinel/infrastructure";
+  }
+
+  if (hasTenantContext && canAccessDataSentinelIntake(user?.permissions)) {
+    return "/datasentinel/intake";
+  }
+
+  if (hasTenantContext && canAccessDataSentinelActivity(user?.permissions)) {
+    return "/datasentinel/activity";
   }
 
   return "/home";

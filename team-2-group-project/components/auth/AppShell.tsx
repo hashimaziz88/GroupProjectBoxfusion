@@ -31,7 +31,10 @@ const AppShell = ({ title, subtitle, children }: IAppShellProps) => {
   const { logout } = useAuthActions();
   const { currentTenant, permissions, user } = useAuthState();
 
-  const visibleItems = getVisibleNavigationItems(permissions);
+  const visibleItems = getVisibleNavigationItems(
+    permissions,
+    Boolean(currentTenant?.tenantId),
+  );
   const selectedKey =
     visibleItems.find((item) => pathname.startsWith(item.href))?.key ?? "home";
 

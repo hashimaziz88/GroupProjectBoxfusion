@@ -41,6 +41,10 @@ export default function LoginPage() {
   const [tenantFeedback, setTenantFeedback] = useState<TenantFeedbackState>(null);
 
   useEffect(() => {
+    setTenantName(currentTenant?.tenancyName ?? "");
+  }, [currentTenant?.tenancyName]);
+
+  useEffect(() => {
     if (!isReady || !isAuthenticated) {
       return;
     }
@@ -58,6 +62,37 @@ export default function LoginPage() {
 
   const registrationEnabled = Boolean(currentTenant?.tenantId);
   const showRegisteredMessage = searchParams.get("registered") === "1";
+  const localApiConfigurationWarning = useMemo(() => {
+    if (typeof window === "undefined") {
+      return null;
+    }
+
+    const apiLink = process.env.NEXT_PUBLIC_API_LINK;
+
+    if (!apiLink) {
+      return "The frontend is missing NEXT_PUBLIC_API_LINK, so authentication and tenant resolution cannot work.";
+    }
+
+    try {
+      const apiUrl = new URL(apiLink, window.location.origin);
+      const isLocalFrontend =
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1" ||
+        window.location.hostname === "::1";
+      const isLocalApi =
+        apiUrl.hostname === "localhost" ||
+        apiUrl.hostname === "127.0.0.1" ||
+        apiUrl.hostname === "::1";
+
+      if (isLocalFrontend && !isLocalApi) {
+        return `Local frontend is currently configured to use ${apiUrl.origin}. Switch NEXT_PUBLIC_API_LINK to your local ABP host if you want tenant login to stay local.`;
+      }
+    } catch {
+      return `NEXT_PUBLIC_API_LINK is not a valid URL: ${apiLink}`;
+    }
+
+    return null;
+  }, []);
 
   const handleTenantChange = async () => {
     const result = await changeTenant(tenantName.trim() || null);
@@ -125,6 +160,15 @@ export default function LoginPage() {
           type={tenantFeedback.type}
           showIcon
           title={tenantFeedback.message}
+          className={styles.alert}
+        />
+      ) : null}
+
+      {localApiConfigurationWarning ? (
+        <Alert
+          type="warning"
+          showIcon
+          title={localApiConfigurationWarning}
           className={styles.alert}
         />
       ) : null}

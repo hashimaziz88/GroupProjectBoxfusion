@@ -28,10 +28,20 @@ const deleteCookieValue = (name: string) => {
   document.cookie = `${encodeURIComponent(name)}=; path=/; max-age=0`;
 };
 
-export const authenticate = async (payload: IAuthenticateRequest) => {
+export const authenticate = async (
+  payload: IAuthenticateRequest,
+  tenantId?: string | number | null,
+) => {
   const response = await axiosInstance().post<
     IAbpResponse<IAuthenticateResponse>
-  >("/api/TokenAuth/Authenticate", payload);
+  >("/api/TokenAuth/Authenticate", payload, {
+    headers:
+      tenantId !== undefined && tenantId !== null
+        ? {
+            "Abp.TenantId": `${tenantId}`,
+          }
+        : undefined,
+  });
 
   return unwrapAbpResponse(response.data);
 };
