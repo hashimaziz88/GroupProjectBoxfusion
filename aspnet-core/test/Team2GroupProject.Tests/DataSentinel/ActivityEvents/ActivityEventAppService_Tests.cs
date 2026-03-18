@@ -115,6 +115,36 @@ namespace Team2GroupProject.Tests.DataSentinel.ActivityEvents
         }
 
         [Fact]
+        public async Task ImportBatchAsync_should_normalize_unspecified_event_times_to_utc()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            var database = await CreateDatabaseAsync(tenantId);
+            var unspecifiedTime = new DateTime(2026, 3, 18, 8, 15, 0, DateTimeKind.Unspecified);
+
+            var result = await _activityEventAppService.ImportBatchAsync(new IngestActivityEventsInput
+            {
+                Events = new List<ActivityEventIngestionItemDto>
+                {
+                    new ActivityEventIngestionItemDto
+                    {
+                        DatabaseId = database.Id,
+                        EventTime = unspecifiedTime,
+                        EventType = ActivityEventType.Read,
+                        ActorUser = "time-normalized-user",
+                        Severity = ActivitySeverity.Info,
+                        IsSuccess = true
+                    }
+                }
+            });
+
+            var persisted = await UsingDbContextAsync(async context =>
+                await context.ActivityEvents.FindAsync(result.CreatedEventIds.Single()));
+
+            persisted.ShouldNotBeNull();
+            persisted.EventTime.ShouldBe(DateTime.SpecifyKind(unspecifiedTime, DateTimeKind.Utc));
+        }
+
+        [Fact]
         public async Task IngestAsync_should_allow_partial_success_for_batch_payloads()
         {
             var tenantId = AbpSession.TenantId!.Value;
@@ -159,6 +189,95 @@ namespace Team2GroupProject.Tests.DataSentinel.ActivityEvents
                 await Task.FromResult(context.ActivityEvents.Count(x => result.CreatedEventIds.Contains(x.Id))));
 
             persistedCount.ShouldBe(1);
+        }
+
+        [Fact]
+        public async Task ImportBatchAsync_should_reject_duplicate_source_events_within_the_same_batch()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            var database = await CreateDatabaseAsync(tenantId);
+
+            var result = await _activityEventAppService.ImportBatchAsync(new IngestActivityEventsInput
+            {
+                Events = new List<ActivityEventIngestionItemDto>
+                {
+                    new ActivityEventIngestionItemDto
+                    {
+                        SourceSystem = "DemoImport",
+                        SourceEventKey = "duplicate-001",
+                        DatabaseId = database.Id,
+                        EventTime = DateTime.UtcNow.AddMinutes(-2),
+                        EventType = ActivityEventType.Write,
+                        ActorUser = "duplicate-user",
+                        Severity = ActivitySeverity.Low,
+                        IsSuccess = true
+                    },
+                    new ActivityEventIngestionItemDto
+                    {
+                        SourceSystem = "DemoImport",
+                        SourceEventKey = "duplicate-001",
+                        DatabaseId = database.Id,
+                        EventTime = DateTime.UtcNow.AddMinutes(-1),
+                        EventType = ActivityEventType.Write,
+                        ActorUser = "duplicate-user",
+                        Severity = ActivitySeverity.Low,
+                        IsSuccess = true
+                    }
+                }
+            });
+
+            result.AcceptedCount.ShouldBe(1);
+            result.RejectedCount.ShouldBe(1);
+            result.Errors.Single().Errors.ShouldContain("Duplicate source event detected in the submitted batch.");
+        }
+
+        [Fact]
+        public async Task ImportBatchAsync_should_reject_source_events_that_were_already_imported()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            var database = await CreateDatabaseAsync(tenantId);
+
+            var firstImport = await _activityEventAppService.ImportBatchAsync(new IngestActivityEventsInput
+            {
+                Events = new List<ActivityEventIngestionItemDto>
+                {
+                    new ActivityEventIngestionItemDto
+                    {
+                        SourceSystem = "DemoImport",
+                        SourceEventKey = "existing-001",
+                        DatabaseId = database.Id,
+                        EventTime = DateTime.UtcNow.AddMinutes(-1),
+                        EventType = ActivityEventType.Write,
+                        ActorUser = "existing-user",
+                        Severity = ActivitySeverity.Low,
+                        IsSuccess = true
+                    }
+                }
+            });
+
+            firstImport.AcceptedCount.ShouldBe(1);
+
+            var secondImport = await _activityEventAppService.ImportBatchAsync(new IngestActivityEventsInput
+            {
+                Events = new List<ActivityEventIngestionItemDto>
+                {
+                    new ActivityEventIngestionItemDto
+                    {
+                        SourceSystem = "DemoImport",
+                        SourceEventKey = "existing-001",
+                        DatabaseId = database.Id,
+                        EventTime = DateTime.UtcNow,
+                        EventType = ActivityEventType.Write,
+                        ActorUser = "existing-user",
+                        Severity = ActivitySeverity.Low,
+                        IsSuccess = true
+                    }
+                }
+            });
+
+            secondImport.AcceptedCount.ShouldBe(0);
+            secondImport.RejectedCount.ShouldBe(1);
+            secondImport.Errors.Single().Errors.ShouldContain("Source event has already been imported for this tenant.");
         }
 
         [Fact]

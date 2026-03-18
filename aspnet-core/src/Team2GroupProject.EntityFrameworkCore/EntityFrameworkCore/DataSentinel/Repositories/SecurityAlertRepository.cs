@@ -29,6 +29,19 @@ namespace Team2GroupProject.EntityFrameworkCore.DataSentinel.Repositories
                 .FirstOrDefaultAsync(x => x.Id == id);
         }
 
+        public async Task<SecurityAlert> GetWithContextAsync(int tenantId, Guid id)
+        {
+            return await GetAll()
+                .Include(x => x.Rule)
+                .Include(x => x.TriggeringActivityEvent)
+                .Include(x => x.Server)
+                .Include(x => x.Database)
+                .Include(x => x.Table)
+                .Include(x => x.Notes)
+                .Include(x => x.StatusHistoryEntries)
+                .FirstOrDefaultAsync(x => x.TenantId == tenantId && x.Id == id);
+        }
+
         public async Task<List<SecurityAlert>> GetOpenAlertsAsync(int tenantId)
         {
             return await GetAll()
@@ -38,6 +51,12 @@ namespace Team2GroupProject.EntityFrameworkCore.DataSentinel.Repositories
                     x.Status != SecurityAlertStatus.Dismissed)
                 .OrderByDescending(x => x.TriggeredAt)
                 .ToListAsync();
+        }
+
+        public async Task<SecurityAlert> FindByCorrelationKeyAsync(int tenantId, string correlationKey)
+        {
+            return await GetAll()
+                .FirstOrDefaultAsync(x => x.TenantId == tenantId && x.CorrelationKey == correlationKey);
         }
     }
 }

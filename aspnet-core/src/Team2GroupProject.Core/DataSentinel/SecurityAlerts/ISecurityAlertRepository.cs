@@ -9,6 +9,10 @@ namespace Team2GroupProject.DataSentinel.SecurityAlerts
     {
         Task<SecurityAlert> GetWithContextAsync(Guid id);
 
+        Task<SecurityAlert> GetWithContextAsync(int tenantId, Guid id);
+
         Task<List<SecurityAlert>> GetOpenAlertsAsync(int tenantId);
+
+        Task<SecurityAlert> FindByCorrelationKeyAsync(int tenantId, string correlationKey);
     }
 }
