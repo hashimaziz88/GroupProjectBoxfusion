@@ -21,11 +21,14 @@ namespace Team2GroupProject.DataSentinel.Detection
     public class AnomalyDetectionAppService : Team2GroupProjectAppServiceBase, IAnomalyDetectionAppService
     {
         private readonly IThresholdRuleEvaluator _thresholdRuleEvaluator;
+        private readonly IRepeatedFailureEvaluator _repeatedFailureEvaluator;
 
         public AnomalyDetectionAppService(
-            IThresholdRuleEvaluator thresholdRuleEvaluator)
+            IThresholdRuleEvaluator thresholdRuleEvaluator,
+            IRepeatedFailureEvaluator repeatedFailureEvaluator)
         {
             _thresholdRuleEvaluator = thresholdRuleEvaluator;
+            _repeatedFailureEvaluator = repeatedFailureEvaluator;
         }
 
         public async Task<ThresholdRuleEvaluationResultDto> EvaluateThresholdRulesAsync(EvaluateThresholdRulesInput input)
@@ -49,6 +52,19 @@ namespace Team2GroupProject.DataSentinel.Detection
             }
 
             return value.ToUniversalTime();
+        }
+
+        /// <summary>
+        /// Evaluates repeated failure rules for the active tenant.
+        /// </summary>
+        public async Task<RepeatedFailureRuleEvaluationResultDto> EvaluateRepeatedFailureRulesAsync(
+            EvaluateRepeatedFailureRulesInput input)
+        {
+            var tenantId = AbpSession.GetTenantId();
+            var evaluationTimeUtc = NormalizeEvaluationTime(input?.EvaluationTimeUtc ?? Clock.Now);
+            var result = await _repeatedFailureEvaluator.EvaluateAsync(tenantId, evaluationTimeUtc, ruleId: input?.RuleId);
+            if (result.CreatedAlertIds.Count > 0) { await CurrentUnitOfWork.SaveChangesAsync(); }
+            return result;
         }
     }
 }
