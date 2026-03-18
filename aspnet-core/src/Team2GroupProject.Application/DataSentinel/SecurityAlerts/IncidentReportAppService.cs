@@ -1,44 +1,44 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Abp.Authorization;
 using Abp.Runtime.Session;
 using Abp.UI;
 using Microsoft.EntityFrameworkCore;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
-using Team2GroupProject.Authorization;
 using Team2GroupProject.DataSentinel.Monitoring;
 
 namespace Team2GroupProject.DataSentinel.SecurityAlerts
 {
-    [AbpAuthorize(PermissionNames.Pages_DataSentinel_Reports_Export)]
-    public class IncidentReportAppService : Team2GroupProjectAppServiceBase, IIncidentReportAppService
+    public class IncidentReportAppService : IIncidentReportAppService
     {
         private readonly ISecurityAlertRepository _securityAlertRepository;
         private readonly IAlertStatusHistoryRepository _alertStatusHistoryRepository;
         private readonly IIncidentNoteRepository _incidentNoteRepository;
         private readonly IMonitoredDatabaseRepository _monitoredDatabaseRepository;
         private readonly IMonitoredTableRepository _monitoredTableRepository;
+        private readonly IAbpSession _abpSession;
 
         public IncidentReportAppService(
             ISecurityAlertRepository securityAlertRepository,
             IAlertStatusHistoryRepository alertStatusHistoryRepository,
             IIncidentNoteRepository incidentNoteRepository,
             IMonitoredDatabaseRepository monitoredDatabaseRepository,
-            IMonitoredTableRepository monitoredTableRepository)
+            IMonitoredTableRepository monitoredTableRepository,
+            IAbpSession abpSession)
         {
             _securityAlertRepository = securityAlertRepository;
             _alertStatusHistoryRepository = alertStatusHistoryRepository;
             _incidentNoteRepository = incidentNoteRepository;
             _monitoredDatabaseRepository = monitoredDatabaseRepository;
             _monitoredTableRepository = monitoredTableRepository;
+            _abpSession = abpSession;
         }
 
         public async Task<byte[]> GenerateReportAsync(Guid alertId)
         {
-            var tenantId = AbpSession.GetTenantId();
+            var tenantId = _abpSession.GetTenantId();
 
             var row = await (
                 from a in _securityAlertRepository.GetAll().Where(x => x.TenantId == tenantId && x.Id == alertId)
