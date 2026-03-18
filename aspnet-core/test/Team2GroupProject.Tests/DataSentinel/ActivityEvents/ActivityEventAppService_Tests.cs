@@ -469,6 +469,141 @@ namespace Team2GroupProject.Tests.DataSentinel.ActivityEvents
             result.Items.ShouldAllBe(x => x.ActorUser == "analyst" && x.EventType == ActivityEventType.Read);
         }
 
+        [Fact]
+        public async Task GetPagedAsync_start_date_filter_excludes_events_before_range()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            var cutoff = DateTime.UtcNow.AddHours(-1);
+            await SeedEventsAsync(tenantId, 3, new SeedOptions { EventTime = DateTime.UtcNow.AddHours(-2) });
+            await SeedEventsAsync(tenantId, 2, new SeedOptions { EventTime = DateTime.UtcNow });
+
+            var result = await _activityEventAppService.GetPagedAsync(new GetActivityEventsInput
+            {
+                StartDate = cutoff
+            });
+
+            result.TotalCount.ShouldBe(2);
+            result.Items.ShouldAllBe(x => x.EventTime >= cutoff);
+        }
+
+        [Fact]
+        public async Task GetPagedAsync_end_date_filter_excludes_events_after_range()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            var cutoff = DateTime.UtcNow.AddHours(-1);
+            await SeedEventsAsync(tenantId, 3, new SeedOptions { EventTime = DateTime.UtcNow.AddHours(-2) });
+            await SeedEventsAsync(tenantId, 2, new SeedOptions { EventTime = DateTime.UtcNow });
+
+            var result = await _activityEventAppService.GetPagedAsync(new GetActivityEventsInput
+            {
+                EndDate = cutoff
+            });
+
+            result.TotalCount.ShouldBe(3);
+            result.Items.ShouldAllBe(x => x.EventTime <= cutoff);
+        }
+
+        [Fact]
+        public async Task GetPagedAsync_date_range_returns_only_events_within_window()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            var start = DateTime.UtcNow.AddHours(-3);
+            var end = DateTime.UtcNow.AddHours(-1);
+            await SeedEventsAsync(tenantId, 2, new SeedOptions { EventTime = DateTime.UtcNow.AddHours(-4) }); // before
+            await SeedEventsAsync(tenantId, 3, new SeedOptions { EventTime = DateTime.UtcNow.AddHours(-2) }); // within
+            await SeedEventsAsync(tenantId, 1, new SeedOptions { EventTime = DateTime.UtcNow });              // after
+
+            var result = await _activityEventAppService.GetPagedAsync(new GetActivityEventsInput
+            {
+                StartDate = start,
+                EndDate = end
+            });
+
+            result.TotalCount.ShouldBe(3);
+            result.Items.ShouldAllBe(x => x.EventTime >= start && x.EventTime <= end);
+        }
+
+        [Fact]
+        public async Task GetPagedAsync_severity_filter_returns_only_matching_severity()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            await SeedEventsAsync(tenantId, 3, new SeedOptions { Severity = ActivitySeverity.High });
+            await SeedEventsAsync(tenantId, 2, new SeedOptions { Severity = ActivitySeverity.Critical });
+
+            var result = await _activityEventAppService.GetPagedAsync(new GetActivityEventsInput
+            {
+                Severity = ActivitySeverity.High
+            });
+
+            result.TotalCount.ShouldBe(3);
+            result.Items.ShouldAllBe(x => x.Severity == ActivitySeverity.High);
+        }
+
+        [Fact]
+        public async Task GetPagedAsync_server_id_filter_returns_only_matching_server()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            var database = await CreateDatabaseAsync(tenantId);
+            await SeedEventsAsync(tenantId, 2, new SeedOptions { ServerId = database.ServerId });
+            await SeedEventsAsync(tenantId, 3);
+
+            var result = await _activityEventAppService.GetPagedAsync(new GetActivityEventsInput
+            {
+                ServerId = database.ServerId
+            });
+
+            result.TotalCount.ShouldBe(2);
+            result.Items.ShouldAllBe(x => x.ServerId == database.ServerId);
+        }
+
+        [Fact]
+        public async Task GetPagedAsync_actor_ip_filter_returns_only_matching_ip()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            await SeedEventsAsync(tenantId, 2, new SeedOptions { ActorIp = "10.0.0.1" });
+            await SeedEventsAsync(tenantId, 3, new SeedOptions { ActorIp = "192.168.1.5" });
+
+            var result = await _activityEventAppService.GetPagedAsync(new GetActivityEventsInput
+            {
+                ActorIp = "10.0.0.1"
+            });
+
+            result.TotalCount.ShouldBe(2);
+            result.Items.ShouldAllBe(x => x.ActorIp == "10.0.0.1");
+        }
+
+        [Fact]
+        public async Task GetPagedAsync_is_success_filter_returns_only_matching_outcome()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            await SeedEventsAsync(tenantId, 4, new SeedOptions { IsSuccess = true });
+            await SeedEventsAsync(tenantId, 2, new SeedOptions { IsSuccess = false });
+
+            var result = await _activityEventAppService.GetPagedAsync(new GetActivityEventsInput
+            {
+                IsSuccess = false
+            });
+
+            result.TotalCount.ShouldBe(2);
+            result.Items.ShouldAllBe(x => !x.IsSuccess);
+        }
+
+        [Fact]
+        public async Task GetPagedAsync_operation_filter_returns_only_matching_operation()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            await SeedEventsAsync(tenantId, 3, new SeedOptions { Operation = "SELECT" });
+            await SeedEventsAsync(tenantId, 2, new SeedOptions { Operation = "DELETE" });
+
+            var result = await _activityEventAppService.GetPagedAsync(new GetActivityEventsInput
+            {
+                Operation = "SELECT"
+            });
+
+            result.TotalCount.ShouldBe(3);
+            result.Items.ShouldAllBe(x => x.Operation == "SELECT");
+        }
+
         // ── GetSummary tests ──────────────────────────────────────────────────
 
         [Fact]
@@ -602,9 +737,12 @@ namespace Team2GroupProject.Tests.DataSentinel.ActivityEvents
             public ActivityEventType EventType = ActivityEventType.Read;
             public ActivitySeverity Severity = ActivitySeverity.Info;
             public string ActorUser = "test_user";
+            public string ActorIp = null;
             public string Operation = "SELECT";
             public bool IsSuccess = true;
             public Guid? DatabaseId = null;
+            public Guid? ServerId = null;
+            public DateTime? EventTime = null;
         }
 
         private async Task SeedEventsAsync(int tenantId, int count, SeedOptions opts = null)
@@ -615,14 +753,16 @@ namespace Team2GroupProject.Tests.DataSentinel.ActivityEvents
             {
                 var e = new ActivityEvent(
                     tenantId,
-                    DateTime.UtcNow.AddSeconds(-i),
+                    opts.EventTime ?? DateTime.UtcNow.AddSeconds(-i),
                     opts.EventType,
                     opts.ActorUser,
                     opts.Severity,
                     opts.IsSuccess)
                 {
+                    ActorIp = opts.ActorIp,
                     Operation = opts.Operation,
-                    DatabaseId = opts.DatabaseId
+                    DatabaseId = opts.DatabaseId,
+                    ServerId = opts.ServerId
                 };
 
                 await UsingDbContextAsync(async context =>
