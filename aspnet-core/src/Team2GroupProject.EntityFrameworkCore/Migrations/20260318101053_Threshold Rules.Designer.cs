@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Team2GroupProject.EntityFrameworkCore;
@@ -11,9 +12,11 @@ using Team2GroupProject.EntityFrameworkCore;
 namespace Team2GroupProject.Migrations
 {
     [DbContext(typeof(Team2GroupProjectDbContext))]
-    partial class Team2GroupProjectDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260318101053_Threshold Rules")]
+    partial class ThresholdRules
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
