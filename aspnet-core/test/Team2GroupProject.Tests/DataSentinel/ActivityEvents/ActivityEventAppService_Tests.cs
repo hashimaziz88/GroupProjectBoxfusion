@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Abp.Authorization;
+using Abp.Runtime.Validation;
+using Abp.UI;
 using Shouldly;
 using Team2GroupProject.DataSentinel.ActivityEvents;
 using Team2GroupProject.DataSentinel.ActivityEvents.Dto;
@@ -65,6 +68,50 @@ namespace Team2GroupProject.Tests.DataSentinel.ActivityEvents
             persisted.EvidenceJson.ShouldContain("[REDACTED]");
             persisted.EvidenceJson.ShouldNotContain("sup3r-secret");
             persisted.EvidenceJson.ShouldNotContain("token-value");
+        }
+
+        [Fact]
+        public async Task ImportBatchAsync_should_return_summary_for_bulk_batches()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            var database = await CreateDatabaseAsync(tenantId);
+
+            var result = await _activityEventAppService.ImportBatchAsync(new IngestActivityEventsInput
+            {
+                Events = new List<ActivityEventIngestionItemDto>
+                {
+                    new ActivityEventIngestionItemDto
+                    {
+                        DatabaseId = database.Id,
+                        EventTime = DateTime.UtcNow.AddMinutes(-2),
+                        EventType = ActivityEventType.Read,
+                        ActorUser = "report_reader",
+                        Severity = ActivitySeverity.Info,
+                        IsSuccess = true,
+                        RowsAffected = 24
+                    },
+                    new ActivityEventIngestionItemDto
+                    {
+                        DatabaseId = database.Id,
+                        EventTime = DateTime.UtcNow.AddMinutes(-1),
+                        EventType = ActivityEventType.Write,
+                        ActorUser = "report_writer",
+                        Severity = ActivitySeverity.Low,
+                        IsSuccess = true,
+                        RowsAffected = 2
+                    }
+                }
+            });
+
+            result.ReceivedCount.ShouldBe(2);
+            result.AcceptedCount.ShouldBe(2);
+            result.RejectedCount.ShouldBe(0);
+            result.CreatedEventIds.Count.ShouldBe(2);
+
+            var persistedCount = await UsingDbContextAsync(async context =>
+                await Task.FromResult(context.ActivityEvents.Count(x => result.CreatedEventIds.Contains(x.Id))));
+
+            persistedCount.ShouldBe(2);
         }
 
         [Fact]
@@ -237,6 +284,43 @@ namespace Team2GroupProject.Tests.DataSentinel.ActivityEvents
             persistedEvents.All(x => x.ServerId == database.ServerId).ShouldBeTrue();
             persistedEvents.Any(x => x.EvidenceJson.Contains("seeded-abp-audit-log")).ShouldBeTrue();
             persistedEvents.Any(x => x.EvidenceJson.Contains("serviceName")).ShouldBeTrue();
+        }
+
+        [Fact]
+        public async Task ImportBatchAsync_should_fail_gracefully_when_payload_is_missing()
+        {
+            await Should.ThrowAsync<AbpValidationException>(() =>
+                _activityEventAppService.ImportBatchAsync(null));
+        }
+
+        [Fact]
+        public async Task ImportBatchAsync_should_fail_gracefully_when_batch_is_empty()
+        {
+            await Should.ThrowAsync<AbpValidationException>(() =>
+                _activityEventAppService.ImportBatchAsync(new IngestActivityEventsInput()));
+        }
+
+        [Fact]
+        public async Task ImportBatchAsync_should_reject_batches_over_the_supported_limit()
+        {
+            var tooManyEvents = Enumerable.Range(0, 501)
+                .Select(index => new ActivityEventIngestionItemDto
+                {
+                    EventTime = DateTime.UtcNow.AddMinutes(-index),
+                    EventType = ActivityEventType.Read,
+                    ActorUser = $"bulk-user-{index.ToString(CultureInfo.InvariantCulture)}",
+                    Severity = ActivitySeverity.Info,
+                    IsSuccess = true
+                })
+                .ToList();
+
+            var exception = await Should.ThrowAsync<UserFriendlyException>(() =>
+                _activityEventAppService.ImportBatchAsync(new IngestActivityEventsInput
+                {
+                    Events = tooManyEvents
+                }));
+
+            exception.Message.ShouldBe("Batch size cannot exceed 500 activity events.");
         }
 
         [Fact]
