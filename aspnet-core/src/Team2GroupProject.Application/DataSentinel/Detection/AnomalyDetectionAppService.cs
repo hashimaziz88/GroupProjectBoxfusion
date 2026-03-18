@@ -33,7 +33,7 @@ namespace Team2GroupProject.DataSentinel.Detection
             _outOfHoursRuleEvaluator = outOfHoursRuleEvaluator;
             _repeatedFailureEvaluator = repeatedFailureEvaluator;
                
-
+        }
         public async Task<ThresholdRuleEvaluationResultDto> EvaluateThresholdRulesAsync(EvaluateThresholdRulesInput input)
         {
             var tenantId = AbpSession.GetTenantId();
