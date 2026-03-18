@@ -59,6 +59,7 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
             _monitoredDatabaseRepository = monitoredDatabaseRepository;
         }
 
+
         [DisableAuditing]
         public async Task<ActivityEventIngestionResultDto> IngestAsync(IngestActivityEventsInput input)
         {
@@ -941,6 +942,18 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
                 .Select(x => new DatabaseOptionDto { Id = x.Id, Name = x.Name })
                 .ToListAsync();
 
+            var serverIds = await events
+                .Where(x => x.ServerId.HasValue)
+                .Select(x => x.ServerId.Value)
+                .Distinct()
+                .ToListAsync();
+
+            var servers = await _monitoredServerRepository.GetAll()
+                .Where(x => x.TenantId == tenantId && serverIds.Contains(x.Id))
+                .OrderBy(x => x.Name)
+                .Select(x => new ServerOptionDto { Id = x.Id, Name = x.Name })
+                .ToListAsync();
+
             var users = await events
                 .Where(x => !string.IsNullOrEmpty(x.ActorUser))
                 .Select(x => x.ActorUser)
@@ -948,10 +961,27 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
                 .OrderBy(x => x)
                 .ToListAsync();
 
+            var ipAddresses = await events
+                .Where(x => !string.IsNullOrEmpty(x.ActorIp))
+                .Select(x => x.ActorIp)
+                .Distinct()
+                .OrderBy(x => x)
+                .ToListAsync();
+
+            var operations = await events
+                .Where(x => !string.IsNullOrEmpty(x.Operation))
+                .Select(x => x.Operation)
+                .Distinct()
+                .OrderBy(x => x)
+                .ToListAsync();
+
             return new ActivityEventFilterOptionsDto
             {
                 Databases = databases,
-                Users = users
+                Servers = servers,
+                Users = users,
+                IpAddresses = ipAddresses,
+                Operations = operations
             };
         }
 
