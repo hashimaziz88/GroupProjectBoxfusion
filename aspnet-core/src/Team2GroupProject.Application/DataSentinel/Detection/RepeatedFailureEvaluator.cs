@@ -4,66 +4,85 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Abp.Dependency;
-using Abp.Timing;
+using Abp.Extensions;
 using Abp.UI;
+using Team2GroupProject.DataSentinel;
 using Team2GroupProject.DataSentinel.ActivityEvents;
 using Team2GroupProject.DataSentinel.AlertRules;
 using Team2GroupProject.DataSentinel.Detection.Dto;
 using Team2GroupProject.DataSentinel.SecurityAlerts;
+using Team2GroupProject.DataSentinel.UserRiskProfiles;
 
 namespace Team2GroupProject.DataSentinel.Detection
 {
     /// <summary>
-    /// Provides repeated failure evaluation logic for anomaly detection orchestration.
+    /// Evaluates repeated failure rules. This evaluator is responsible for
+    /// rule loading, event querying, deduplication checks, alert insertion,
+    /// and risk profile updates. SaveChangesAsync is owned by the orchestrator.
     /// </summary>
     public class RepeatedFailureEvaluator : IRepeatedFailureEvaluator, ITransientDependency
     {
         private readonly IAlertRuleRepository _alertRuleRepository;
         private readonly IActivityEventRepository _activityEventRepository;
+        private readonly ISecurityAlertRepository _securityAlertRepository;
+        private readonly IUserRiskProfileRepository _userRiskProfileRepository;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RepeatedFailureEvaluator"/> class.
         /// </summary>
-        /// <param name="alertRuleRepository">Alert rule repository.</param>
-        /// <param name="activityEventRepository">Activity event repository.</param>
         public RepeatedFailureEvaluator(
             IAlertRuleRepository alertRuleRepository,
-            IActivityEventRepository activityEventRepository)
+            IActivityEventRepository activityEventRepository,
+            ISecurityAlertRepository securityAlertRepository,
+            IUserRiskProfileRepository userRiskProfileRepository)
         {
             _alertRuleRepository = alertRuleRepository;
             _activityEventRepository = activityEventRepository;
+            _securityAlertRepository = securityAlertRepository;
+            _userRiskProfileRepository = userRiskProfileRepository;
         }
 
         /// <summary>
-        /// Evaluates repeated failure rules for a tenant.
+        /// Evaluates repeated failure rules for the supplied tenant.
         /// </summary>
-        /// <param name="tenantId">Tenant ID.</param>
-        /// <param name="input">Evaluation input.</param>
-        /// <returns>Evaluation output container.</returns>
-        public async Task<RepeatedFailureEvaluationOutput> EvaluateAsync(int tenantId, EvaluateRepeatedFailureRulesInput input)
+        public Task<RepeatedFailureRuleEvaluationResultDto> EvaluateAsync(
+            int tenantId,
+            DateTime evaluationTimeUtc,
+            Guid? ruleId = null)
         {
-            var evaluationTimeUtc = NormalizeEvaluationTime(input?.EvaluationTimeUtc ?? Clock.Now);
-            var rules = await _alertRuleRepository.GetEnabledByTypeAsync(tenantId, AlertRuleType.RepeatedFailure);
-
-            if (input?.RuleId.HasValue == true)
-            {
-                rules = rules.Where(x => x.Id == input.RuleId.Value).ToList();
-            }
-
-            var output = new RepeatedFailureEvaluationOutput
+            var result = new RepeatedFailureRuleEvaluationResultDto
             {
                 EvaluationTimeUtc = evaluationTimeUtc
             };
+
+            return EvaluateInternalAsync(tenantId, evaluationTimeUtc, ruleId, result);
+        }
+
+        /// <summary>
+        /// Evaluates rules and fills the result object with persistence outcomes.
+        /// </summary>
+        private async Task<RepeatedFailureRuleEvaluationResultDto> EvaluateInternalAsync(
+            int tenantId,
+            DateTime evaluationTimeUtc,
+            Guid? ruleId,
+            RepeatedFailureRuleEvaluationResultDto result)
+        {
+            var rules = await _alertRuleRepository.GetEnabledByTypeAsync(tenantId, AlertRuleType.RepeatedFailure);
+
+            if (ruleId.HasValue)
+            {
+                rules = rules.Where(x => x.Id == ruleId.Value).ToList();
+            }
 
             foreach (var rule in rules.OrderBy(x => x.Name))
             {
                 if (!CanEvaluate(rule))
                 {
-                    output.SkippedRuleCount++;
+                    result.SkippedRuleCount++;
                     continue;
                 }
 
-                output.EvaluatedRuleCount++;
+                result.EvaluatedRuleCount++;
 
                 var windowStart = evaluationTimeUtc.AddMinutes(-rule.WindowMinutes);
                 var matchingEvents = await _activityEventRepository.GetByTimeWindowAsync(
@@ -74,29 +93,33 @@ namespace Team2GroupProject.DataSentinel.Detection
                     isSuccess: false);
 
                 var candidateGroups = BuildCandidateGroups(rule, matchingEvents);
-                output.CandidateGroupCount += candidateGroups.Count;
+                result.CandidateGroupCount += candidateGroups.Count;
 
                 foreach (var candidateGroup in candidateGroups)
                 {
                     var correlationKey = BuildCorrelationKey(rule, candidateGroup);
-                    var alert = BuildAlert(rule, candidateGroup, evaluationTimeUtc, correlationKey);
-
-                    output.AlertCandidates.Add(new RepeatedFailureAlertCandidate
+                    var existingAlert = await _securityAlertRepository.FindByCorrelationKeyAsync(tenantId, correlationKey);
+                    if (existingAlert != null)
                     {
-                        Rule = rule,
-                        Alert = alert
-                    });
+                        result.DuplicateAlertCount++;
+                        continue;
+                    }
+
+                    var alert = BuildAlert(rule, candidateGroup, evaluationTimeUtc, correlationKey);
+                    await _securityAlertRepository.InsertAsync(alert);
+                    await UpdateRiskProfileAsync(tenantId, alert, evaluationTimeUtc);
+
+                    result.CreatedAlertIds.Add(alert.Id);
                 }
             }
 
-            return output;
+            result.CreatedAlertCount = result.CreatedAlertIds.Count;
+            return result;
         }
 
         /// <summary>
         /// Determines whether a rule can be evaluated by this evaluator.
         /// </summary>
-        /// <param name="rule">Rule to inspect.</param>
-        /// <returns><c>true</c> when the rule has a valid actor-scoped configuration; otherwise <c>false</c>.</returns>
         private static bool CanEvaluate(AlertRule rule)
         {
             try
@@ -108,16 +131,13 @@ namespace Team2GroupProject.DataSentinel.Detection
                 return false;
             }
 
-            return rule.GroupByField == AlertRuleGroupByField.ActorUser ||
-                   rule.GroupByField == AlertRuleGroupByField.ActorIp;
+            return rule.GroupByField == AlertRuleGroupByField.ActorUser
+                || rule.GroupByField == AlertRuleGroupByField.ActorIp;
         }
 
         /// <summary>
-        /// Builds candidate groups from matching events.
+        /// Builds threshold-qualified candidate groups from matching events.
         /// </summary>
-        /// <param name="rule">Rule context.</param>
-        /// <param name="events">Matching events.</param>
-        /// <returns>Candidate groups that meet the configured threshold.</returns>
         private static List<RepeatedFailureCandidateGroup> BuildCandidateGroups(AlertRule rule, IReadOnlyList<ActivityEvent> events)
         {
             IEnumerable<IGrouping<string, ActivityEvent>> groupedEvents;
@@ -146,11 +166,8 @@ namespace Team2GroupProject.DataSentinel.Detection
         }
 
         /// <summary>
-        /// Builds a deterministic correlation key for candidate deduplication.
+        /// Builds a deterministic correlation key for duplicate suppression.
         /// </summary>
-        /// <param name="rule">Rule context.</param>
-        /// <param name="candidateGroup">Candidate group context.</param>
-        /// <returns>Deterministic SHA-256 correlation key.</returns>
         private static string BuildCorrelationKey(AlertRule rule, RepeatedFailureCandidateGroup candidateGroup)
         {
             var orderedEventIds = string.Join(",",
@@ -173,13 +190,8 @@ namespace Team2GroupProject.DataSentinel.Detection
         }
 
         /// <summary>
-        /// Builds a <see cref="SecurityAlert"/> for a repeated failure candidate group.
+        /// Builds a security alert from a repeated failure candidate group.
         /// </summary>
-        /// <param name="rule">Rule context.</param>
-        /// <param name="candidateGroup">Candidate group context.</param>
-        /// <param name="evaluationTimeUtc">Evaluation time in UTC.</param>
-        /// <param name="correlationKey">Deterministic correlation key.</param>
-        /// <returns>A built security alert.</returns>
         private static SecurityAlert BuildAlert(AlertRule rule, RepeatedFailureCandidateGroup candidateGroup, DateTime evaluationTimeUtc, string correlationKey)
         {
             var triggeringEvent = candidateGroup.Events.Last();
@@ -196,9 +208,9 @@ namespace Team2GroupProject.DataSentinel.Detection
                 observedCount = candidateGroup.Events.Count,
                 thresholdCount = rule.ThresholdCount,
                 windowMinutes = rule.WindowMinutes,
+                allEventsFailed = true,
                 earliestEventTimeUtc = candidateGroup.Events.First().EventTime,
                 latestEventTimeUtc = candidateGroup.Events.Last().EventTime,
-                allEventsFailed = true,
                 relatedEventIds = candidateGroup.Events.Select(x => x.Id).Take(20).ToList()
             });
 
@@ -228,31 +240,47 @@ namespace Team2GroupProject.DataSentinel.Detection
         }
 
         /// <summary>
-        /// Normalizes an evaluation timestamp to UTC.
+        /// Updates or creates the user risk profile for the alert actor.
         /// </summary>
-        /// <param name="value">Input timestamp.</param>
-        /// <returns>UTC-normalized timestamp.</returns>
-        private static DateTime NormalizeEvaluationTime(DateTime value)
+        private async Task UpdateRiskProfileAsync(int tenantId, SecurityAlert alert, DateTime evaluationTimeUtc)
         {
-            if (value.Kind == DateTimeKind.Unspecified)
+            if (alert.PrimaryActorUser.IsNullOrWhiteSpace())
             {
-                return DateTime.SpecifyKind(value, DateTimeKind.Utc);
+                return;
             }
 
-            return value.ToUniversalTime();
+            var profile = await _userRiskProfileRepository.FindByActorAsync(tenantId, alert.PrimaryActorUser);
+            var isNewProfile = profile == null;
+
+            if (isNewProfile)
+            {
+                profile = new UserRiskProfile(tenantId, alert.PrimaryActorUser);
+            }
+
+            profile.ActorIp = alert.PrimaryActorIp ?? profile.ActorIp;
+            profile.AlertCount += 1;
+
+            if (alert.Severity == ActivitySeverity.High || alert.Severity == ActivitySeverity.Critical)
+            {
+                profile.HighSeverityAlertCount += 1;
+            }
+
+            profile.RecalculateRisk(evaluationTimeUtc);
+
+            if (isNewProfile)
+            {
+                await _userRiskProfileRepository.InsertAsync(profile);
+            }
         }
 
         /// <summary>
-        /// Represents one actor-scoped repeated failure candidate group.
+        /// Represents a repeated-failure candidate group.
         /// </summary>
         private sealed class RepeatedFailureCandidateGroup
         {
             /// <summary>
             /// Initializes a new instance of the <see cref="RepeatedFailureCandidateGroup"/> class.
             /// </summary>
-            /// <param name="groupByField">Grouping field used by the rule.</param>
-            /// <param name="groupValue">Group key value.</param>
-            /// <param name="events">Ordered events in the group.</param>
             public RepeatedFailureCandidateGroup(
                 AlertRuleGroupByField? groupByField,
                 string groupValue,
@@ -264,7 +292,7 @@ namespace Team2GroupProject.DataSentinel.Detection
             }
 
             /// <summary>
-            /// Gets the rule grouping field.
+            /// Gets the group-by field used to produce this group.
             /// </summary>
             public AlertRuleGroupByField? GroupByField { get; }
 
@@ -274,14 +302,18 @@ namespace Team2GroupProject.DataSentinel.Detection
             public string GroupValue { get; }
 
             /// <summary>
-            /// Gets the ordered events in this group.
+            /// Gets the events included in this group.
             /// </summary>
             public List<ActivityEvent> Events { get; }
 
             /// <summary>
-            /// Gets a display descriptor for the group scope.
+            /// Gets a human-readable descriptor for the grouping scope.
             /// </summary>
-            public string GroupDescriptor => GroupByField == AlertRuleGroupByField.ActorIp ? "source IP" : "actor";
+            public string GroupDescriptor => GroupByField switch
+            {
+                AlertRuleGroupByField.ActorIp => "source IP",
+                _ => "actor"
+            };
         }
     }
 }
