@@ -4,6 +4,7 @@ import { Card, Tabs, Typography } from "antd";
 import { useStyles } from "@/components/datasentinel/intake/style/style";
 import { IIntakeFormSharedProps } from "@/interfaces/datasentinel/intakeComponents";
 import AbpAuditLogUploadForm from "@/components/datasentinel/intake/AbpAuditLogUploadForm";
+import ImportBatchForm from "@/components/datasentinel/intake/ImportBatchForm";
 import ManualActivityBatchForm from "@/components/datasentinel/intake/ManualActivityBatchForm";
 import SeedSimulatedLogsForm from "@/components/datasentinel/intake/SeedSimulatedLogsForm";
 
@@ -37,6 +38,11 @@ const IntakeWorkflowTabs = (props: IIntakeFormSharedProps) => {
             key: "seed",
             label: "Seed simulated ABP logs",
             children: <SeedSimulatedLogsForm {...props} />,
+          },
+          {
+            key: "import",
+            label: "Import batch",
+            children: <ImportBatchForm {...props} />,
           },
         ]}
       />

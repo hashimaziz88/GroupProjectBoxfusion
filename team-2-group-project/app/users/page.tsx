@@ -1,38 +1,188 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Alert, Card, Table, Tag, Typography } from "antd";
+import {
+  Alert,
+  Button,
+  Card,
+  Checkbox,
+  Form,
+  Input,
+  Modal,
+  Popconfirm,
+  Select,
+  Space,
+  Table,
+  Tag,
+  Typography,
+} from "antd";
 import AppShell from "@/components/auth/AppShell";
 import { withAuth } from "@/hoc/withAuth";
-import { getUsers } from "@/utils/auth/adminService";
+import { useAdminState, useAdminActions } from "@/providers/adminProvider";
+import {
+  createUser,
+  updateUser,
+  deleteUser,
+  activateUser,
+  deActivateUser,
+  resetPassword,
+} from "@/utils/auth/adminService";
 import { formatDateTime, toArray } from "@/utils/helpers";
 import { useStyles } from "@/app/style/style";
-import { IUserListItem } from "@/interfaces/auth/adminService";
+import {
+  ICreateUserDto,
+  IResetPasswordDto,
+  IUserDto,
+  IUserListItem,
+} from "@/interfaces/auth/adminService";
 import { PERMISSIONS } from "@/constants/auth/roles";
 
 const { Paragraph, Title } = Typography;
 
 const UsersPageContent = () => {
   const { styles } = useStyles();
-  const [users, setUsers] = useState<IUserListItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { users, isLoadingUsers, roles, errorMessage, actionMessage } =
+    useAdminState();
+  const { fetchUsers, fetchRoles, setActionMessage } = useAdminActions();
+
+  const [createForm] = Form.useForm();
+  const [editForm] = Form.useForm();
+  const [resetForm] = Form.useForm();
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isResetOpen, setIsResetOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<IUserListItem | null>(null);
+  const [resetUserId, setResetUserId] = useState<number | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    void getUsers()
-      .then((result) => {
-        setUsers(toArray(result.items));
-        setErrorMessage(null);
-      })
-      .catch((error: unknown) => {
-        setErrorMessage(
-          error instanceof Error ? error.message : "Failed to load users.",
-        );
-      })
-      .finally(() => {
-        setIsLoading(false);
+    void fetchUsers();
+    void fetchRoles();
+  }, [fetchUsers, fetchRoles]);
+
+  const roleOptions = roles.map((r) => ({
+    value: r.name,
+    label: r.displayName,
+  }));
+
+  const handleCreate = async (values: ICreateUserDto) => {
+    setIsSubmitting(true);
+    try {
+      await createUser(values);
+      setActionMessage({ type: "success", text: "User created successfully." });
+      setIsCreateOpen(false);
+      createForm.resetFields();
+      void fetchUsers();
+    } catch (error: unknown) {
+      setActionMessage({
+        type: "error",
+        text: error instanceof Error ? error.message : "Failed to create user.",
       });
-  }, []);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEdit = async (values: Omit<IUserDto, "id">) => {
+    if (!editingUser) return;
+    setIsSubmitting(true);
+    try {
+      await updateUser({ ...values, id: editingUser.id });
+      setActionMessage({ type: "success", text: "User updated successfully." });
+      setIsEditOpen(false);
+      void fetchUsers();
+    } catch (error: unknown) {
+      setActionMessage({
+        type: "error",
+        text: error instanceof Error ? error.message : "Failed to update user.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    try {
+      await deleteUser(id);
+      setActionMessage({ type: "success", text: "User deleted." });
+      void fetchUsers();
+    } catch (error: unknown) {
+      setActionMessage({
+        type: "error",
+        text: error instanceof Error ? error.message : "Failed to delete user.",
+      });
+    }
+  };
+
+  const handleToggleActive = async (user: IUserListItem) => {
+    try {
+      if (user.isActive) {
+        await deActivateUser(user.id);
+        setActionMessage({
+          type: "success",
+          text: `${user.userName} deactivated.`,
+        });
+      } else {
+        await activateUser(user.id);
+        setActionMessage({
+          type: "success",
+          text: `${user.userName} activated.`,
+        });
+      }
+      void fetchUsers();
+    } catch (error: unknown) {
+      setActionMessage({
+        type: "error",
+        text:
+          error instanceof Error
+            ? error.message
+            : "Failed to change user status.",
+      });
+    }
+  };
+
+  const handleResetPassword = async (
+    values: Omit<IResetPasswordDto, "userId">,
+  ) => {
+    if (!resetUserId) return;
+    setIsSubmitting(true);
+    try {
+      await resetPassword({ ...values, userId: resetUserId });
+      setActionMessage({
+        type: "success",
+        text: "Password reset successfully.",
+      });
+      setIsResetOpen(false);
+      resetForm.resetFields();
+    } catch (error: unknown) {
+      setActionMessage({
+        type: "error",
+        text:
+          error instanceof Error ? error.message : "Failed to reset password.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const openEdit = (user: IUserListItem) => {
+    setEditingUser(user);
+    editForm.setFieldsValue({
+      userName: user.userName,
+      name: user.name,
+      surname: user.surname,
+      emailAddress: user.emailAddress,
+      isActive: user.isActive,
+      roleNames: toArray(user.roleNames),
+    });
+    setIsEditOpen(true);
+  };
+
+  const openReset = (userId: number) => {
+    setResetUserId(userId);
+    resetForm.resetFields();
+    setIsResetOpen(true);
+  };
 
   return (
     <AppShell
@@ -47,28 +197,49 @@ const UsersPageContent = () => {
           className={styles.alert}
         />
       ) : null}
+      {actionMessage ? (
+        <Alert
+          type={actionMessage.type}
+          showIcon
+          title={actionMessage.text}
+          className={styles.alert}
+          closable={{ onClose: () => setActionMessage(null) }}
+        />
+      ) : null}
 
       <Card className={styles.pageCard}>
-        <Title level={4} className={styles.sectionTitle}>
-          Tenant users
-        </Title>
+        <div className={styles.cardToolbar}>
+          <Title level={4} className={styles.sectionTitle}>
+            Tenant users
+          </Title>
+          <Button
+            type="primary"
+            onClick={() => {
+              createForm.resetFields();
+              setIsCreateOpen(true);
+            }}
+          >
+            Create user
+          </Button>
+        </div>
         <Paragraph className={styles.sectionLead}>
           This page is available only when `{PERMISSIONS.users}` is granted.
         </Paragraph>
         <Table<IUserListItem>
           rowKey="id"
-          loading={isLoading}
+          loading={isLoadingUsers}
           dataSource={users}
           className={styles.table}
           columns={[
             {
               title: "User",
-              dataIndex: "fullName",
-              key: "fullName",
+              key: "user",
               render: (_, record) => (
                 <>
-                  <strong>{record.fullName || `${record.name} ${record.surname}`}</strong>
-                  <div>{record.userName}</div>
+                  <strong>
+                    {record.fullName || `${record.name} ${record.surname}`}
+                  </strong>
+                  <div className={styles.cellHint}>{record.userName}</div>
                 </>
               ),
             },
@@ -97,7 +268,7 @@ const UsersPageContent = () => {
                     <Tag key={role}>{role}</Tag>
                   ))
                 ) : (
-                  <span>No roles</span>
+                  <span className={styles.mutedText}>No roles</span>
                 ),
             },
             {
@@ -106,10 +277,178 @@ const UsersPageContent = () => {
               key: "lastLoginTime",
               render: (value?: string | null) => formatDateTime(value),
             },
+            {
+              title: "Actions",
+              key: "actions",
+              render: (_, record) => (
+                <Space size="small" wrap>
+                  <Button size="small" onClick={() => openEdit(record)}>
+                    Edit
+                  </Button>
+                  <Button
+                    size="small"
+                    onClick={() => void handleToggleActive(record)}
+                  >
+                    {record.isActive ? "Deactivate" : "Activate"}
+                  </Button>
+                  <Button size="small" onClick={() => openReset(record.id)}>
+                    Reset password
+                  </Button>
+                  <Popconfirm
+                    title="Delete user"
+                    description="This action cannot be undone."
+                    onConfirm={() => void handleDelete(record.id)}
+                    okText="Delete"
+                    okButtonProps={{ danger: true }}
+                  >
+                    <Button size="small" danger>
+                      Delete
+                    </Button>
+                  </Popconfirm>
+                </Space>
+              ),
+            },
           ]}
           pagination={false}
         />
       </Card>
+
+      <Modal
+        title="Create user"
+        open={isCreateOpen}
+        onCancel={() => setIsCreateOpen(false)}
+        onOk={() => createForm.submit()}
+        okText="Create"
+        confirmLoading={isSubmitting}
+        destroyOnHidden
+      >
+        <Form
+          form={createForm}
+          layout="vertical"
+          onFinish={handleCreate}
+          initialValues={{ isActive: true }}
+        >
+          <Form.Item name="name" label="First name" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="surname"
+            label="Last name"
+            rules={[{ required: true }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="userName"
+            label="Username"
+            rules={[{ required: true }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="emailAddress"
+            label="Email"
+            rules={[{ required: true, type: "email" }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="password"
+            label="Password"
+            rules={[{ required: true }]}
+          >
+            <Input.Password />
+          </Form.Item>
+          <Form.Item name="roleNames" label="Roles">
+            <Select
+              mode="multiple"
+              options={roleOptions}
+              placeholder="Select roles"
+            />
+          </Form.Item>
+          <Form.Item name="isActive" valuePropName="checked">
+            <Checkbox>Active</Checkbox>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="Edit user"
+        open={isEditOpen}
+        onCancel={() => setIsEditOpen(false)}
+        onOk={() => editForm.submit()}
+        okText="Save"
+        confirmLoading={isSubmitting}
+        destroyOnHidden
+      >
+        <Form form={editForm} layout="vertical" onFinish={handleEdit}>
+          <Form.Item name="name" label="First name" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="surname"
+            label="Last name"
+            rules={[{ required: true }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="userName"
+            label="Username"
+            rules={[{ required: true }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="emailAddress"
+            label="Email"
+            rules={[{ required: true, type: "email" }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item name="roleNames" label="Roles">
+            <Select
+              mode="multiple"
+              options={roleOptions}
+              placeholder="Select roles"
+            />
+          </Form.Item>
+          <Form.Item name="isActive" valuePropName="checked">
+            <Checkbox>Active</Checkbox>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="Reset password"
+        open={isResetOpen}
+        onCancel={() => setIsResetOpen(false)}
+        onOk={() => resetForm.submit()}
+        okText="Reset"
+        confirmLoading={isSubmitting}
+        destroyOnHidden
+      >
+        <Form
+          form={resetForm}
+          layout="vertical"
+          onFinish={handleResetPassword}
+        >
+          <Form.Item
+            name="adminPassword"
+            label="Your admin password"
+            rules={[{ required: true }]}
+          >
+            <Input.Password />
+          </Form.Item>
+          <Form.Item
+            name="newPassword"
+            label="New password for user"
+            rules={[{ required: true }]}
+          >
+            <Input.Password />
+          </Form.Item>
+        </Form>
+      </Modal>
     </AppShell>
   );
 };

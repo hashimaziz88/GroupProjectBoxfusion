@@ -1,38 +1,138 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Alert, Card, Table, Tag, Typography } from "antd";
+import {
+  Alert,
+  Button,
+  Card,
+  Checkbox,
+  Form,
+  Input,
+  Modal,
+  Popconfirm,
+  Space,
+  Table,
+  Tag,
+  Typography,
+} from "antd";
 import AppShell from "@/components/auth/AppShell";
 import { withAuth } from "@/hoc/withAuth";
-import { getTenants } from "@/utils/auth/adminService";
-import { toArray } from "@/utils/helpers";
+import { useAdminState, useAdminActions } from "@/providers/adminProvider";
+import {
+  createTenant,
+  updateTenant,
+  deleteTenant,
+  getTenant,
+} from "@/utils/auth/adminService";
 import { useStyles } from "@/app/style/style";
-import { ITenantListItem } from "@/interfaces/auth/adminService";
+import {
+  ICreateTenantDto,
+  ITenantDto,
+  ITenantListItem,
+} from "@/interfaces/auth/adminService";
 import { PERMISSIONS } from "@/constants/auth/roles";
 
 const { Paragraph, Title } = Typography;
 
 const TenantsPageContent = () => {
   const { styles } = useStyles();
-  const [tenants, setTenants] = useState<ITenantListItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { tenants, isLoadingTenants, errorMessage, actionMessage } =
+    useAdminState();
+  const { fetchTenants, setActionMessage } = useAdminActions();
+
+  const [createForm] = Form.useForm();
+  const [editForm] = Form.useForm();
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingTenant, setEditingTenant] = useState<ITenantListItem | null>(
+    null,
+  );
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingEdit, setIsLoadingEdit] = useState(false);
 
   useEffect(() => {
-    void getTenants()
-      .then((result) => {
-        setTenants(toArray(result.items));
-        setErrorMessage(null);
-      })
-      .catch((error: unknown) => {
-        setErrorMessage(
-          error instanceof Error ? error.message : "Failed to load tenants.",
-        );
-      })
-      .finally(() => {
-        setIsLoading(false);
+    void fetchTenants();
+  }, [fetchTenants]);
+
+  const handleCreate = async (values: ICreateTenantDto) => {
+    setIsSubmitting(true);
+    try {
+      await createTenant({ ...values, connectionString: null });
+      setActionMessage({
+        type: "success",
+        text: "Tenant created successfully.",
       });
-  }, []);
+      setIsCreateOpen(false);
+      createForm.resetFields();
+      void fetchTenants();
+    } catch (error: unknown) {
+      setActionMessage({
+        type: "error",
+        text:
+          error instanceof Error ? error.message : "Failed to create tenant.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEdit = async (values: Omit<ITenantDto, "id">) => {
+    if (!editingTenant) return;
+    setIsSubmitting(true);
+    try {
+      await updateTenant({ ...values, id: editingTenant.id });
+      setActionMessage({
+        type: "success",
+        text: "Tenant updated successfully.",
+      });
+      setIsEditOpen(false);
+      void fetchTenants();
+    } catch (error: unknown) {
+      setActionMessage({
+        type: "error",
+        text:
+          error instanceof Error ? error.message : "Failed to update tenant.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    try {
+      await deleteTenant(id);
+      setActionMessage({ type: "success", text: "Tenant deleted." });
+      void fetchTenants();
+    } catch (error: unknown) {
+      setActionMessage({
+        type: "error",
+        text:
+          error instanceof Error ? error.message : "Failed to delete tenant.",
+      });
+    }
+  };
+
+  const openEdit = async (tenant: ITenantListItem) => {
+    setEditingTenant(tenant);
+    setIsLoadingEdit(true);
+    setIsEditOpen(true);
+    try {
+      const result = await getTenant(tenant.id);
+      editForm.setFieldsValue({
+        tenancyName: result.tenancyName,
+        name: result.name,
+        isActive: result.isActive,
+      });
+    } catch {
+      editForm.setFieldsValue({
+        tenancyName: tenant.tenancyName,
+        name: tenant.name,
+        isActive: tenant.isActive,
+      });
+    } finally {
+      setIsLoadingEdit(false);
+    }
+  };
 
   return (
     <AppShell
@@ -47,28 +147,48 @@ const TenantsPageContent = () => {
           className={styles.alert}
         />
       ) : null}
+      {actionMessage ? (
+        <Alert
+          type={actionMessage.type}
+          showIcon
+          title={actionMessage.text}
+          className={styles.alert}
+          closable={{ onClose: () => setActionMessage(null) }}
+        />
+      ) : null}
 
       <Card className={styles.pageCard}>
-        <Title level={4} className={styles.sectionTitle}>
-          Tenant directory
-        </Title>
+        <div className={styles.cardToolbar}>
+          <Title level={4} className={styles.sectionTitle}>
+            Tenant directory
+          </Title>
+          <Button
+            type="primary"
+            onClick={() => {
+              createForm.resetFields();
+              setIsCreateOpen(true);
+            }}
+          >
+            Create tenant
+          </Button>
+        </div>
         <Paragraph className={styles.sectionLead}>
-          This route is available only when `{PERMISSIONS.tenants}` is granted, which typically means host admin access.
+          This route is available only when `{PERMISSIONS.tenants}` is granted,
+          which typically means host admin access.
         </Paragraph>
         <Table<ITenantListItem>
           rowKey="id"
-          loading={isLoading}
+          loading={isLoadingTenants}
           dataSource={tenants}
           className={styles.table}
           columns={[
             {
               title: "Tenant",
-              dataIndex: "name",
-              key: "name",
+              key: "tenant",
               render: (_, record) => (
                 <>
                   <strong>{record.name}</strong>
-                  <div>{record.tenancyName}</div>
+                  <div className={styles.cellHint}>{record.tenancyName}</div>
                 </>
               ),
             },
@@ -87,10 +207,111 @@ const TenantsPageContent = () => {
                 </Tag>
               ),
             },
+            {
+              title: "Actions",
+              key: "actions",
+              render: (_, record) => (
+                <Space size="small" wrap>
+                  <Button size="small" onClick={() => void openEdit(record)}>
+                    Edit
+                  </Button>
+                  <Popconfirm
+                    title="Delete tenant"
+                    description="This will permanently remove the tenant and all associated data."
+                    onConfirm={() => void handleDelete(record.id)}
+                    okText="Delete"
+                    okButtonProps={{ danger: true }}
+                  >
+                    <Button size="small" danger>
+                      Delete
+                    </Button>
+                  </Popconfirm>
+                </Space>
+              ),
+            },
           ]}
           pagination={false}
         />
       </Card>
+
+      <Modal
+        title="Create tenant"
+        open={isCreateOpen}
+        onCancel={() => setIsCreateOpen(false)}
+        onOk={() => createForm.submit()}
+        okText="Create"
+        confirmLoading={isSubmitting}
+        destroyOnHidden
+      >
+        <Form
+          form={createForm}
+          layout="vertical"
+          onFinish={handleCreate}
+          initialValues={{ isActive: true }}
+        >
+          <Form.Item
+            name="tenancyName"
+            label="Tenancy name"
+            rules={[
+              { required: true },
+              {
+                pattern: /^[a-zA-Z][a-zA-Z0-9_-]{1,}$/,
+                message:
+                  "Must start with a letter and contain only letters, digits, hyphens, or underscores.",
+              },
+            ]}
+          >
+            <Input placeholder="e.g. acme-corp" />
+          </Form.Item>
+          <Form.Item
+            name="name"
+            label="Display name"
+            rules={[{ required: true }]}
+          >
+            <Input placeholder="e.g. ACME Corporation" />
+          </Form.Item>
+          <Form.Item
+            name="adminEmailAddress"
+            label="Admin email"
+            rules={[{ required: true, type: "email" }]}
+          >
+            <Input placeholder="admin@acme.com" />
+          </Form.Item>
+          <Form.Item name="isActive" valuePropName="checked">
+            <Checkbox>Active</Checkbox>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="Edit tenant"
+        open={isEditOpen}
+        onCancel={() => setIsEditOpen(false)}
+        onOk={() => editForm.submit()}
+        okText="Save"
+        confirmLoading={isSubmitting || isLoadingEdit}
+        destroyOnHidden
+      >
+        <Form form={editForm} layout="vertical" onFinish={handleEdit}>
+          <Form.Item
+            name="tenancyName"
+            label="Tenancy name"
+            rules={[{ required: true }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="name"
+            label="Display name"
+            rules={[{ required: true }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item name="isActive" valuePropName="checked">
+            <Checkbox>Active</Checkbox>
+          </Form.Item>
+        </Form>
+      </Modal>
     </AppShell>
   );
 };
