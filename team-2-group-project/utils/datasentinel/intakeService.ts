@@ -35,3 +35,11 @@ export const seedSimulatedAbpAuditLogs = async (
 
   return unwrapAbpResponse(response.data);
 };
+
+export const importBatch = async (input: IIngestActivityEventsInput) => {
+  const response = await axiosInstance().post<
+    IAbpResponse<IActivityEventIngestionResult>
+  >("/api/services/app/ActivityEvent/ImportBatch", input);
+
+  return unwrapAbpResponse(response.data);
+};

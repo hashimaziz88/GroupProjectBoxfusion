@@ -107,6 +107,384 @@
         }
       }
     },
+    "/api/services/app/ActivityEvent/ImportBatch": {
+      "post": {
+        "tags": ["ActivityEvent"],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngestActivityEventsInput"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngestActivityEventsInput"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngestActivityEventsInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityEventIngestionResultDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityEventIngestionResultDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityEventIngestionResultDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/services/app/ActivityEvent/Ingest": {
+      "post": {
+        "tags": ["ActivityEvent"],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngestActivityEventsInput"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngestActivityEventsInput"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngestActivityEventsInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityEventIngestionResultDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityEventIngestionResultDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityEventIngestionResultDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/services/app/ActivityEvent/IngestAbpAuditLogs": {
+      "post": {
+        "tags": ["ActivityEvent"],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngestAbpAuditLogsInput"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngestAbpAuditLogsInput"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngestAbpAuditLogsInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityEventIngestionResultDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityEventIngestionResultDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityEventIngestionResultDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/services/app/ActivityEvent/SeedSimulatedAbpAuditLogs": {
+      "post": {
+        "tags": ["ActivityEvent"],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SeedSimulatedAbpAuditLogsInput"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SeedSimulatedAbpAuditLogsInput"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SeedSimulatedAbpAuditLogsInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityEventIngestionResultDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityEventIngestionResultDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityEventIngestionResultDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/services/app/ActivityEvent/GetPaged": {
+      "get": {
+        "tags": ["ActivityEvent"],
+        "parameters": [
+          {
+            "name": "Keyword",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "EventType",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/ActivityEventType"
+            }
+          },
+          {
+            "name": "DatabaseId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "ServerId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "ActorUser",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ActorIp",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Operation",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Severity",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/ActivitySeverity"
+            }
+          },
+          {
+            "name": "IsSuccess",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "StartDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "EndDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "Tab",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/ActivityEventTab"
+            }
+          },
+          {
+            "name": "SortDescending",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "SkipCount",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "MaxResultCount",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityEventDtoPagedResultDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityEventDtoPagedResultDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityEventDtoPagedResultDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/services/app/ActivityEvent/GetSummary": {
+      "get": {
+        "tags": ["ActivityEvent"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityEventSummaryDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityEventSummaryDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityEventSummaryDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/services/app/ActivityEvent/GetFilterOptions": {
+      "get": {
+        "tags": ["ActivityEvent"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityEventFilterOptionsDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityEventFilterOptionsDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityEventFilterOptionsDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/services/app/Configuration/ChangeUiTheme": {
       "post": {
         "tags": ["Configuration"],
@@ -132,6 +510,292 @@
         "responses": {
           "200": {
             "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/services/app/MonitoringInfrastructure/GetMonitoredServers": {
+      "get": {
+        "tags": ["MonitoringInfrastructure"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonitoredServerDtoListResultDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonitoredServerDtoListResultDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonitoredServerDtoListResultDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/services/app/MonitoringInfrastructure/GetMonitoredDatabases": {
+      "get": {
+        "tags": ["MonitoringInfrastructure"],
+        "parameters": [
+          {
+            "name": "ServerId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonitoredDatabaseDtoListResultDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonitoredDatabaseDtoListResultDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonitoredDatabaseDtoListResultDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/services/app/MonitoringInfrastructure/GetMonitoredTables": {
+      "get": {
+        "tags": ["MonitoringInfrastructure"],
+        "parameters": [
+          {
+            "name": "DatabaseId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonitoredTableDtoListResultDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonitoredTableDtoListResultDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonitoredTableDtoListResultDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/services/app/MonitoringInfrastructure/CreateMonitoredServer": {
+      "post": {
+        "tags": ["MonitoringInfrastructure"],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMonitoredServerInput"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMonitoredServerInput"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMonitoredServerInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonitoredServerDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonitoredServerDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonitoredServerDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/services/app/MonitoringInfrastructure/CreateMonitoredDatabase": {
+      "post": {
+        "tags": ["MonitoringInfrastructure"],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMonitoredDatabaseInput"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMonitoredDatabaseInput"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMonitoredDatabaseInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonitoredDatabaseDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonitoredDatabaseDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonitoredDatabaseDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/services/app/MonitoringInfrastructure/CreateMonitoredTable": {
+      "post": {
+        "tags": ["MonitoringInfrastructure"],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMonitoredTableInput"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMonitoredTableInput"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMonitoredTableInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonitoredTableDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonitoredTableDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonitoredTableDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/services/app/MonitoringInfrastructure/BootstrapDemo": {
+      "post": {
+        "tags": ["MonitoringInfrastructure"],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BootstrapMonitoringDemoInput"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BootstrapMonitoringDemoInput"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BootstrapMonitoringDemoInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BootstrapMonitoringDemoResultDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BootstrapMonitoringDemoResultDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BootstrapMonitoringDemoResultDto"
+                }
+              }
+            }
           }
         }
       }
@@ -1147,6 +1811,395 @@
   },
   "components": {
     "schemas": {
+      "AbpAuditLogIngestionItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "tenantId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "userId": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "serviceName": {
+            "type": "string",
+            "nullable": true
+          },
+          "methodName": {
+            "type": "string",
+            "nullable": true
+          },
+          "parameters": {
+            "type": "string",
+            "nullable": true
+          },
+          "returnValue": {
+            "type": "string",
+            "nullable": true
+          },
+          "executionTime": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "executionDuration": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "clientIpAddress": {
+            "type": "string",
+            "nullable": true
+          },
+          "clientName": {
+            "type": "string",
+            "nullable": true
+          },
+          "browserInfo": {
+            "type": "string",
+            "nullable": true
+          },
+          "exceptionMessage": {
+            "type": "string",
+            "nullable": true
+          },
+          "exception": {
+            "type": "string",
+            "nullable": true
+          },
+          "impersonatorUserId": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "impersonatorTenantId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "customData": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ActivityEventDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "eventId": {
+            "type": "string",
+            "nullable": true
+          },
+          "eventTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "eventType": {
+            "$ref": "#/components/schemas/ActivityEventType"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/ActivitySeverity"
+          },
+          "actorUser": {
+            "type": "string",
+            "nullable": true
+          },
+          "actorIp": {
+            "type": "string",
+            "nullable": true
+          },
+          "objectName": {
+            "type": "string",
+            "nullable": true
+          },
+          "operation": {
+            "type": "string",
+            "nullable": true
+          },
+          "rowsAffected": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "durationMs": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "isOutOfHours": {
+            "type": "boolean"
+          },
+          "isSuccess": {
+            "type": "boolean"
+          },
+          "failureReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "databaseId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "databaseName": {
+            "type": "string",
+            "nullable": true
+          },
+          "serverId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "queryPreview": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ActivityEventDtoPagedResultDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActivityEventDto"
+            },
+            "nullable": true
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ActivityEventFilterOptionsDto": {
+        "type": "object",
+        "properties": {
+          "databases": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DatabaseOptionDto"
+            },
+            "nullable": true
+          },
+          "servers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ServerOptionDto"
+            },
+            "nullable": true
+          },
+          "users": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "ipAddresses": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "operations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ActivityEventIngestionErrorDto": {
+        "type": "object",
+        "properties": {
+          "itemIndex": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ActivityEventIngestionItemDto": {
+        "type": "object",
+        "properties": {
+          "serverId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "databaseId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "eventTime": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "eventType": {
+            "$ref": "#/components/schemas/ActivityEventType"
+          },
+          "actorUser": {
+            "type": "string",
+            "nullable": true
+          },
+          "actorIp": {
+            "type": "string",
+            "nullable": true
+          },
+          "objectName": {
+            "type": "string",
+            "nullable": true
+          },
+          "operation": {
+            "type": "string",
+            "nullable": true
+          },
+          "rowsAffected": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "durationMs": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "isOutOfHours": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "severity": {
+            "$ref": "#/components/schemas/ActivitySeverity"
+          },
+          "isSuccess": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "failureReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "evidence": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "nullable": true
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ActivityEventIngestionResultDto": {
+        "type": "object",
+        "properties": {
+          "receivedCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "acceptedCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "rejectedCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdEventIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "nullable": true
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActivityEventIngestionErrorDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ActivityEventSummaryDto": {
+        "type": "object",
+        "properties": {
+          "totalEvents": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "readOps": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "writeOps": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "authEvents": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "privilegedOps": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "suspiciousActivityCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "failedEventsCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ActivityEventTab": {
+        "enum": [0, 1, 2],
+        "type": "integer",
+        "format": "int32"
+      },
+      "ActivityEventType": {
+        "enum": [0, 1, 2, 3, 4, 5, 6, 7, 8, 99],
+        "type": "integer",
+        "format": "int32"
+      },
+      "ActivitySeverity": {
+        "enum": [0, 1, 2, 3, 4],
+        "type": "integer",
+        "format": "int32"
+      },
       "ApplicationInfoDto": {
         "type": "object",
         "properties": {
@@ -1210,6 +2263,58 @@
         },
         "additionalProperties": false
       },
+      "BootstrapMonitoringDemoInput": {
+        "type": "object",
+        "properties": {
+          "serverName": {
+            "maxLength": 128,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "hostName": {
+            "maxLength": 256,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "environment": {
+            "maxLength": 64,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "includeTables": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "BootstrapMonitoringDemoResultDto": {
+        "type": "object",
+        "properties": {
+          "createdServersCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdDatabasesCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdTablesCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "servers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MonitoredServerDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "ChangePasswordDto": {
         "required": ["currentPassword", "newPassword"],
         "type": "object",
@@ -1244,6 +2349,97 @@
           "languageName": {
             "minLength": 1,
             "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateMonitoredDatabaseInput": {
+        "required": ["engine", "name", "serverId"],
+        "type": "object",
+        "properties": {
+          "serverId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "maxLength": 128,
+            "minLength": 0,
+            "type": "string"
+          },
+          "engine": {
+            "maxLength": 64,
+            "minLength": 0,
+            "type": "string"
+          },
+          "description": {
+            "maxLength": 1024,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "isEnabled": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateMonitoredServerInput": {
+        "required": ["environment", "hostName", "name"],
+        "type": "object",
+        "properties": {
+          "name": {
+            "maxLength": 128,
+            "minLength": 0,
+            "type": "string"
+          },
+          "hostName": {
+            "maxLength": 256,
+            "minLength": 0,
+            "type": "string"
+          },
+          "environment": {
+            "maxLength": 64,
+            "minLength": 0,
+            "type": "string"
+          },
+          "description": {
+            "maxLength": 1024,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "isEnabled": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateMonitoredTableInput": {
+        "required": ["databaseId", "name", "schemaName"],
+        "type": "object",
+        "properties": {
+          "databaseId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "schemaName": {
+            "maxLength": 128,
+            "minLength": 0,
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 128,
+            "minLength": 0,
+            "type": "string"
+          },
+          "description": {
+            "maxLength": 1024,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "isEnabled": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -1357,6 +2553,20 @@
         },
         "additionalProperties": false
       },
+      "DatabaseOptionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "FlatPermissionDto": {
         "type": "object",
         "properties": {
@@ -1413,6 +2623,44 @@
         },
         "additionalProperties": false
       },
+      "IngestAbpAuditLogsInput": {
+        "required": ["abpAuditLogs"],
+        "type": "object",
+        "properties": {
+          "serverId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "databaseId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "abpAuditLogs": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AbpAuditLogIngestionItemDto"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "IngestActivityEventsInput": {
+        "required": ["events"],
+        "type": "object",
+        "properties": {
+          "events": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActivityEventIngestionItemDto"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
       "Int64EntityDto": {
         "type": "object",
         "properties": {
@@ -1444,6 +2692,161 @@
           "tenantId": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MonitoredDatabaseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "serverId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "engine": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "isEnabled": {
+            "type": "boolean"
+          },
+          "lastActivityAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "tables": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MonitoredTableDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MonitoredDatabaseDtoListResultDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MonitoredDatabaseDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MonitoredServerDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "hostName": {
+            "type": "string",
+            "nullable": true
+          },
+          "environment": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "isEnabled": {
+            "type": "boolean"
+          },
+          "lastHeartbeatAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "databases": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MonitoredDatabaseDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MonitoredServerDtoListResultDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MonitoredServerDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MonitoredTableDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "databaseId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "schemaName": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "isEnabled": {
+            "type": "boolean"
+          },
+          "lastActivityAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MonitoredTableDtoListResultDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MonitoredTableDto"
+            },
             "nullable": true
           }
         },
@@ -1683,6 +3086,50 @@
             "items": {
               "$ref": "#/components/schemas/RoleListDto"
             },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SeedSimulatedAbpAuditLogsInput": {
+        "type": "object",
+        "properties": {
+          "serverId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "databaseId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "count": {
+            "maximum": 500,
+            "minimum": 1,
+            "type": "integer",
+            "format": "int32"
+          },
+          "seed": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "includeFailures": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ServerOptionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
             "nullable": true
           }
         },

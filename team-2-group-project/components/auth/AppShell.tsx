@@ -1,15 +1,16 @@
 "use client";
 
+import Image from "next/image";
 import { Button, Layout, Menu, Tag, Typography } from "antd";
 import { usePathname, useRouter } from "next/navigation";
 import { getVisibleNavigationItems } from "@/constants/navigation";
 import { useAuthActions, useAuthState } from "@/providers/authProvider";
 import { isHostAdmin, isTenantAdmin } from "@/utils/auth/roles";
-import { useStyles } from "@/app/style/style";
+import { useStyles } from "@/components/auth/style/style";
 import { IAppShellProps } from "@/interfaces/auth/authProps";
 
 const { Content, Header, Sider } = Layout;
-const { Paragraph, Text, Title } = Typography;
+const { Paragraph, Title } = Typography;
 
 const resolveRoleLabel = (roles?: string[] | null) => {
   if (isHostAdmin(roles)) {
@@ -40,13 +41,20 @@ const AppShell = ({ title, subtitle, children }: IAppShellProps) => {
   return (
     <Layout className={styles.shell}>
       <Sider breakpoint="lg" collapsedWidth="0" className={styles.sider}>
-        <div className={styles.brandBlock}>
-          <Text className={styles.brandEyebrow}>Team 2</Text>
-          <Title level={4} className={styles.brandTitle}>
-            Group Project
-          </Title>
+        <div
+          className={styles.brandBlock}
+          onClick={() => router.push("/landing")}
+          style={{ cursor: "pointer" }}
+        >
+          <Image
+            src="/logoipsum-custom-logo.svg"
+            alt="DataSentinel"
+            width={160}
+            height={27}
+            className={styles.brandLogo}
+          />
           <Paragraph className={styles.brandText}>
-            Angular-parity shell with ABP auth, permissions, and tenancy.
+            Database activity monitoring and security intelligence platform.
           </Paragraph>
           <Tag className={styles.tenantBadge}>
             {currentTenant?.tenancyName ?? "Host context"}
@@ -80,12 +88,6 @@ const AppShell = ({ title, subtitle, children }: IAppShellProps) => {
             <Tag className={styles.headerTag}>
               {currentTenant?.tenancyName ?? "Host"}
             </Tag>
-            <Button
-              className={styles.secondaryButton}
-              onClick={() => router.push("/update-password")}
-            >
-              Update password
-            </Button>
             <Button className={styles.primaryButton} onClick={() => void logout()}>
               Log out
             </Button>

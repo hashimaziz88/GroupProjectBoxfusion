@@ -15,14 +15,14 @@ const AboutPageContent = () => {
   return (
     <AppShell
       title="About"
-      subtitle="This logged-in shell mirrors the Angular app structure: session bootstrap, tenant context, guarded routes, and permission-aware navigation."
+      subtitle="DataSentinel — real-time database activity monitoring and security intelligence platform."
     >
       <Card className={styles.pageCard}>
         <Title level={4} className={styles.sectionTitle}>
           Current session
         </Title>
         <Paragraph className={styles.sectionLead}>
-          The frontend resolves tenant context before authentication, then loads current login information and ABP permissions after sign-in.
+          Your active session details. Tenant context is resolved at startup and permissions are loaded after sign-in.
         </Paragraph>
         <div className={styles.tagRow}>
           <Tag className={styles.infoTag}>
