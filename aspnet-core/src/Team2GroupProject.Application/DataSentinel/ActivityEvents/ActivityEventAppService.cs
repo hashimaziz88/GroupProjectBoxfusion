@@ -15,6 +15,7 @@ using Microsoft.EntityFrameworkCore;
 using Team2GroupProject.Authorization;
 using Team2GroupProject.DataSentinel;
 using Team2GroupProject.DataSentinel.ActivityEvents.Dto;
+using Team2GroupProject.DataSentinel.Detection;
 using Team2GroupProject.DataSentinel.Monitoring;
 
 namespace Team2GroupProject.DataSentinel.ActivityEvents
@@ -50,15 +51,18 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
         private readonly IActivityEventRepository _activityEventRepository;
         private readonly IMonitoredServerRepository _monitoredServerRepository;
         private readonly IMonitoredDatabaseRepository _monitoredDatabaseRepository;
+        private readonly IThresholdRuleEvaluator _thresholdRuleEvaluator;
 
         public ActivityEventAppService(
             IActivityEventRepository activityEventRepository,
             IMonitoredServerRepository monitoredServerRepository,
-            IMonitoredDatabaseRepository monitoredDatabaseRepository)
+            IMonitoredDatabaseRepository monitoredDatabaseRepository,
+            IThresholdRuleEvaluator thresholdRuleEvaluator)
         {
             _activityEventRepository = activityEventRepository;
             _monitoredServerRepository = monitoredServerRepository;
             _monitoredDatabaseRepository = monitoredDatabaseRepository;
+            _thresholdRuleEvaluator = thresholdRuleEvaluator;
         }
 
 
@@ -113,6 +117,7 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
                 var mappedResult = await IngestInternalAsync(tenantId, mappedEvents, sourceIndexes);
                 result.CreatedEventIds.AddRange(mappedResult.CreatedEventIds);
                 result.Errors.AddRange(mappedResult.Errors);
+                result.DetectionSummary = mappedResult.DetectionSummary;
             }
 
             result.AcceptedCount = result.CreatedEventIds.Count;
@@ -253,8 +258,54 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
 
             result.AcceptedCount = result.CreatedEventIds.Count;
             result.RejectedCount = result.Errors.Count;
+            result.DetectionSummary = await RunThresholdDetectionAsync(tenantId, validEvents);
 
             return result;
+        }
+
+        private async Task<IngestionDetectionSummaryDto> RunThresholdDetectionAsync(
+            int tenantId,
+            IReadOnlyCollection<ActivityEvent> acceptedEvents)
+        {
+            var summary = new IngestionDetectionSummaryDto();
+            if (acceptedEvents == null || acceptedEvents.Count == 0)
+            {
+                return summary;
+            }
+
+            var createdAlertIds = new HashSet<Guid>();
+            var anchors = acceptedEvents
+                .GroupBy(x => new { x.EventType, x.EventTime })
+                .Select(group => new DetectionAnchor(group.Key.EventType, group.Key.EventTime))
+                .OrderBy(x => x.EventTimeUtc)
+                .ThenBy(x => x.EventType)
+                .ToList();
+
+            foreach (var anchor in anchors)
+            {
+                var evaluation = await _thresholdRuleEvaluator.EvaluateAsync(
+                    tenantId,
+                    anchor.EventTimeUtc,
+                    eventType: anchor.EventType);
+
+                summary.EvaluatedAnchorCount++;
+                summary.DuplicateAlertCount += evaluation.DuplicateAlertCount;
+
+                foreach (var alertId in evaluation.CreatedAlertIds)
+                {
+                    createdAlertIds.Add(alertId);
+                }
+
+                if (evaluation.CreatedAlertIds.Count > 0)
+                {
+                    await CurrentUnitOfWork.SaveChangesAsync();
+                }
+            }
+
+            summary.CreatedAlertIds = createdAlertIds.OrderBy(x => x).ToList();
+            summary.CreatedAlertCount = summary.CreatedAlertIds.Count;
+
+            return summary;
         }
 
         private static IReadOnlyList<ActivityEventIngestionItemDto> GetValidatedActivityEventBatchItems(IngestActivityEventsInput input)
@@ -1274,6 +1325,19 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
             return objectName.IsNullOrWhiteSpace()
                 ? operation
                 : $"{operation} {objectName}";
+        }
+
+        private sealed class DetectionAnchor
+        {
+            public DetectionAnchor(ActivityEventType eventType, DateTime eventTimeUtc)
+            {
+                EventType = eventType;
+                EventTimeUtc = eventTimeUtc;
+            }
+
+            public ActivityEventType EventType { get; }
+
+            public DateTime EventTimeUtc { get; }
         }
     }
 }
