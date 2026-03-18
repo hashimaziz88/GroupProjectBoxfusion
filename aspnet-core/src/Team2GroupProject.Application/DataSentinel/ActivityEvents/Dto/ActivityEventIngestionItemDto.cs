@@ -29,6 +29,16 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents.Dto
         public ActivityEventType? EventType { get; set; }
 
         /// <summary>
+        /// Optional source system label for dedupe-safe imports. Defaults to "BatchImport" when omitted.
+        /// </summary>
+        public string SourceSystem { get; set; }
+
+        /// <summary>
+        /// Optional source-specific event identifier. When omitted, a deterministic fingerprint is generated.
+        /// </summary>
+        public string SourceEventKey { get; set; }
+
+        /// <summary>
         /// Database actor responsible for the event.
         /// </summary>
         public string ActorUser { get; set; }

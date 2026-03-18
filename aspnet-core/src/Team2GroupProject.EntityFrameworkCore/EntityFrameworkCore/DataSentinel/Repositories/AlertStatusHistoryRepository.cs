@@ -23,5 +23,13 @@ namespace Team2GroupProject.EntityFrameworkCore.DataSentinel.Repositories
                 .OrderBy(x => x.CreationTime)
                 .ToListAsync();
         }
+
+        public async Task<List<AlertStatusHistory>> GetByAlertAsync(int tenantId, Guid alertId)
+        {
+            return await GetAll()
+                .Where(x => x.TenantId == tenantId && x.AlertId == alertId)
+                .OrderBy(x => x.CreationTime)
+                .ToListAsync();
+        }
     }
 }

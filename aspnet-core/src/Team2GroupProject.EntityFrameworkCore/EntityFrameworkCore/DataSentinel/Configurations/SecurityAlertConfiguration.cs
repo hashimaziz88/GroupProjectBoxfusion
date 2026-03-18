@@ -27,6 +27,9 @@ namespace Team2GroupProject.EntityFrameworkCore.DataSentinel.Configurations
             builder.Property(x => x.EvidenceSummaryJson)
                 .HasColumnType("text");
 
+            builder.Property(x => x.CorrelationKey)
+                .HasMaxLength(DataSentinelConsts.AlertCorrelationKeyMaxLength);
+
             builder.Property(x => x.Status)
                 .HasConversion<int>();
 
@@ -76,6 +79,9 @@ namespace Team2GroupProject.EntityFrameworkCore.DataSentinel.Configurations
             builder.HasIndex(x => new { x.TenantId, x.RuleId, x.TriggeredAt });
             builder.HasIndex(x => new { x.TenantId, x.DatabaseId, x.TriggeredAt });
             builder.HasIndex(x => new { x.TenantId, x.PrimaryActorUser, x.TriggeredAt });
+            builder.HasIndex(x => new { x.TenantId, x.CorrelationKey })
+                .IsUnique()
+                .HasFilter("\"CorrelationKey\" IS NOT NULL");
         }
     }
 }

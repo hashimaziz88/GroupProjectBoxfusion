@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Abp.UI;
 using Microsoft.EntityFrameworkCore;
 using Shouldly;
 using Abp.Runtime.Session;
@@ -116,6 +117,22 @@ namespace Team2GroupProject.Tests.DataSentinel.AlertRules
                 var persisted = await context.AlertRules.SingleAsync(x => x.Id == rule.Id);
                 persisted.IsEnabled.ShouldBeFalse();
             });
+        }
+
+        [Fact]
+        public void Should_reject_threshold_rule_without_a_positive_window()
+        {
+            var tenantId = AbpSession.GetTenantId();
+
+            var exception = Should.Throw<UserFriendlyException>(() => new AlertRule(
+                tenantId,
+                "Invalid Threshold Rule",
+                AlertRuleType.ThresholdBased,
+                ActivitySeverity.Medium,
+                windowMinutes: 0,
+                thresholdCount: 10));
+
+            exception.Message.ShouldBe("ThresholdBased rules require WindowMinutes to be greater than 0.");
         }
 
         [Fact]

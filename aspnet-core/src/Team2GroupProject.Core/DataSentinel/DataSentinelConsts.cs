@@ -14,6 +14,9 @@ namespace Team2GroupProject.DataSentinel
         public const int AlertSummaryMaxLength = 2048;
         public const int IncidentNoteBodyMaxLength = 4000;
         public const int StatusHistoryCommentMaxLength = 1024;
+        public const int SourceSystemMaxLength = 64;
+        public const int SourceEventKeyMaxLength = 128;
+        public const int AlertCorrelationKeyMaxLength = 128;
 
         // ActivityEvent field lengths
         public const int ActorUserMaxLength = 256;
