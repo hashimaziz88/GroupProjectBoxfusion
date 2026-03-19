@@ -15,9 +15,20 @@ namespace Team2GroupProject.DataSentinel.Detection
         Task<ThresholdRuleEvaluationResultDto> EvaluateThresholdRulesAsync(EvaluateThresholdRulesInput input);
 
         Task<OutOfHoursRuleEvaluationResultDto> EvaluateOutOfHoursRulesAsync(EvaluateOutOfHoursRulesInput input);
+        
         /// <summary>
         /// Evaluates repeated failure rules for the active tenant.
         /// </summary>
         Task<RepeatedFailureRuleEvaluationResultDto> EvaluateRepeatedFailureRulesAsync(EvaluateRepeatedFailureRulesInput input);
+
+        /// <summary>
+        /// Evaluates large read/write rules for the active tenant.
+        /// </summary>
+        Task<LargeReadWriteRuleEvaluationResultDto> EvaluateLargeReadWriteRulesAsync(EvaluateLargeReadWriteRulesInput input);
+
+        /// <summary>
+        /// Evaluates privileged action rules for the active tenant.
+        /// </summary>
+        Task<PrivilegedActionRuleEvaluationResultDto> EvaluatePrivilegedActionRulesAsync(EvaluatePrivilegedActionRulesInput input);
     }
 }
