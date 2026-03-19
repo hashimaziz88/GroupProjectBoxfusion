@@ -194,6 +194,67 @@ namespace Team2GroupProject.Tests.DataSentinel.ActivityEvents
         }
 
         [Fact]
+        public async Task IngestAsync_should_seed_default_rules_and_create_alerts_when_the_tenant_has_no_rules()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            var database = await CreateDatabaseAsync(tenantId);
+            var evaluationTime = DateTime.UtcNow;
+
+            var result = await _activityEventAppService.IngestAsync(new IngestActivityEventsInput
+            {
+                Events = new List<ActivityEventIngestionItemDto>
+                {
+                    new ActivityEventIngestionItemDto
+                    {
+                        DatabaseId = database.Id,
+                        EventTime = evaluationTime.AddMinutes(-2),
+                        EventType = ActivityEventType.Login,
+                        ActorUser = "burst-user",
+                        ActorIp = "10.10.10.10",
+                        Severity = ActivitySeverity.Medium,
+                        IsSuccess = false,
+                        FailureReason = "Invalid password"
+                    },
+                    new ActivityEventIngestionItemDto
+                    {
+                        DatabaseId = database.Id,
+                        EventTime = evaluationTime.AddMinutes(-1),
+                        EventType = ActivityEventType.Login,
+                        ActorUser = "burst-user",
+                        ActorIp = "10.10.10.10",
+                        Severity = ActivitySeverity.Medium,
+                        IsSuccess = false,
+                        FailureReason = "Invalid password"
+                    },
+                    new ActivityEventIngestionItemDto
+                    {
+                        DatabaseId = database.Id,
+                        EventTime = evaluationTime,
+                        EventType = ActivityEventType.Login,
+                        ActorUser = "burst-user",
+                        ActorIp = "10.10.10.10",
+                        Severity = ActivitySeverity.Medium,
+                        IsSuccess = false,
+                        FailureReason = "Invalid password"
+                    }
+                }
+            });
+
+            result.AcceptedCount.ShouldBe(3);
+            result.DetectionSummary.CreatedAlertCount.ShouldBe(1);
+
+            var persistedCounts = await UsingDbContextAsync(async context =>
+                await Task.FromResult(new
+                {
+                    RuleCount = context.AlertRules.Count(x => x.TenantId == tenantId),
+                    AlertCount = context.SecurityAlerts.Count(x => x.TenantId == tenantId)
+                }));
+
+            persistedCounts.RuleCount.ShouldBeGreaterThan(0);
+            persistedCounts.AlertCount.ShouldBe(1);
+        }
+
+        [Fact]
         public async Task ImportBatchAsync_should_reject_duplicate_source_events_within_the_same_batch()
         {
             var tenantId = AbpSession.TenantId!.Value;

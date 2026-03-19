@@ -10,6 +10,7 @@ using Abp.Runtime.Session;
 using Abp.UI;
 using Microsoft.EntityFrameworkCore;
 using Team2GroupProject.Authorization;
+using Team2GroupProject.DataSentinel.AlertRules;
 using Team2GroupProject.DataSentinel.Monitoring.Dto;
 
 namespace Team2GroupProject.DataSentinel.Monitoring
@@ -20,15 +21,18 @@ namespace Team2GroupProject.DataSentinel.Monitoring
         private readonly IMonitoredServerRepository _monitoredServerRepository;
         private readonly IMonitoredDatabaseRepository _monitoredDatabaseRepository;
         private readonly IMonitoredTableRepository _monitoredTableRepository;
+        private readonly IDefaultAlertRuleSeeder _defaultAlertRuleSeeder;
 
         public MonitoringInfrastructureAppService(
             IMonitoredServerRepository monitoredServerRepository,
             IMonitoredDatabaseRepository monitoredDatabaseRepository,
-            IMonitoredTableRepository monitoredTableRepository)
+            IMonitoredTableRepository monitoredTableRepository,
+            IDefaultAlertRuleSeeder defaultAlertRuleSeeder)
         {
             _monitoredServerRepository = monitoredServerRepository;
             _monitoredDatabaseRepository = monitoredDatabaseRepository;
             _monitoredTableRepository = monitoredTableRepository;
+            _defaultAlertRuleSeeder = defaultAlertRuleSeeder;
         }
 
         public async Task<ListResultDto<MonitoredServerDto>> GetMonitoredServersAsync()
@@ -253,6 +257,7 @@ namespace Team2GroupProject.DataSentinel.Monitoring
                 }
             }
 
+            await _defaultAlertRuleSeeder.EnsureSeededAsync(tenantId);
             CurrentUnitOfWork.SaveChanges();
 
             var servers = await LoadInfrastructureAsync(tenantId);

@@ -15,6 +15,7 @@ using Microsoft.EntityFrameworkCore;
 using Team2GroupProject.Authorization;
 using Team2GroupProject.DataSentinel;
 using Team2GroupProject.DataSentinel.ActivityEvents.Dto;
+using Team2GroupProject.DataSentinel.AlertRules;
 using Team2GroupProject.DataSentinel.Detection;
 using Team2GroupProject.DataSentinel.Monitoring;
 
@@ -51,6 +52,7 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
         private readonly IActivityEventRepository _activityEventRepository;
         private readonly IMonitoredServerRepository _monitoredServerRepository;
         private readonly IMonitoredDatabaseRepository _monitoredDatabaseRepository;
+        private readonly IDefaultAlertRuleSeeder _defaultAlertRuleSeeder;
         private readonly IThresholdRuleEvaluator _thresholdRuleEvaluator;
         private readonly IOutOfHoursRuleEvaluator _outOfHoursRuleEvaluator;
         private readonly IRepeatedFailureEvaluator _repeatedFailureEvaluator;
@@ -61,6 +63,7 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
             IActivityEventRepository activityEventRepository,
             IMonitoredServerRepository monitoredServerRepository,
             IMonitoredDatabaseRepository monitoredDatabaseRepository,
+            IDefaultAlertRuleSeeder defaultAlertRuleSeeder,
             IThresholdRuleEvaluator thresholdRuleEvaluator,
             IOutOfHoursRuleEvaluator outOfHoursRuleEvaluator,
             IRepeatedFailureEvaluator repeatedFailureEvaluator,
@@ -70,6 +73,7 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
             _activityEventRepository = activityEventRepository;
             _monitoredServerRepository = monitoredServerRepository;
             _monitoredDatabaseRepository = monitoredDatabaseRepository;
+            _defaultAlertRuleSeeder = defaultAlertRuleSeeder;
             _thresholdRuleEvaluator = thresholdRuleEvaluator;
             _outOfHoursRuleEvaluator = outOfHoursRuleEvaluator;
             _repeatedFailureEvaluator = repeatedFailureEvaluator;
@@ -284,6 +288,8 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
             {
                 return summary;
             }
+
+            await _defaultAlertRuleSeeder.EnsureSeededAsync(tenantId);
 
             var createdAlertIds = new HashSet<Guid>();
             var anchors = acceptedEvents
