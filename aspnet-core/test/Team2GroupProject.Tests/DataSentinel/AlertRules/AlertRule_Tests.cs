@@ -65,7 +65,7 @@ namespace Team2GroupProject.Tests.DataSentinel.AlertRules
         {
             var tenantId = AbpSession.GetTenantId();
 
-            // OutOfHours rules apply to any event — EventType and GroupByField are intentionally null
+            // OutOfHours rules use the evaluator's risky-action filter, so EventType and GroupByField are intentionally null.
             var rule = new AlertRule(
                 tenantId,
                 "Out Of Hours Activity",
@@ -86,6 +86,8 @@ namespace Team2GroupProject.Tests.DataSentinel.AlertRules
                 persisted.EventType.ShouldBeNull();
                 persisted.GroupByField.ShouldBeNull();
                 persisted.RuleType.ShouldBe(AlertRuleType.OutOfHours);
+                persisted.WindowMinutes.ShouldBe(0);
+                persisted.ThresholdCount.ShouldBe(1);
             });
         }
 
