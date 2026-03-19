@@ -36,6 +36,10 @@ export const canAccessTenants = (permissions?: string[] | null) =>
 export const canAccessDataSentinelIntake = (permissions?: string[] | null) =>
   hasPermission(permissions, PERMISSIONS.dataSentinelIntake);
 
+export const canAccessDataSentinelDashboard = (
+  permissions?: string[] | null,
+) => hasPermission(permissions, PERMISSIONS.dataSentinelDashboard);
+
 export const canAccessDataSentinelInfrastructure = (
   permissions?: string[] | null,
 ) =>
@@ -58,6 +62,10 @@ export const selectBestAuthenticatedRoute = (
   }
 
   const hasTenantContext = Boolean(user?.tenantId);
+
+  if (hasTenantContext && canAccessDataSentinelDashboard(user?.permissions)) {
+    return "/datasentinel/dashboard";
+  }
 
   if (hasTenantContext && canAccessDataSentinelInfrastructure(user?.permissions)) {
     return "/datasentinel/infrastructure";

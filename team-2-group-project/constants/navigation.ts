@@ -1,4 +1,5 @@
 import {
+  canAccessDataSentinelDashboard,
   canAccessDataSentinelInfrastructure,
   canAccessDataSentinelIntake,
   canAccessDataSentinelActivity,
@@ -21,6 +22,12 @@ export const NAVIGATION_ITEMS: INavigationItem[] = [
     key: "home",
     href: "/home",
     label: "Home",
+  },
+  {
+    key: "datasentinel-dashboard",
+    href: "/datasentinel/dashboard",
+    label: "Dashboard",
+    permission: PERMISSIONS.dataSentinelDashboard,
   },
   {
     key: "datasentinel-infrastructure",
@@ -81,6 +88,7 @@ export const getVisibleNavigationItems = (
     }
 
     const isDataSentinelItem =
+      item.permission === PERMISSIONS.dataSentinelDashboard ||
       item.permission === PERMISSIONS.dataSentinelInfrastructureView ||
       item.permission === PERMISSIONS.dataSentinelIntake ||
       item.permission === PERMISSIONS.dataSentinelActivity ||
@@ -100,6 +108,10 @@ export const getVisibleNavigationItems = (
 
     if (item.permission === PERMISSIONS.tenants) {
       return canAccessTenants(permissions);
+    }
+
+    if (item.permission === PERMISSIONS.dataSentinelDashboard) {
+      return canAccessDataSentinelDashboard(permissions);
     }
 
     if (item.permission === PERMISSIONS.dataSentinelInfrastructureView) {
