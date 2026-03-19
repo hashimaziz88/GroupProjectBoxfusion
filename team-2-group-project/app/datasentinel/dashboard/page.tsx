@@ -52,8 +52,7 @@ const DashboardPageContent = () => {
           type="error"
           showIcon
           title={errorMessage}
-          closable
-          onClose={clearMessages}
+          closable={{ onClose: clearMessages }}
           className={styles.alert}
           style={{ marginBottom: 16 }}
         />
@@ -63,14 +62,13 @@ const DashboardPageContent = () => {
           type={actionMessage.type}
           showIcon
           title={actionMessage.text}
-          closable
-          onClose={clearMessages}
+          closable={{ onClose: clearMessages }}
           className={styles.alert}
           style={{ marginBottom: 16 }}
         />
       ) : null}
 
-      <Space direction="vertical" size={18} style={{ width: "100%" }}>
+      <Space orientation="vertical" size={18} style={{ width: "100%" }}>
         <DashboardFilters />
         {isLoading && !isRefreshing ? (
           <Skeleton active paragraph={{ rows: 16 }} />
