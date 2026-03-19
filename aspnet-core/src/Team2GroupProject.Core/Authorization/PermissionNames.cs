@@ -22,6 +22,7 @@
         public const string Pages_DataSentinel_Rules_View = "Pages.DataSentinel.Rules.View";
         public const string Pages_DataSentinel_Rules_Manage = "Pages.DataSentinel.Rules.Manage";
         public const string Pages_DataSentinel_Reports_Export = "Pages.DataSentinel.Reports.Export";
+        public const string Pages_DataSentinel_Users_View = "Pages.DataSentinel.Users.View";
         public const string Pages_DataSentinel_Admin = "Pages.DataSentinel.Admin";
         public const string Pages_DataSentinel_AiInsights = "Pages.DataSentinel.AiInsights";
     }

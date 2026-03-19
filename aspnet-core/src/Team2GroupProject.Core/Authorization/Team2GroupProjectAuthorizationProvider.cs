@@ -28,6 +28,7 @@ namespace Team2GroupProject.Authorization
             var rules = dataSentinel.CreateChildPermission(PermissionNames.Pages_DataSentinel_Rules_View, L("DataSentinelRulesView"));
             rules.CreateChildPermission(PermissionNames.Pages_DataSentinel_Rules_Manage, L("DataSentinelRulesManage"));
 
+            dataSentinel.CreateChildPermission(PermissionNames.Pages_DataSentinel_Users_View, L("DataSentinelUsersView"));
             dataSentinel.CreateChildPermission(PermissionNames.Pages_DataSentinel_Reports_Export, L("DataSentinelReportsExport"));
             dataSentinel.CreateChildPermission(PermissionNames.Pages_DataSentinel_Admin, L("DataSentinelAdmin"));
             dataSentinel.CreateChildPermission(PermissionNames.Pages_DataSentinel_AiInsights, L("DataSentinelAiInsights"));
