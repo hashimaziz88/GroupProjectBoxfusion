@@ -242,7 +242,7 @@ const SecurityAlertsTable = () => {
         }}
         okButtonProps={{ loading: isBulkUpdatingStatus }}
         okText="Apply bulk action"
-        destroyOnClose
+        destroyOnHidden
       >
         <Form
           form={bulkForm}

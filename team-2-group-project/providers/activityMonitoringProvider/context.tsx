@@ -9,6 +9,7 @@ import {
   IActivityFilterOptions,
   IActivitySummary,
 } from "@/interfaces/datasentinel/activity";
+import { IAiActivityAnalysis } from "@/utils/datasentinel/aiService";
 
 export interface IActivityMonitoringStateContext {
   filters: IActivityFilterDraft;
@@ -25,6 +26,9 @@ export interface IActivityMonitoringStateContext {
   currentPage: number;
   pageSize: number;
   hasTenantContext: boolean;
+  aiAnalysis: IAiActivityAnalysis | null;
+  isAiLoading: boolean;
+  aiError: string | null;
 }
 
 export interface IActivityMonitoringActionContext {
@@ -38,6 +42,7 @@ export interface IActivityMonitoringActionContext {
   setActiveTab: (tab: ActivityTab) => Promise<void>;
   setPagination: (page: number, pageSize: number) => Promise<void>;
   buildRequestFilters: () => IActivityEventFilters;
+  retryAiAnalysis: () => Promise<void>;
 }
 
 export const DEFAULT_FILTERS: IActivityFilterDraft = {
@@ -88,6 +93,9 @@ export const INITIAL_STATE: IActivityMonitoringStateContext = {
   currentPage: 1,
   pageSize: 25,
   hasTenantContext: false,
+  aiAnalysis: null,
+  isAiLoading: false,
+  aiError: null,
 };
 
 export const ActivityMonitoringStateContext =

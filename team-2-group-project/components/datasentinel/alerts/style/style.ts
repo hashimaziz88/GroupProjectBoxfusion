@@ -15,22 +15,29 @@ export const useStyles = createStyles(() => ({
 
   pageCard: css`
     &.ant-card {
-      border-radius: 24px;
+      border-radius: 16px;
       border: 1px solid rgba(148, 163, 184, 0.2);
-      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.07);
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+
+      .ant-card-body {
+        padding: 16px 18px;
+      }
     }
   `,
 
   sectionTitle: css`
     &.ant-typography {
-      margin: 0 0 12px;
+      margin: 0 0 8px;
+      font-size: 14px;
+      font-weight: 700;
       color: #0f172a;
     }
   `,
 
   sectionLead: css`
     &.ant-typography {
-      margin: 0 0 16px;
+      margin: 0 0 12px;
+      font-size: 12px;
       color: #64748b;
     }
   `,
@@ -191,5 +198,62 @@ export const useStyles = createStyles(() => ({
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
+  `,
+
+  aiPanel: css`
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 18px;
+    background: linear-gradient(135deg, #f5f3ff 0%, #eef2ff 100%);
+    padding: 20px;
+    margin-bottom: 22px;
+  `,
+
+  aiPanelHeader: css`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+  `,
+
+  aiPanelTitle: css`
+    &.ant-typography {
+      margin: 0;
+      color: #4338ca;
+    }
+  `,
+
+  aiSection: css`
+    margin-bottom: 14px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  `,
+
+  aiSectionLabel: css`
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #6366f1;
+    margin-bottom: 6px;
+  `,
+
+  aiSeverityBlock: css`
+    border-left: 3px solid #f59e0b;
+    padding-left: 12px;
+  `,
+
+  aiNextStepBlock: css`
+    border-left: 3px solid #6366f1;
+    padding-left: 12px;
+  `,
+
+  aiErrorBlock: css`
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    color: #64748b;
   `,
 }));

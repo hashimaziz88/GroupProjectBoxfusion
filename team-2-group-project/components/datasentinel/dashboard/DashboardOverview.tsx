@@ -51,13 +51,9 @@ const DashboardOverview = () => {
 
   return (
     <Card className={styles.pageCard}>
-      <Typography.Title level={4} className={styles.sectionTitle}>
+      <Typography.Title level={5} className={styles.sectionTitle}>
         Security Overview
       </Typography.Title>
-      <Typography.Paragraph className={styles.sectionLead}>
-        A tenant-scoped snapshot of current alert volume, failed access pressure,
-        and the riskiest monitored behavior.
-      </Typography.Paragraph>
 
       <div className={styles.quickLinks}>
         {canAccessAlerts ? (
@@ -77,7 +73,7 @@ const DashboardOverview = () => {
         ) : null}
       </div>
 
-      <div className={styles.statGrid} style={{ marginTop: 18 }}>
+      <div className={styles.statGrid} style={{ marginTop: 12 }}>
         {summaryCards.map((item) => (
           <div key={item.label} className={styles.statCard}>
             <span className={styles.statLabel}>{item.label}</span>

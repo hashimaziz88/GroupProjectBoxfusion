@@ -10,6 +10,7 @@ import {
   IDashboardSummary,
   IDashboardTopRisk,
 } from "@/interfaces/datasentinel/dashboard";
+import { IAiDashboardAnalysis } from "@/utils/datasentinel/aiService";
 
 export interface IDashboardActionMessage {
   type: "success" | "error";
@@ -33,6 +34,9 @@ export interface IDashboardStateContext {
   canAccessActivity: boolean;
   canAccessAlerts: boolean;
   canAccessInfrastructure: boolean;
+  aiAnalysis: IAiDashboardAnalysis | null;
+  isAiLoading: boolean;
+  aiError: string | null;
 }
 
 export interface IDashboardActionContext {
@@ -44,6 +48,7 @@ export interface IDashboardActionContext {
   resetFilters: () => Promise<void>;
   refresh: () => Promise<void>;
   clearMessages: () => void;
+  retryAiAnalysis: () => Promise<void>;
 }
 
 export const DEFAULT_FILTERS: IDashboardFilterDraft = {
@@ -112,6 +117,9 @@ export const INITIAL_STATE: IDashboardStateContext = {
   canAccessActivity: false,
   canAccessAlerts: false,
   canAccessInfrastructure: false,
+  aiAnalysis: null,
+  isAiLoading: false,
+  aiError: null,
 };
 
 export const DashboardStateContext =

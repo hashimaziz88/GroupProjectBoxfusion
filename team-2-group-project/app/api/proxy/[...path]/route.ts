@@ -13,7 +13,8 @@ async function handleRequest(
   context: { params: Promise<{ path: string[] }> }
 ) {
   const { path } = await context.params;
-  const targetUrl = `${BACKEND_URL}/${path.join("/")}`;
+  const search = request.nextUrl.search || "";
+  const targetUrl = `${BACKEND_URL}/${path.join("/")}${search}`;
   const tenantId = getTenantId(request);
 
   const body =
