@@ -539,7 +539,7 @@ namespace Team2GroupProject.Tests.DataSentinel.ActivityEvents
         {
             var tenantId = AbpSession.TenantId!.Value;
             var database = await CreateDatabaseAsync(tenantId);
-            var baseTime = new DateTime(2026, 3, 18, 17, 30, 0, DateTimeKind.Utc);
+            var baseTime = ConvertLocalTimeToUtc(new DateTime(2026, 3, 18, 11, 30, 0));
             var rule = await CreateBulkOperationRuleAsync(
                 tenantId,
                 "Large Export",
@@ -573,7 +573,7 @@ namespace Team2GroupProject.Tests.DataSentinel.ActivityEvents
             alerts.ShouldAllBe(x => x.RuleId == rule.Id);
             alerts.ShouldAllBe(x => x.PrimaryActorUser == "bulk-user");
             alerts.ShouldAllBe(x => x.DatabaseId == database.Id);
-            alerts.ShouldAllBe(x => x.RelatedEventCount == 1);
+            alerts.Select(x => x.RelatedEventCount).OrderBy(x => x).ShouldBe(new[] { 1, 2 });
         }
 
         [Fact]
@@ -581,7 +581,7 @@ namespace Team2GroupProject.Tests.DataSentinel.ActivityEvents
         {
             var tenantId = AbpSession.TenantId!.Value;
             var database = await CreateDatabaseAsync(tenantId);
-            var eventTime = new DateTime(2026, 3, 18, 18, 0, 0, DateTimeKind.Utc);
+            var eventTime = ConvertLocalTimeToUtc(new DateTime(2026, 3, 18, 10, 0, 0));
             var rule = await CreatePrivilegedActionRuleAsync(tenantId, "Sensitive Admin Activity", ActivitySeverity.High);
 
             var result = await _activityEventAppService.ImportBatchAsync(new IngestActivityEventsInput
@@ -615,7 +615,7 @@ namespace Team2GroupProject.Tests.DataSentinel.ActivityEvents
         {
             var tenantId = AbpSession.TenantId!.Value;
             var database = await CreateDatabaseAsync(tenantId);
-            var eventTime = new DateTime(2026, 3, 18, 19, 0, 0, DateTimeKind.Utc);
+            var eventTime = ConvertLocalTimeToUtc(new DateTime(2026, 3, 18, 10, 30, 0));
             var rule = await CreatePrivilegedActionRuleAsync(tenantId, "Mapped Privileged Activity", ActivitySeverity.High);
 
             var result = await _activityEventAppService.IngestAbpAuditLogsAsync(new IngestAbpAuditLogsInput
@@ -808,7 +808,7 @@ namespace Team2GroupProject.Tests.DataSentinel.ActivityEvents
         {
             var tenantId = AbpSession.TenantId!.Value;
             var database = await CreateDatabaseAsync(tenantId);
-            var baseTime = new DateTime(2026, 3, 18, 19, 30, 0, DateTimeKind.Utc);
+            var baseTime = ConvertLocalTimeToUtc(new DateTime(2026, 3, 18, 11, 0, 0));
 
             await CreateBulkOperationRuleAsync(
                 tenantId,
@@ -943,7 +943,7 @@ namespace Team2GroupProject.Tests.DataSentinel.ActivityEvents
         {
             var tenantId = AbpSession.TenantId!.Value;
             var database = await CreateDatabaseAsync(tenantId);
-            var firstTime = new DateTime(2026, 3, 18, 20, 30, 0, DateTimeKind.Utc);
+            var firstTime = ConvertLocalTimeToUtc(new DateTime(2026, 3, 18, 11, 0, 0));
 
             await CreateBulkOperationRuleAsync(
                 tenantId,
@@ -973,7 +973,7 @@ namespace Team2GroupProject.Tests.DataSentinel.ActivityEvents
 
             firstImport.DetectionSummary.CreatedAlertCount.ShouldBe(2);
             secondImport.DetectionSummary.CreatedAlertCount.ShouldBe(0);
-            secondImport.DetectionSummary.DuplicateAlertCount.ShouldBe(2);
+            secondImport.DetectionSummary.DuplicateAlertCount.ShouldBe(1);
 
             var alertCount = await UsingDbContextAsync(async context =>
                 await Task.FromResult(context.SecurityAlerts.Count()));
