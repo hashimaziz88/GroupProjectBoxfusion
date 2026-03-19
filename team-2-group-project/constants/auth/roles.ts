@@ -2,6 +2,7 @@ export const PERMISSIONS = {
   users: "Pages.Users",
   roles: "Pages.Roles",
   tenants: "Pages.Tenants",
+  dataSentinelDashboard: "Pages.DataSentinel.Dashboard",
   dataSentinelIntake: "Pages.DataSentinel.Intake",
   dataSentinelInfrastructureView: "Pages.DataSentinel.Infrastructure.View",
   dataSentinelInfrastructureManage: "Pages.DataSentinel.Infrastructure.Manage",

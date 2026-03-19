@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Button,
   Card,
@@ -45,6 +46,7 @@ const resolveRiskColor = (score: number) => {
 
 const SecurityAlertsTable = () => {
   const { styles } = useStyles();
+  const router = useRouter();
   const {
     alerts,
     canReviewAlerts,
@@ -58,7 +60,6 @@ const SecurityAlertsTable = () => {
   } = useSecurityAlertsState();
   const {
     bulkUpdateStatus,
-    openAlert,
     setPagination,
     setSelectedAlertIds,
   } = useSecurityAlertsActions();
@@ -221,7 +222,9 @@ const SecurityAlertsTable = () => {
                 type="link"
                 size="small"
                 icon={<EyeOutlined />}
-                onClick={() => void openAlert(record.id)}
+                onClick={() => {
+                  router.push(`/datasentinel/alerts/${record.id}`);
+                }}
               >
                 View
               </Button>

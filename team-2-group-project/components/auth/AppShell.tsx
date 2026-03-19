@@ -1,9 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import { Button, Layout, Menu, Tag, Typography } from "antd";
+import type { ItemType } from "antd/es/menu/interface";
 import { usePathname, useRouter } from "next/navigation";
-import { getVisibleNavigationItems } from "@/constants/navigation";
+import {
+  getVisibleNavigationItems,
+  INavigationItem,
+} from "@/constants/navigation";
 import { useAuthActions, useAuthState } from "@/providers/authProvider";
 import { isHostAdmin, isTenantAdmin } from "@/utils/auth/roles";
 import { useStyles } from "@/components/auth/style/style";
@@ -24,6 +29,54 @@ const resolveRoleLabel = (roles?: string[] | null) => {
   return "Tenant user";
 };
 
+const buildMenuItems = (
+  items: INavigationItem[],
+  onNavigate: (href: string) => void,
+): ItemType[] =>
+  items.map((item) => {
+    if (item.children?.length) {
+      return {
+        key: item.key,
+        label: item.label,
+        children: buildMenuItems(item.children, onNavigate),
+      };
+    }
+
+    return {
+      key: item.key,
+      label: item.label,
+      onClick: item.href ? () => onNavigate(item.href!) : undefined,
+    };
+  });
+
+const resolveMenuSelection = (
+  items: INavigationItem[],
+  pathname: string,
+  ancestorKeys: string[] = [],
+): { selectedKey: string; openKeys: string[] } | null => {
+  for (const item of items) {
+    if (item.children?.length) {
+      const childSelection = resolveMenuSelection(item.children, pathname, [
+        ...ancestorKeys,
+        item.key,
+      ]);
+
+      if (childSelection) {
+        return childSelection;
+      }
+    }
+
+    if (item.href && pathname.startsWith(item.href)) {
+      return {
+        selectedKey: item.key,
+        openKeys: ancestorKeys,
+      };
+    }
+  }
+
+  return null;
+};
+
 const AppShell = ({ title, subtitle, children }: IAppShellProps) => {
   const router = useRouter();
   const pathname = usePathname();
@@ -35,8 +88,15 @@ const AppShell = ({ title, subtitle, children }: IAppShellProps) => {
     permissions,
     Boolean(currentTenant?.tenantId),
   );
-  const selectedKey =
-    visibleItems.find((item) => pathname.startsWith(item.href))?.key ?? "home";
+  const menuSelection = resolveMenuSelection(visibleItems, pathname) ?? {
+    selectedKey: "home",
+    openKeys: [],
+  };
+  const [userOpenKeys, setUserOpenKeys] = useState<string[]>([]);
+  const openKeys =
+    userOpenKeys.length > 0 || menuSelection.openKeys.length === 0
+      ? userOpenKeys
+      : menuSelection.openKeys;
 
   return (
     <Layout className={styles.shell}>
@@ -64,12 +124,10 @@ const AppShell = ({ title, subtitle, children }: IAppShellProps) => {
         <Menu
           theme="dark"
           mode="inline"
-          selectedKeys={[selectedKey]}
-          items={visibleItems.map((item) => ({
-            key: item.key,
-            label: item.label,
-            onClick: () => router.push(item.href),
-          }))}
+          selectedKeys={[menuSelection.selectedKey]}
+          openKeys={openKeys}
+          onOpenChange={(nextKeys) => setUserOpenKeys(nextKeys)}
+          items={buildMenuItems(visibleItems, (href) => router.push(href))}
           className={styles.menu}
         />
       </Sider>

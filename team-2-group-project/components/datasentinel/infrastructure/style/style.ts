@@ -1,6 +1,18 @@
 import { createStyles, css } from "antd-style";
 
 export const useStyles = createStyles(() => ({
+  alert: css`
+    &.ant-alert {
+      border-radius: 18px;
+    }
+  `,
+
+  backRow: css`
+    display: flex;
+    align-items: center;
+    margin-bottom: 16px;
+  `,
+
   pageCard: css`
     &.ant-card {
       border-radius: 24px;
@@ -90,6 +102,61 @@ export const useStyles = createStyles(() => ({
     @media (max-width: 960px) {
       grid-template-columns: 1fr;
     }
+  `,
+
+  directoryGrid: css`
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+
+    @media (max-width: 1200px) {
+      grid-template-columns: 1fr;
+    }
+  `,
+
+  directoryCard: css`
+    border-radius: 22px;
+    padding: 22px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbfd 100%);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 220px;
+  `,
+
+  directoryTitle: css`
+    color: #0f172a;
+    font-size: 20px;
+    font-weight: 700;
+  `,
+
+  directoryLead: css`
+    color: #64748b;
+    font-size: 14px;
+  `,
+
+  directoryCount: css`
+    color: #0f172a;
+    font-size: 34px;
+    font-weight: 800;
+  `,
+
+  detailGrid: css`
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+
+    @media (max-width: 960px) {
+      grid-template-columns: 1fr;
+    }
+  `,
+
+  detailPanel: css`
+    border-radius: 20px;
+    padding: 18px;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    background: #f8fbfd;
   `,
 
   tripleGrid: css`
