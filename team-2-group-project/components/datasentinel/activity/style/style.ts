@@ -123,4 +123,51 @@ export const useStyles = createStyles(() => ({
     font-size: 12px;
     margin-top: 4px;
   `,
+
+  aiPanel: css`
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 18px;
+    background: linear-gradient(135deg, #f5f3ff 0%, #eef2ff 100%);
+    padding: 20px;
+    margin-bottom: 18px;
+  `,
+
+  aiPanelHeader: css`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+  `,
+
+  aiPanelTitle: css`
+    &.ant-typography {
+      margin: 0;
+      color: #4338ca;
+    }
+  `,
+
+  aiSection: css`
+    margin-bottom: 14px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  `,
+
+  aiSectionLabel: css`
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #6366f1;
+    margin-bottom: 6px;
+  `,
+
+  aiErrorBlock: css`
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    color: #64748b;
+  `,
 }));

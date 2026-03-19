@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useContext, useEffect, useReducer } from "react";
+import React, { useCallback, useContext, useEffect, useReducer } from "react";
 import axios from "axios";
 import { useAuthState } from "@/providers/authProvider";
 import {
@@ -17,6 +17,11 @@ import {
   canAccessDataSentinelInfrastructure,
 } from "@/utils/auth/roles";
 import { toArray } from "@/utils/helpers";
+import {
+  AiUnavailableError,
+  generateDashboardAnalysis,
+  IAiDashboardContext,
+} from "@/utils/datasentinel/aiService";
 import {
   DashboardActionContext,
   DashboardStateContext,
@@ -94,6 +99,57 @@ export const DashboardProvider: React.FC<{
     hasTenantContext,
   ]);
 
+  const loadAiAnalysis = useCallback(
+    async (
+      summary: (typeof state)["summary"],
+      anomalyTimeline: (typeof state)["anomalyTimeline"],
+      topRisk: (typeof state)["topRisk"],
+      recentAlerts: (typeof state)["recentAlerts"],
+      windowDays: number,
+    ) => {
+      dispatch(setDashboardState({ isAiLoading: true, aiError: null }));
+      try {
+        const ctx: IAiDashboardContext = {
+          windowDays,
+          totalAlerts: summary.totalAlerts,
+          criticalAlerts: summary.criticalAlerts,
+          newAlerts: summary.newAlerts,
+          totalFailedAccessAttempts: summary.totalFailedAccessAttempts,
+          suspiciousWriteActivityCount: summary.suspiciousWriteActivityCount,
+          highRiskUsersCount: summary.highRiskUsersCount,
+          anomalyBucketCount: anomalyTimeline.items.filter(
+            (b) => b.alertCount > 0 || b.suspiciousEventCount > 0,
+          ).length,
+          topRiskyUsers: topRisk.users.map((u) => ({
+            actorUser: u.actorUser,
+            riskScore: u.riskScore,
+            alertCount: u.alertCount,
+            highSeverityAlertCount: u.highSeverityAlertCount,
+            failedLoginCount: u.failedLoginCount,
+            outOfHoursEventCount: u.outOfHoursEventCount,
+          })),
+          recentAlerts: recentAlerts.map((a) => ({
+            title: a.title,
+            severity: a.severity,
+            primaryActorUser: a.primaryActorUser,
+          })),
+        };
+        const analysis = await generateDashboardAnalysis(ctx);
+        dispatch(setDashboardState({ aiAnalysis: analysis, aiError: null }));
+      } catch (error: unknown) {
+        const message =
+          error instanceof AiUnavailableError
+            ? error.message
+            : "AI analysis is temporarily unavailable.";
+        dispatch(setDashboardState({ aiAnalysis: null, aiError: message }));
+        console.error("[DashboardProvider] AI analysis failed:", error);
+      } finally {
+        dispatch(setDashboardState({ isAiLoading: false }));
+      }
+    },
+    [],
+  );
+
   useEffect(() => {
     if (!hasTenantContext) {
       return;
@@ -145,6 +201,7 @@ export const DashboardProvider: React.FC<{
           return;
         }
 
+        const alertItems = toArray(recentAlerts.items);
         dispatch(
           setDashboardState({
             summary,
@@ -152,11 +209,18 @@ export const DashboardProvider: React.FC<{
             severityBreakdown,
             anomalyTimeline,
             topRisk,
-            recentAlerts: toArray(recentAlerts.items),
+            recentAlerts: alertItems,
             isLoading: false,
             isRefreshing: false,
             errorMessage: null,
           }),
+        );
+        void loadAiAnalysis(
+          summary,
+          anomalyTimeline,
+          topRisk,
+          alertItems,
+          state.appliedFilters.windowDays,
         );
       } catch (error: unknown) {
         if (cancelled) {
@@ -227,6 +291,16 @@ export const DashboardProvider: React.FC<{
     );
   };
 
+  const retryAiAnalysis = async () => {
+    await loadAiAnalysis(
+      state.summary,
+      state.anomalyTimeline,
+      state.topRisk,
+      state.recentAlerts,
+      state.appliedFilters.windowDays,
+    );
+  };
+
   return (
     <DashboardStateContext.Provider
       value={{
@@ -246,6 +320,9 @@ export const DashboardProvider: React.FC<{
         canAccessActivity,
         canAccessAlerts,
         canAccessInfrastructure,
+        aiAnalysis: state.aiAnalysis,
+        isAiLoading: state.isAiLoading,
+        aiError: state.aiError,
       }}
     >
       <DashboardActionContext.Provider
@@ -255,6 +332,7 @@ export const DashboardProvider: React.FC<{
           resetFilters,
           refresh,
           clearMessages,
+          retryAiAnalysis,
         }}
       >
         {children}
