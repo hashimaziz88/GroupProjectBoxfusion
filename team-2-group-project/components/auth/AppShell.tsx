@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { Button, Layout, Menu, Tag, Typography } from "antd";
 import type { ItemType } from "antd/es/menu/interface";
@@ -92,15 +92,11 @@ const AppShell = ({ title, subtitle, children }: IAppShellProps) => {
     selectedKey: "home",
     openKeys: [],
   };
-  const routeOpenKeys = useMemo(
-    () => menuSelection.openKeys,
-    [menuSelection.selectedKey],
-  );
   const [userOpenKeys, setUserOpenKeys] = useState<string[]>([]);
   const openKeys =
-    userOpenKeys.length > 0 || routeOpenKeys.length === 0
+    userOpenKeys.length > 0 || menuSelection.openKeys.length === 0
       ? userOpenKeys
-      : routeOpenKeys;
+      : menuSelection.openKeys;
 
   return (
     <Layout className={styles.shell}>
