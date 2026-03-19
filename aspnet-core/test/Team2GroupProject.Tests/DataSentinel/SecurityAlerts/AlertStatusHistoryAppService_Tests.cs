@@ -79,6 +79,7 @@ namespace Team2GroupProject.Tests.DataSentinel.SecurityAlerts
             history[0].FromStatus.ShouldBe(SecurityAlertStatus.New);
             history[0].ToStatus.ShouldBe(SecurityAlertStatus.Resolved);
             history[0].Comment.ShouldBe("False alarm");
+            history[0].CreatorUserDisplayName.ShouldNotBeNullOrWhiteSpace();
         }
 
         [Fact]

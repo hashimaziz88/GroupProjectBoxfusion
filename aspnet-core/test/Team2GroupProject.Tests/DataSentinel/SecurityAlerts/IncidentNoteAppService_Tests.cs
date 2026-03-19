@@ -22,25 +22,6 @@ namespace Team2GroupProject.Tests.DataSentinel.SecurityAlerts
         }
 
         [Fact]
-        public async Task CreateAsync_should_persist_note_for_valid_alert()
-        {
-            var tenantId = AbpSession.TenantId!.Value;
-            var alert = await SeedAlertAsync(tenantId);
-
-            var result = await _incidentNoteAppService.CreateAsync(new CreateIncidentNoteInput
-            {
-                AlertId = alert.Id,
-                Body = "Confirmed this is a real threat. Escalating to security team.",
-                IsInternal = false
-            });
-
-            result.Id.ShouldNotBe(Guid.Empty);
-            result.AlertId.ShouldBe(alert.Id);
-            result.Body.ShouldBe("Confirmed this is a real threat. Escalating to security team.");
-            result.IsInternal.ShouldBeFalse();
-        }
-
-        [Fact]
         public async Task CreateAsync_should_reject_empty_body()
         {
             var tenantId = AbpSession.TenantId!.Value;

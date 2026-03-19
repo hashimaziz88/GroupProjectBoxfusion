@@ -19,9 +19,7 @@ namespace Team2GroupProject.DataSentinel.AlertRules
         PrivilegedAction = 3,
 
         /// <summary>Fires when a single operation affects a row count exceeding the threshold.</summary>
-        BulkOperation = 4,
-
-        /// <summary>Fires when read or write operations exceed specified row count thresholds within the time window.</summary>
-        LargeReadWrite = 5
+        BulkOperation = 4
+        // LargeReadWrite (5) was removed — BulkOperation covers read/write row-count threshold detection.
     }
 }

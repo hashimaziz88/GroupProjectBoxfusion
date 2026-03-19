@@ -485,6 +485,98 @@
         }
       }
     },
+    "/api/services/app/AlertStatusHistory/GetByAlert": {
+      "get": {
+        "tags": ["AlertStatusHistory"],
+        "parameters": [
+          {
+            "name": "alertId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AlertStatusHistoryDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AlertStatusHistoryDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AlertStatusHistoryDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/services/app/AnomalyDetection/EvaluateThresholdRules": {
+      "post": {
+        "tags": ["AnomalyDetection"],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvaluateThresholdRulesInput"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvaluateThresholdRulesInput"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvaluateThresholdRulesInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThresholdRuleEvaluationResultDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThresholdRuleEvaluationResultDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThresholdRuleEvaluationResultDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/services/app/Configuration/ChangeUiTheme": {
       "post": {
         "tags": ["Configuration"],
@@ -510,6 +602,98 @@
         "responses": {
           "200": {
             "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/services/app/IncidentNote/Create": {
+      "post": {
+        "tags": ["IncidentNote"],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateIncidentNoteInput"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateIncidentNoteInput"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateIncidentNoteInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentNoteDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentNoteDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentNoteDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/services/app/IncidentNote/GetByAlert": {
+      "get": {
+        "tags": ["IncidentNote"],
+        "parameters": [
+          {
+            "name": "alertId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IncidentNoteDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IncidentNoteDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IncidentNoteDto"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -1098,6 +1282,209 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RoleDtoPagedResultDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/SecurityAlert/ExportReport": {
+      "get": {
+        "tags": ["SecurityAlert"],
+        "parameters": [
+          {
+            "name": "alertId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/services/app/SecurityAlert/GetPaged": {
+      "get": {
+        "tags": ["SecurityAlert"],
+        "parameters": [
+          {
+            "name": "Keyword",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Severity",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/ActivitySeverity"
+            }
+          },
+          {
+            "name": "Status",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/SecurityAlertStatus"
+            }
+          },
+          {
+            "name": "DatabaseId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "StartDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "EndDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "SkipCount",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "MaxResultCount",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecurityAlertDtoPagedResultDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecurityAlertDtoPagedResultDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecurityAlertDtoPagedResultDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/services/app/SecurityAlert/GetById": {
+      "get": {
+        "tags": ["SecurityAlert"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecurityAlertDetailDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecurityAlertDetailDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecurityAlertDetailDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/services/app/SecurityAlert/UpdateStatus": {
+      "put": {
+        "tags": ["SecurityAlert"],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAlertStatusInput"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAlertStatusInput"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAlertStatusInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/services/app/SecurityAlert/GetFilterOptions": {
+      "get": {
+        "tags": ["SecurityAlert"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecurityAlertFilterOptionsDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecurityAlertFilterOptionsDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecurityAlertFilterOptionsDto"
                 }
               }
             }
@@ -2066,6 +2453,14 @@
           "eventType": {
             "$ref": "#/components/schemas/ActivityEventType"
           },
+          "sourceSystem": {
+            "type": "string",
+            "nullable": true
+          },
+          "sourceEventKey": {
+            "type": "string",
+            "nullable": true
+          },
           "actorUser": {
             "type": "string",
             "nullable": true
@@ -2199,6 +2594,53 @@
         "enum": [0, 1, 2, 3, 4],
         "type": "integer",
         "format": "int32"
+      },
+      "AlertDatabaseOptionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AlertStatusHistoryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "alertId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fromStatus": {
+            "$ref": "#/components/schemas/SecurityAlertStatus"
+          },
+          "toStatus": {
+            "$ref": "#/components/schemas/SecurityAlertStatus"
+          },
+          "comment": {
+            "type": "string",
+            "nullable": true
+          },
+          "creationTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "creatorUserId": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
       },
       "ApplicationInfoDto": {
         "type": "object",
@@ -2349,6 +2791,23 @@
           "languageName": {
             "minLength": 1,
             "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateIncidentNoteInput": {
+        "type": "object",
+        "properties": {
+          "alertId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "body": {
+            "type": "string",
+            "nullable": true
+          },
+          "isInternal": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -2567,6 +3026,22 @@
         },
         "additionalProperties": false
       },
+      "EvaluateThresholdRulesInput": {
+        "type": "object",
+        "properties": {
+          "evaluationTimeUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "ruleId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "FlatPermissionDto": {
         "type": "object",
         "properties": {
@@ -2618,6 +3093,36 @@
             "items": {
               "type": "string"
             },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "IncidentNoteDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "alertId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "body": {
+            "type": "string",
+            "nullable": true
+          },
+          "isInternal": {
+            "type": "boolean"
+          },
+          "creationTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "creatorUserId": {
+            "type": "integer",
+            "format": "int64",
             "nullable": true
           }
         },
@@ -3091,6 +3596,164 @@
         },
         "additionalProperties": false
       },
+      "SecurityAlertDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "alertId": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "summary": {
+            "type": "string",
+            "nullable": true
+          },
+          "severity": {
+            "$ref": "#/components/schemas/ActivitySeverity"
+          },
+          "riskScore": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SecurityAlertStatus"
+          },
+          "triggeredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "databaseId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "databaseName": {
+            "type": "string",
+            "nullable": true
+          },
+          "tableId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "tableName": {
+            "type": "string",
+            "nullable": true
+          },
+          "primaryActorUser": {
+            "type": "string",
+            "nullable": true
+          },
+          "recommendedActions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SecurityAlertDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "alertId": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "summary": {
+            "type": "string",
+            "nullable": true
+          },
+          "severity": {
+            "$ref": "#/components/schemas/ActivitySeverity"
+          },
+          "riskScore": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SecurityAlertStatus"
+          },
+          "triggeredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "databaseId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "databaseName": {
+            "type": "string",
+            "nullable": true
+          },
+          "tableId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "tableName": {
+            "type": "string",
+            "nullable": true
+          },
+          "primaryActorUser": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SecurityAlertDtoPagedResultDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SecurityAlertDto"
+            },
+            "nullable": true
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SecurityAlertFilterOptionsDto": {
+        "type": "object",
+        "properties": {
+          "databases": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AlertDatabaseOptionDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SecurityAlertStatus": {
+        "enum": [0, 1, 2, 3, 4],
+        "type": "integer",
+        "format": "int32"
+      },
       "SeedSimulatedAbpAuditLogsInput": {
         "type": "object",
         "properties": {
@@ -3194,6 +3857,61 @@
             "nullable": true
           },
           "name": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ThresholdRuleEvaluationResultDto": {
+        "type": "object",
+        "properties": {
+          "evaluationTimeUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "evaluatedRuleCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "skippedRuleCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "candidateGroupCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAlertCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "duplicateAlertCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAlertIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateAlertStatusInput": {
+        "type": "object",
+        "properties": {
+          "alertId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "newStatus": {
+            "$ref": "#/components/schemas/SecurityAlertStatus"
+          },
+          "comment": {
             "type": "string",
             "nullable": true
           }
