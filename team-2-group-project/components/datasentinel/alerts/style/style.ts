@@ -15,22 +15,29 @@ export const useStyles = createStyles(() => ({
 
   pageCard: css`
     &.ant-card {
-      border-radius: 24px;
+      border-radius: 16px;
       border: 1px solid rgba(148, 163, 184, 0.2);
-      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.07);
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+
+      .ant-card-body {
+        padding: 16px 18px;
+      }
     }
   `,
 
   sectionTitle: css`
     &.ant-typography {
-      margin: 0 0 12px;
+      margin: 0 0 8px;
+      font-size: 14px;
+      font-weight: 700;
       color: #0f172a;
     }
   `,
 
   sectionLead: css`
     &.ant-typography {
-      margin: 0 0 16px;
+      margin: 0 0 12px;
+      font-size: 12px;
       color: #64748b;
     }
   `,

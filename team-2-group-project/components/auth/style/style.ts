@@ -22,10 +22,10 @@ export const useStyles = createStyles(() => ({
   `,
 
   brandBlock: css`
-    padding: 28px 22px 18px;
+    padding: 16px 16px 10px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 6px;
   `,
 
   brandLogo: css`
@@ -53,8 +53,8 @@ export const useStyles = createStyles(() => ({
     &.ant-typography {
       margin: 0;
       color: rgba(186, 218, 230, 0.72);
-      font-size: 13px;
-      line-height: 1.6;
+      font-size: 11px;
+      line-height: 1.5;
     }
   `,
 
@@ -66,7 +66,8 @@ export const useStyles = createStyles(() => ({
       border: 1px solid rgba(8, 145, 178, 0.32);
       background: rgba(8, 145, 178, 0.12);
       color: #7dd3e8;
-      padding: 6px 12px;
+      font-size: 11px;
+      padding: 2px 10px;
     }
   `,
 
@@ -75,12 +76,12 @@ export const useStyles = createStyles(() => ({
       flex: 1;
       background: transparent;
       border-inline-end: none;
-      padding: 8px 12px 24px;
+      padding: 4px 10px 16px;
     }
 
     .ant-menu-item {
-      border-radius: 14px;
-      margin-block: 6px;
+      border-radius: 10px;
+      margin-block: 2px;
     }
   `,
 
@@ -93,26 +94,27 @@ export const useStyles = createStyles(() => ({
   header: css`
     &.ant-layout-header {
       height: auto;
-      min-height: 108px;
-      padding: 24px 28px 16px;
+      padding: 14px 24px 10px;
       background: transparent;
       display: flex;
       flex-wrap: wrap;
       justify-content: space-between;
-      gap: 18px;
-      align-items: flex-start;
+      gap: 10px;
+      align-items: center;
     }
   `,
 
   headerCopy: css`
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 2px;
   `,
 
   pageTitle: css`
     &.ant-typography {
       margin: 0;
+      font-size: 17px;
+      font-weight: 700;
       color: #0c1a2e;
     }
   `,
@@ -120,8 +122,9 @@ export const useStyles = createStyles(() => ({
   pageSubtitle: css`
     &.ant-typography {
       margin: 0;
+      font-size: 12px;
       color: #4a6a7c;
-      max-width: 760px;
+      max-width: 620px;
     }
   `,
 
@@ -129,7 +132,7 @@ export const useStyles = createStyles(() => ({
     display: flex;
     flex-wrap: wrap;
     justify-content: flex-end;
-    gap: 10px;
+    gap: 8px;
     align-items: center;
   `,
 
@@ -140,17 +143,19 @@ export const useStyles = createStyles(() => ({
       border: none;
       background: rgba(8, 145, 178, 0.10);
       color: #0c4a58;
-      padding: 7px 12px;
+      font-size: 12px;
+      padding: 3px 10px;
       font-weight: 600;
     }
   `,
 
   primaryButton: css`
     &.ant-btn {
-      height: 42px;
+      height: 32px;
       border: none;
       border-radius: 999px;
-      padding-inline: 18px;
+      padding-inline: 16px;
+      font-size: 13px;
       color: white;
       font-weight: 600;
       background: linear-gradient(135deg, #0891b2 0%, #0e4f6b 100%);
@@ -165,9 +170,10 @@ export const useStyles = createStyles(() => ({
 
   secondaryButton: css`
     &.ant-btn {
-      height: 42px;
+      height: 32px;
       border-radius: 999px;
       border-color: #b0cfd8;
+      font-size: 13px;
       color: #0c1a2e;
       font-weight: 600;
       background: white;
@@ -175,9 +181,9 @@ export const useStyles = createStyles(() => ({
   `,
 
   content: css`
-    padding: 0 28px 28px;
+    padding: 0 20px 20px;
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 12px;
   `,
 }));

@@ -34,12 +34,9 @@ const DashboardFilters = () => {
 
   return (
     <Card className={styles.pageCard}>
-      <Typography.Title level={4} className={styles.sectionTitle}>
+      <Typography.Title level={5} className={styles.sectionTitle}>
         Dashboard Controls
       </Typography.Title>
-      <Typography.Paragraph className={styles.sectionLead}>
-        Tune the time window and ranking depth for the security posture view.
-      </Typography.Paragraph>
 
       <div className={styles.filterGrid}>
         <div className={styles.filterField}>
