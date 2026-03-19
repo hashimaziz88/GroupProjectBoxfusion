@@ -13,7 +13,7 @@ import {
   ISecurityAlertListItem,
   IUpdateAlertStatusInput,
 } from "@/interfaces/datasentinel/alerts";
-import { IAiAlertAnalysis } from "@/utils/datasentinel/aiService";
+import { IAiAlertAnalysis, IAiAlertsTriageAnalysis } from "@/utils/datasentinel/aiService";
 
 export interface ISecurityAlertsActionMessage {
   type: "success" | "error";
@@ -50,6 +50,9 @@ export interface ISecurityAlertsStateContext {
   aiAnalysis: IAiAlertAnalysis | null;
   isAiLoading: boolean;
   aiError: string | null;
+  triageAnalysis: IAiAlertsTriageAnalysis | null;
+  isTriageLoading: boolean;
+  triageError: string | null;
 }
 
 export interface ISecurityAlertsActionContext {
@@ -72,6 +75,7 @@ export interface ISecurityAlertsActionContext {
   clearMessages: () => void;
   buildRequestFilters: () => ISecurityAlertFilters;
   retryAiAnalysis: () => Promise<void>;
+  retryTriageAnalysis: () => Promise<void>;
 }
 
 export const DEFAULT_FILTERS: ISecurityAlertFilterDraft = {
@@ -117,6 +121,9 @@ export const INITIAL_STATE: ISecurityAlertsStateContext = {
   aiAnalysis: null,
   isAiLoading: false,
   aiError: null,
+  triageAnalysis: null,
+  isTriageLoading: false,
+  triageError: null,
 };
 
 export const SecurityAlertsStateContext =

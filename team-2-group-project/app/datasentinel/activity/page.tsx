@@ -2,6 +2,7 @@
 
 import { Alert } from "antd";
 import AppShell from "@/components/auth/AppShell";
+import ActivityAiPanel from "@/components/datasentinel/activity/ActivityAiPanel";
 import ActivityEventsTable from "@/components/datasentinel/activity/ActivityEventsTable";
 import ActivityFilterPanel from "@/components/datasentinel/activity/ActivityFilterPanel";
 import ActivityOverviewCard from "@/components/datasentinel/activity/ActivityOverviewCard";
@@ -41,6 +42,7 @@ const ActivityMonitoringPageContent = () => {
         <Alert type="error" showIcon title={errorMessage} className={styles.alert} />
       ) : null}
       <ActivitySummaryCards />
+      <ActivityAiPanel />
       <ActivityOverviewCard />
       <ActivityFilterPanel />
       <ActivityEventsTable />
