@@ -15,5 +15,7 @@ namespace Team2GroupProject.DataSentinel.SecurityAlerts.Dto
         public DateTime CreationTime { get; set; }
 
         public long? CreatorUserId { get; set; }
+
+        public string CreatorUserDisplayName { get; set; }
     }
 }

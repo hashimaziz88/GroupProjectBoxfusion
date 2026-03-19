@@ -8,6 +8,7 @@ export enum SecurityAlertsActionEnums {
   setFilters = "SECURITY_ALERTS_SET_FILTERS",
   setAppliedFilters = "SECURITY_ALERTS_SET_APPLIED_FILTERS",
   setPagination = "SECURITY_ALERTS_SET_PAGINATION",
+  setSelectedAlertIds = "SECURITY_ALERTS_SET_SELECTED_ALERT_IDS",
 }
 
 export const setSecurityAlertsState = createAction<
@@ -47,4 +48,11 @@ export const setSecurityAlertsPagination = createAction<
 >(SecurityAlertsActionEnums.setPagination, ({ page, pageSize }) => ({
   currentPage: page,
   pageSize,
+}));
+
+export const setSecurityAlertSelectedIds = createAction<
+  Partial<ISecurityAlertsStateContext>,
+  string[]
+>(SecurityAlertsActionEnums.setSelectedAlertIds, (selectedAlertIds) => ({
+  selectedAlertIds,
 }));

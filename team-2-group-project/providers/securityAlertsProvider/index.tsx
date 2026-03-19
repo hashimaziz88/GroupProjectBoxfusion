@@ -4,6 +4,7 @@ import React, { useCallback, useContext, useEffect, useReducer } from "react";
 import axios from "axios";
 import { PERMISSIONS } from "@/constants/auth/roles";
 import {
+  IBulkUpdateAlertStatusInput,
   ICreateIncidentNoteInput,
   ISecurityAlertFilters,
   ISecurityAlertFilterDraft,
@@ -12,6 +13,7 @@ import {
 import { useAuthState } from "@/providers/authProvider";
 import { hasPermission } from "@/utils/auth/roles";
 import {
+  bulkUpdateSecurityAlertStatus,
   createIncidentNote,
   exportIncidentReport,
   getAlertStatusHistory,
@@ -31,6 +33,7 @@ import {
 } from "./context";
 import {
   resetSecurityAlertsState,
+  setSecurityAlertSelectedIds,
   setSecurityAlertsAppliedFilters,
   setSecurityAlertsFilters,
   setSecurityAlertsPagination,
@@ -114,9 +117,10 @@ export const SecurityAlertsProvider: React.FC<{
 
       try {
         const result = await getSecurityAlerts(buildRequestFilters());
+        const items = toArray(result.items);
         dispatch(
           setSecurityAlertsState({
-            alerts: toArray(result.items),
+            alerts: items,
             totalCount: result.totalCount ?? 0,
             errorMessage: null,
           }),
@@ -295,6 +299,10 @@ export const SecurityAlertsProvider: React.FC<{
     dispatch(setSecurityAlertsPagination({ page, pageSize }));
   };
 
+  const setSelectedAlertIds = (alertIds: string[]) => {
+    dispatch(setSecurityAlertSelectedIds(alertIds));
+  };
+
   const updateStatus = async (
     input: Omit<IUpdateAlertStatusInput, "alertId">,
   ) => {
@@ -381,6 +389,58 @@ export const SecurityAlertsProvider: React.FC<{
     }
   };
 
+  const bulkUpdateStatus = async (input: IBulkUpdateAlertStatusInput) => {
+    if (input.alertIds.length === 0) {
+      dispatch(
+        setSecurityAlertsState({
+          actionMessage: {
+            type: "error",
+            text: "Select at least one new alert first.",
+          },
+        }),
+      );
+      return false;
+    }
+
+    dispatch(setSecurityAlertsState({ isBulkUpdatingStatus: true }));
+
+    try {
+      await bulkUpdateSecurityAlertStatus(input);
+
+      dispatch(
+        setSecurityAlertsState({
+          actionMessage: {
+            type: "success",
+            text:
+              input.newStatus === 3
+                ? "Selected alerts were marked as resolved."
+                : "Selected alerts were dismissed successfully.",
+          },
+          errorMessage: null,
+          selectedAlertIds: [],
+        }),
+      );
+
+      await Promise.all([
+        loadAlerts(true),
+        state.selectedAlertId ? loadAlertDetail(state.selectedAlertId) : Promise.resolve(),
+      ]);
+      return true;
+    } catch (error: unknown) {
+      dispatch(
+        setSecurityAlertsState({
+          actionMessage: {
+            type: "error",
+            text: resolveErrorMessage(error),
+          },
+        }),
+      );
+      return false;
+    } finally {
+      dispatch(setSecurityAlertsState({ isBulkUpdatingStatus: false }));
+    }
+  };
+
   const exportReport = async () => {
     if (!state.selectedAlertId || !state.selectedAlert) {
       return;
@@ -432,7 +492,9 @@ export const SecurityAlertsProvider: React.FC<{
           openAlert,
           closeAlert,
           setPagination,
+          setSelectedAlertIds,
           updateStatus,
+          bulkUpdateStatus,
           createNote: createNoteAction,
           exportReport,
           clearMessages,

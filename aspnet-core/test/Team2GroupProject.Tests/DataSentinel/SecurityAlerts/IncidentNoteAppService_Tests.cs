@@ -38,6 +38,7 @@ namespace Team2GroupProject.Tests.DataSentinel.SecurityAlerts
             result.AlertId.ShouldBe(alert.Id);
             result.Body.ShouldBe("Confirmed this is a real threat. Escalating to security team.");
             result.IsInternal.ShouldBeFalse();
+            result.CreatorUserDisplayName.ShouldNotBeNullOrWhiteSpace();
         }
 
         [Fact]

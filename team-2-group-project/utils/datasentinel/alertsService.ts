@@ -4,6 +4,7 @@ import { IAbpResponse } from "@/interfaces/abp";
 import { IPagedResult } from "@/interfaces/auth/adminService";
 import {
   IAlertStatusHistoryItem,
+  IBulkUpdateAlertStatusInput,
   ICreateIncidentNoteInput,
   IIncidentNote,
   ISecurityAlertDetail,
@@ -49,6 +50,15 @@ export const updateSecurityAlertStatus = async (
   input: IUpdateAlertStatusInput,
 ) => {
   await axiosInstance().put("/api/services/app/SecurityAlert/UpdateStatus", input);
+};
+
+export const bulkUpdateSecurityAlertStatus = async (
+  input: IBulkUpdateAlertStatusInput,
+) => {
+  await axiosInstance().put(
+    "/api/services/app/SecurityAlert/BulkUpdateStatus",
+    input,
+  );
 };
 
 export const getSecurityAlertFilterOptions = async () => {

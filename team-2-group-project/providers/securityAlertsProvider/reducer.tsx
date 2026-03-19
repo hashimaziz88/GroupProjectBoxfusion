@@ -23,6 +23,10 @@ export const SecurityAlertsReducer = handleActions<
       ...state,
       ...action.payload,
     }),
+    [SecurityAlertsActionEnums.setSelectedAlertIds]: (state, action) => ({
+      ...state,
+      ...action.payload,
+    }),
     [SecurityAlertsActionEnums.resetState]: (_, action) => ({
       ...INITIAL_STATE,
       ...action.payload,

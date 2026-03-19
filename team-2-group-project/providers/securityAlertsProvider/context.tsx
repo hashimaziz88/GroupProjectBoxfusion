@@ -3,6 +3,7 @@
 import { createContext } from "react";
 import {
   IAlertStatusHistoryItem,
+  IBulkUpdateAlertStatusInput,
   ICreateIncidentNoteInput,
   IIncidentNote,
   ISecurityAlertDetail,
@@ -28,11 +29,13 @@ export interface ISecurityAlertsStateContext {
   notes: IIncidentNote[];
   history: IAlertStatusHistoryItem[];
   drawerOpen: boolean;
+  selectedAlertIds: string[];
   isLoading: boolean;
   isRefreshing: boolean;
   isDetailLoading: boolean;
   isFilterOptionsLoading: boolean;
   isUpdatingStatus: boolean;
+  isBulkUpdatingStatus: boolean;
   isCreatingNote: boolean;
   isExportingReport: boolean;
   errorMessage?: string | null;
@@ -57,7 +60,11 @@ export interface ISecurityAlertsActionContext {
   openAlert: (alertId: string) => Promise<void>;
   closeAlert: () => void;
   setPagination: (page: number, pageSize: number) => Promise<void>;
+  setSelectedAlertIds: (alertIds: string[]) => void;
   updateStatus: (input: Omit<IUpdateAlertStatusInput, "alertId">) => Promise<boolean>;
+  bulkUpdateStatus: (
+    input: IBulkUpdateAlertStatusInput,
+  ) => Promise<boolean>;
   createNote: (input: Omit<ICreateIncidentNoteInput, "alertId">) => Promise<boolean>;
   exportReport: () => Promise<void>;
   clearMessages: () => void;
@@ -87,11 +94,13 @@ export const INITIAL_STATE: ISecurityAlertsStateContext = {
   notes: [],
   history: [],
   drawerOpen: false,
+  selectedAlertIds: [],
   isLoading: true,
   isRefreshing: false,
   isDetailLoading: false,
   isFilterOptionsLoading: true,
   isUpdatingStatus: false,
+  isBulkUpdatingStatus: false,
   isCreatingNote: false,
   isExportingReport: false,
   errorMessage: null,

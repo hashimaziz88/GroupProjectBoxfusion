@@ -32,11 +32,17 @@ export interface ISecurityAlertListItem {
   riskScore: number;
   status: number;
   triggeredAt: string;
+  serverId?: string | null;
+  serverName?: string | null;
   databaseId?: string | null;
   databaseName?: string | null;
   tableId?: string | null;
   tableName?: string | null;
   primaryActorUser?: string | null;
+  primaryActorIp?: string | null;
+  eventTimeStart: string;
+  eventTimeEnd: string;
+  relatedEventCount: number;
 }
 
 export interface ISecurityAlertDetail extends ISecurityAlertListItem {
@@ -50,6 +56,7 @@ export interface IIncidentNote {
   isInternal: boolean;
   creationTime: string;
   creatorUserId?: number | null;
+  creatorUserDisplayName?: string | null;
 }
 
 export interface IAlertStatusHistoryItem {
@@ -60,6 +67,7 @@ export interface IAlertStatusHistoryItem {
   comment?: string | null;
   creationTime: string;
   creatorUserId?: number | null;
+  creatorUserDisplayName?: string | null;
 }
 
 export interface ISecurityAlertFilterOptions {
@@ -68,6 +76,12 @@ export interface ISecurityAlertFilterOptions {
 
 export interface IUpdateAlertStatusInput {
   alertId: string;
+  newStatus: number;
+  comment?: string;
+}
+
+export interface IBulkUpdateAlertStatusInput {
+  alertIds: string[];
   newStatus: number;
   comment?: string;
 }

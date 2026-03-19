@@ -113,12 +113,32 @@ const SecurityAlertDetailDrawer = () => {
                 <strong>{selectedAlert.primaryActorUser || "Unknown actor"}</strong>
               </div>
               <div className={styles.detailMetric}>
+                <span className={styles.metricLabel}>Actor IP</span>
+                <strong>{selectedAlert.primaryActorIp || "IP not captured"}</strong>
+              </div>
+              <div className={styles.detailMetric}>
+                <span className={styles.metricLabel}>Server</span>
+                <strong>{selectedAlert.serverName || "Server not linked"}</strong>
+              </div>
+              <div className={styles.detailMetric}>
                 <span className={styles.metricLabel}>Database</span>
                 <strong>{selectedAlert.databaseName || "Database not linked"}</strong>
               </div>
               <div className={styles.detailMetric}>
                 <span className={styles.metricLabel}>Table</span>
                 <strong>{selectedAlert.tableName || "Table not linked"}</strong>
+              </div>
+              <div className={styles.detailMetric}>
+                <span className={styles.metricLabel}>Event window start</span>
+                <strong>{formatDateTime(selectedAlert.eventTimeStart)}</strong>
+              </div>
+              <div className={styles.detailMetric}>
+                <span className={styles.metricLabel}>Event window end</span>
+                <strong>{formatDateTime(selectedAlert.eventTimeEnd)}</strong>
+              </div>
+              <div className={styles.detailMetric}>
+                <span className={styles.metricLabel}>Related events</span>
+                <strong>{selectedAlert.relatedEventCount}</strong>
               </div>
             </div>
           </div>
@@ -149,6 +169,7 @@ const SecurityAlertDetailDrawer = () => {
                         {resolveAlertStatusLabel(item.toStatus)}
                       </strong>
                       <div className={styles.cellHint}>
+                        {item.creatorUserDisplayName || "System"} |{" "}
                         {formatDateTime(item.creationTime)}
                       </div>
                       {item.comment ? <div>{item.comment}</div> : null}
@@ -173,7 +194,11 @@ const SecurityAlertDetailDrawer = () => {
                   <div key={note.id} className={styles.noteCard}>
                     <div className={styles.noteMeta}>
                       {formatDateTime(note.creationTime)}
-                      {note.creatorUserId ? ` | User ${note.creatorUserId}` : ""}
+                      {note.creatorUserDisplayName
+                        ? ` | ${note.creatorUserDisplayName}`
+                        : note.creatorUserId
+                          ? ` | User ${note.creatorUserId}`
+                          : ""}
                       {note.isInternal ? " | Internal" : ""}
                     </div>
                     <div>{note.body}</div>

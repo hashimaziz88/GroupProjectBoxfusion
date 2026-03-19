@@ -69,6 +69,26 @@ export const useStyles = createStyles(() => ({
     }
   `,
 
+  bulkToolbar: css`
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+
+    @media (max-width: 720px) {
+      width: 100%;
+      align-items: flex-start;
+    }
+  `,
+
+  selectionSummary: css`
+    &.ant-typography {
+      margin: 0;
+      color: #64748b;
+      text-align: right;
+    }
+  `,
+
   table: css`
     .ant-table-container {
       border-radius: 18px !important;
