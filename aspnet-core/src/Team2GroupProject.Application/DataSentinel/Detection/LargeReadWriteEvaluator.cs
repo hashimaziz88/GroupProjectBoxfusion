@@ -16,7 +16,7 @@ using Team2GroupProject.DataSentinel.UserRiskProfiles;
 namespace Team2GroupProject.DataSentinel.Detection
 {
     /// <summary>
-    /// Evaluates large read/write rules. This evaluator is responsible for
+    /// Evaluates bulk operation rules. This evaluator is responsible for
     /// rule loading, event querying, deduplication checks, alert insertion,
     /// and risk profile updates. SaveChangesAsync is owned by the orchestrator.
     /// </summary>
@@ -43,7 +43,7 @@ namespace Team2GroupProject.DataSentinel.Detection
         }
 
         /// <summary>
-        /// Evaluates large read/write rules for the supplied tenant.
+        /// Evaluates bulk operation rules for the supplied tenant.
         /// </summary>
         public Task<LargeReadWriteRuleEvaluationResultDto> EvaluateAsync(
             int tenantId,
@@ -67,7 +67,9 @@ namespace Team2GroupProject.DataSentinel.Detection
             Guid? ruleId,
             LargeReadWriteRuleEvaluationResultDto result)
         {
-            var rules = await _alertRuleRepository.GetEnabledByTypeAsync(tenantId, AlertRuleType.LargeReadWrite);
+            // LargeReadWrite was consolidated into BulkOperation; EnsureConfigurationIsValid
+            // validates WindowMinutes and ThresholdCount for BulkOperation rules (issue #37 fix).
+            var rules = await _alertRuleRepository.GetEnabledByTypeAsync(tenantId, AlertRuleType.BulkOperation);
 
             if (ruleId.HasValue)
             {
@@ -187,7 +189,7 @@ namespace Team2GroupProject.DataSentinel.Detection
 
             var keyMaterial = string.Join("|", new[]
             {
-                "large-readwrite",
+                "bulk-operation",
                 rule.Id.ToString("N"),
                 rule.EventType?.ToString() ?? "Any",
                 rule.GroupByField?.ToString() ?? "All",
