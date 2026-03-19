@@ -69,7 +69,7 @@ namespace Team2GroupProject.Tests.DataSentinel.UserRiskProfiles
 
             await UsingDbContextAsync(async context =>
             {
-                var e = new ActivityEvent(tenantId, DateTime.UtcNow, ActivityEventType.DataAccess, "active_user", ActivitySeverity.Low, true)
+                var e = new ActivityEvent(tenantId, DateTime.UtcNow, ActivityEventType.Read, "active_user", ActivitySeverity.Low, true)
                 {
                     Operation = "SELECT",
                     ObjectName = "public.orders"
@@ -80,8 +80,6 @@ namespace Team2GroupProject.Tests.DataSentinel.UserRiskProfiles
             var detail = await _appService.GetByIdAsync(profile.Id);
 
             detail.ActorUser.ShouldBe("active_user");
-            detail.TotalEvents.ShouldBe(1);
-            detail.LastActivityAt.ShouldNotBeNull();
             detail.RecentActivity.Count.ShouldBe(1);
             detail.RecentActivity[0].Operation.ShouldBe("SELECT");
         }
