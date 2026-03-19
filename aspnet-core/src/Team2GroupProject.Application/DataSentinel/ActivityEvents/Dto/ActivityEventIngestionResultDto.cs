@@ -34,7 +34,7 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents.Dto
         public List<ActivityEventIngestionErrorDto> Errors { get; set; } = new List<ActivityEventIngestionErrorDto>();
 
         /// <summary>
-        /// Summary of any threshold alerts created while processing the accepted events.
+        /// Summary of any ingestion-triggered rule evaluation performed for accepted events.
         /// </summary>
         public IngestionDetectionSummaryDto DetectionSummary { get; set; } = new IngestionDetectionSummaryDto();
     }
