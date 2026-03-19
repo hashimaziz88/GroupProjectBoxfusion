@@ -9,12 +9,13 @@ import {
   Form,
   Input,
   Select,
+  Skeleton,
   Space,
   Tag,
   Timeline,
   Typography,
 } from "antd";
-import { DownloadOutlined } from "@ant-design/icons";
+import { DownloadOutlined, ExclamationCircleOutlined, RobotOutlined } from "@ant-design/icons";
 import { ALERT_REVIEW_STATUS_OPTIONS } from "@/constants/datasentinel/alerts";
 import {
   useSecurityAlertsActions,
@@ -26,18 +27,112 @@ import {
   resolveAlertStatusColor,
   resolveAlertStatusLabel,
 } from "@/utils/datasentinel/activityHelpers";
+import { IAiAlertAnalysis } from "@/utils/datasentinel/aiService";
 import { formatDateTime } from "@/utils/helpers";
 import { useStyles } from "./style/style";
 
 const { Paragraph, Text, Title } = Typography;
 
+// ─── AI panel ────────────────────────────────────────────────────────────────
+
+interface AlertAiPanelProps {
+  isLoading: boolean;
+  error: string | null;
+  analysis: IAiAlertAnalysis | null;
+  severityLabel: string;
+  onRetry: () => void;
+}
+
+const AlertAiPanel = ({
+  isLoading,
+  error,
+  analysis,
+  severityLabel,
+  onRetry,
+}: AlertAiPanelProps) => {
+  const { styles } = useStyles();
+
+  const renderBody = () => {
+    if (isLoading) {
+      return <Skeleton active paragraph={{ rows: 3 }} title={false} />;
+    }
+    if (error) {
+      return (
+        <div className={styles.aiErrorBlock}>
+          <ExclamationCircleOutlined style={{ marginTop: 2 }} />
+          <div>
+            <Paragraph style={{ margin: 0 }}>{error}</Paragraph>
+            <Button size="small" style={{ marginTop: 8 }} onClick={onRetry}>
+              Retry
+            </Button>
+          </div>
+        </div>
+      );
+    }
+    if (!analysis) return null;
+
+    return (
+      <>
+        <div className={styles.aiSection}>
+          <span className={styles.aiSectionLabel}>What happened</span>
+          <Paragraph style={{ margin: 0 }}>{analysis.summary}</Paragraph>
+        </div>
+
+        {analysis.severityRationale ? (
+          <div className={styles.aiSection}>
+            <span className={styles.aiSectionLabel}>
+              Why {severityLabel} severity
+            </span>
+            <div className={styles.aiSeverityBlock}>
+              <Paragraph style={{ margin: 0 }}>{analysis.severityRationale}</Paragraph>
+            </div>
+          </div>
+        ) : null}
+
+        <div className={styles.aiSection}>
+          <span className={styles.aiSectionLabel}>Suggested next step</span>
+          <div className={styles.aiNextStepBlock}>
+            <Paragraph style={{ margin: 0 }}>{analysis.nextStep}</Paragraph>
+          </div>
+        </div>
+      </>
+    );
+  };
+
+  return (
+    <div className={styles.aiPanel}>
+      <div className={styles.aiPanelHeader}>
+        <RobotOutlined style={{ color: "#6366f1", fontSize: 16 }} />
+        <Title level={5} className={styles.aiPanelTitle}>
+          AI Analysis
+        </Title>
+      </div>
+      {renderBody()}
+    </div>
+  );
+};
+
+// ─── Detail view ──────────────────────────────────────────────────────────────
+
+const resolveNoteAuthor = (
+  displayName?: string | null,
+  userId?: number | null,
+): string => {
+  if (displayName) return ` | ${displayName}`;
+  if (userId) return ` | User ${userId}`;
+  return "";
+};
+
 const SecurityAlertDetailView = () => {
   const { styles } = useStyles();
   const {
+    aiAnalysis,
+    aiError,
     canExportReports,
     canReviewAlerts,
     detailErrorMessage,
     history,
+    isAiLoading,
     isCreatingNote,
     isDetailLoading,
     isExportingReport,
@@ -45,10 +140,15 @@ const SecurityAlertDetailView = () => {
     notes,
     selectedAlert,
   } = useSecurityAlertsState();
-  const { createNote, exportReport, updateStatus } = useSecurityAlertsActions();
+  const { createNote, exportReport, retryAiAnalysis, updateStatus } =
+    useSecurityAlertsActions();
 
   const [statusForm] = Form.useForm();
   const [noteForm] = Form.useForm();
+
+  const handleExportReport = async () => {
+    await exportReport();
+  };
 
   return (
     <Card className={styles.pageCard}>
@@ -58,9 +158,13 @@ const SecurityAlertDetailView = () => {
 
       {isDetailLoading ? (
         <Paragraph>Loading alert details...</Paragraph>
-      ) : !selectedAlert ? (
+      ) : null}
+
+      {!isDetailLoading && !selectedAlert ? (
         <Empty description="The selected alert could not be loaded." />
-      ) : (
+      ) : null}
+
+      {!isDetailLoading && selectedAlert ? (
         <>
           <div className={styles.detailHero}>
             <Space wrap>
@@ -82,6 +186,14 @@ const SecurityAlertDetailView = () => {
               <Text type="secondary">{selectedAlert.alertId}</Text>
             </div>
           </div>
+
+          <AlertAiPanel
+            isLoading={isAiLoading}
+            error={aiError}
+            analysis={aiAnalysis}
+            severityLabel={resolveAlertSeverityLabel(selectedAlert.severity)}
+            onRetry={retryAiAnalysis}
+          />
 
           <div className={styles.detailSection}>
             <Title level={5} className={styles.sectionTitle}>
@@ -134,16 +246,6 @@ const SecurityAlertDetailView = () => {
             </div>
           </div>
 
-          <div className={styles.detailSection}>
-            <Title level={5} className={styles.sectionTitle}>
-              Recommended actions
-            </Title>
-            <ul className={styles.actionList}>
-              {selectedAlert.recommendedActions.map((action) => (
-                <li key={action}>{action}</li>
-              ))}
-            </ul>
-          </div>
 
           <div className={styles.detailSection}>
             <Title level={5} className={styles.sectionTitle}>
@@ -181,20 +283,22 @@ const SecurityAlertDetailView = () => {
             </Title>
             {notes.length > 0 ? (
               <div className={styles.noteList}>
-                {notes.map((note) => (
-                  <div key={note.id} className={styles.noteCard}>
-                    <div className={styles.noteMeta}>
-                      {formatDateTime(note.creationTime)}
-                      {note.creatorUserDisplayName
-                        ? ` | ${note.creatorUserDisplayName}`
-                        : note.creatorUserId
-                          ? ` | User ${note.creatorUserId}`
-                          : ""}
-                      {note.isInternal ? " | Internal" : ""}
+                {notes.map((note) => {
+                  const author = resolveNoteAuthor(
+                    note.creatorUserDisplayName,
+                    note.creatorUserId,
+                  );
+                  return (
+                    <div key={note.id} className={styles.noteCard}>
+                      <div className={styles.noteMeta}>
+                        {formatDateTime(note.creationTime)}
+                        {author}
+                        {note.isInternal ? " | Internal" : ""}
+                      </div>
+                      <div>{note.body}</div>
                     </div>
-                    <div>{note.body}</div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <Paragraph type="secondary">
@@ -214,7 +318,6 @@ const SecurityAlertDetailView = () => {
                   layout="vertical"
                   onFinish={async (values) => {
                     const updated = await updateStatus(values);
-
                     if (updated) {
                       statusForm.resetFields();
                     }
@@ -251,7 +354,6 @@ const SecurityAlertDetailView = () => {
                   initialValues={{ isInternal: false }}
                   onFinish={async (values) => {
                     const created = await createNote(values);
-
                     if (created) {
                       noteForm.resetFields();
                       noteForm.setFieldValue("isInternal", false);
@@ -280,7 +382,7 @@ const SecurityAlertDetailView = () => {
             <div className={styles.drawerActions}>
               <Button
                 icon={<DownloadOutlined />}
-                onClick={() => void exportReport()}
+                onClick={handleExportReport}
                 loading={isExportingReport}
               >
                 Export incident report
@@ -288,7 +390,7 @@ const SecurityAlertDetailView = () => {
             </div>
           ) : null}
         </>
-      )}
+      ) : null}
     </Card>
   );
 };

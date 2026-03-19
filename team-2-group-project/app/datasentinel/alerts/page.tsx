@@ -1,5 +1,6 @@
 "use client";
 
+import AlertsTriagePanel from "@/components/datasentinel/alerts/AlertsTriagePanel";
 import SecurityAlertsFilterPanel from "@/components/datasentinel/alerts/SecurityAlertsFilterPanel";
 import SecurityAlertsTable from "@/components/datasentinel/alerts/SecurityAlertsTable";
 import SecurityAlertsWorkspace from "@/components/datasentinel/alerts/SecurityAlertsWorkspace";
@@ -13,8 +14,9 @@ const PAGE_SUBTITLE =
 
 const SecurityAlertsPageContent = () => (
   <SecurityAlertsWorkspace title={PAGE_TITLE} subtitle={PAGE_SUBTITLE}>
-      <SecurityAlertsFilterPanel />
-      <SecurityAlertsTable />
+    <AlertsTriagePanel />
+    <SecurityAlertsFilterPanel />
+    <SecurityAlertsTable />
   </SecurityAlertsWorkspace>
 );
 

@@ -10,7 +10,9 @@ import axios from "axios";
 import {
   ActivityTab,
   IActivityEventFilters,
+  IActivityEventListItem,
   IActivityFilterDraft,
+  IActivitySummary,
 } from "@/interfaces/datasentinel/activity";
 import { useAuthState } from "@/providers/authProvider";
 import {
@@ -19,6 +21,10 @@ import {
   getActivitySummary,
 } from "@/utils/datasentinel/activityService";
 import { toArray } from "@/utils/helpers";
+import {
+  AiUnavailableError,
+  generateActivityAnalysis,
+} from "@/utils/datasentinel/aiService";
 import {
   ActivityMonitoringActionContext,
   ActivityMonitoringStateContext,
@@ -101,6 +107,52 @@ export const ActivityMonitoringProvider: React.FC<{
     [state.activeTab, state.appliedFilters, state.currentPage, state.pageSize],
   );
 
+  const loadAiAnalysis = useCallback(
+    async (
+      events: IActivityEventListItem[],
+      summary: IActivitySummary,
+      activeTab: ActivityTab,
+      actorUser: string | undefined,
+      operation: string | undefined,
+    ) => {
+      dispatch(setActivityMonitoringState({ isAiLoading: true, aiError: null }));
+      try {
+        const analysis = await generateActivityAnalysis({
+          totalEvents: summary.totalEvents,
+          readOps: summary.readOps,
+          writeOps: summary.writeOps,
+          authEvents: summary.authEvents,
+          privilegedOps: summary.privilegedOps,
+          suspiciousActivityCount: summary.suspiciousActivityCount,
+          failedEventsCount: summary.failedEventsCount,
+          activeTab,
+          actorUser,
+          operation,
+          sampleEvents: events.slice(0, 20).map((e) => ({
+            eventTime: e.eventTime,
+            operation: e.operation,
+            objectName: e.objectName,
+            actorUser: e.actorUser,
+            isSuccess: e.isSuccess,
+            isOutOfHours: e.isOutOfHours,
+            failureReason: e.failureReason,
+          })),
+        });
+        dispatch(setActivityMonitoringState({ aiAnalysis: analysis, aiError: null }));
+      } catch (error: unknown) {
+        const message =
+          error instanceof AiUnavailableError
+            ? error.message
+            : "AI analysis is temporarily unavailable.";
+        dispatch(setActivityMonitoringState({ aiAnalysis: null, aiError: message }));
+        console.error("[ActivityMonitoringProvider] AI analysis failed:", error);
+      } finally {
+        dispatch(setActivityMonitoringState({ isAiLoading: false }));
+      }
+    },
+    [],
+  );
+
   const loadFilterOptions = useCallback(async () => {
     const result = await getActivityFilterOptions();
     dispatch(
@@ -137,12 +189,20 @@ export const ActivityMonitoringProvider: React.FC<{
 
       try {
         const result = await getActivityEvents(buildRequestFilters());
+        const eventItems = toArray(result.items);
         dispatch(
           setActivityMonitoringState({
-            events: toArray(result.items),
+            events: eventItems,
             totalCount: result.totalCount ?? 0,
             errorMessage: null,
           }),
+        );
+        void loadAiAnalysis(
+          eventItems,
+          state.summary,
+          state.activeTab,
+          state.appliedFilters.actorUser,
+          state.appliedFilters.operation,
         );
       } catch (error: unknown) {
         dispatch(
@@ -161,7 +221,7 @@ export const ActivityMonitoringProvider: React.FC<{
         );
       }
     },
-    [buildRequestFilters],
+    [buildRequestFilters, loadAiAnalysis],
   );
 
   useEffect(() => {
@@ -237,6 +297,16 @@ export const ActivityMonitoringProvider: React.FC<{
     dispatch(setActivityMonitoringTab(tab));
   };
 
+  const retryAiAnalysis = async () => {
+    await loadAiAnalysis(
+      state.events,
+      state.summary,
+      state.activeTab,
+      state.appliedFilters.actorUser,
+      state.appliedFilters.operation,
+    );
+  };
+
   const setPagination = async (page: number, nextPageSize: number) => {
     dispatch(
       setActivityMonitoringPagination({
@@ -263,6 +333,9 @@ export const ActivityMonitoringProvider: React.FC<{
         currentPage: state.currentPage,
         pageSize: state.pageSize,
         hasTenantContext,
+        aiAnalysis: state.aiAnalysis,
+        isAiLoading: state.isAiLoading,
+        aiError: state.aiError,
       }}
     >
       <ActivityMonitoringActionContext.Provider
@@ -274,6 +347,7 @@ export const ActivityMonitoringProvider: React.FC<{
           setActiveTab,
           setPagination,
           buildRequestFilters,
+          retryAiAnalysis,
         }}
       >
         {children}

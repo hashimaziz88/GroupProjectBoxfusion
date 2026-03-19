@@ -2,6 +2,7 @@
 
 import { Alert, Skeleton, Space } from "antd";
 import AppShell from "@/components/auth/AppShell";
+import DashboardAiPanel from "@/components/datasentinel/dashboard/DashboardAiPanel";
 import DashboardCharts from "@/components/datasentinel/dashboard/DashboardCharts";
 import DashboardFilters from "@/components/datasentinel/dashboard/DashboardFilters";
 import DashboardOverview from "@/components/datasentinel/dashboard/DashboardOverview";
@@ -75,6 +76,7 @@ const DashboardPageContent = () => {
           <Skeleton active paragraph={{ rows: 16 }} />
         ) : (
           <>
+            <DashboardAiPanel />
             <DashboardOverview />
             <DashboardCharts />
             <DashboardRiskPanels />
