@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Abp.Authorization;
 using Abp.Dependency;
+using Abp.Domain.Uow;
 using Abp.MultiTenancy;
 using Abp.UI;
 using Microsoft.AspNetCore.Identity;
@@ -52,14 +53,16 @@ namespace Team2GroupProject.Authorization.Roles
 
         private readonly RoleManager _roleManager;
         private readonly IPermissionManager _permissionManager;
+        private readonly IUnitOfWorkManager _unitOfWorkManager;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DataSentinelRoleSeeder"/> class.
         /// </summary>
-        public DataSentinelRoleSeeder(RoleManager roleManager, IPermissionManager permissionManager)
+        public DataSentinelRoleSeeder(RoleManager roleManager, IPermissionManager permissionManager, IUnitOfWorkManager unitOfWorkManager)
         {
             _roleManager = roleManager;
             _permissionManager = permissionManager;
+            _unitOfWorkManager = unitOfWorkManager;
         }
 
         /// <summary>
@@ -73,6 +76,9 @@ namespace Team2GroupProject.Authorization.Roles
                 throw new UserFriendlyException("TenantId must be a positive value.");
             }
 
+            using var uow = _unitOfWorkManager.Begin();
+            _unitOfWorkManager.Current.SetTenantId(tenantId);
+
             var permissionLookup = _permissionManager.GetAllPermissions()
                 .Where(x => x.MultiTenancySides.HasFlag(MultiTenancySides.Tenant))
                 .ToDictionary(x => x.Name, StringComparer.OrdinalIgnoreCase);
@@ -81,7 +87,7 @@ namespace Team2GroupProject.Authorization.Roles
                 tenantId,
                 DataSentinelRoleNames.SecurityAnalyst,
                 "DataSentinel Security Analyst",
-                "Security Analyst — monitors alerts, activity events, and exports reports.",
+                "Security Analyst ï¿½ monitors alerts, activity events, and exports reports.",
                 SecurityAnalystPermissionNames,
                 permissionLookup);
 
@@ -89,7 +95,7 @@ namespace Team2GroupProject.Authorization.Roles
                 tenantId,
                 DataSentinelRoleNames.Dba,
                 "DataSentinel DBA",
-                "DBA — manages infrastructure, intake, and rules.",
+                "DBA ï¿½ manages infrastructure, intake, and rules.",
                 DbaPermissionNames,
                 permissionLookup);
 
@@ -97,11 +103,13 @@ namespace Team2GroupProject.Authorization.Roles
                 tenantId,
                 DataSentinelRoleNames.OperationsManager,
                 "DataSentinel Operations Manager",
-                "Operations Manager — monitors dashboards and alerts, and exports summaries.",
+                "Operations Manager ï¿½ monitors dashboards and alerts, and exports summaries.",
                 OperationsManagerPermissionNames,
                 permissionLookup);
 
             await EnsureTenantAdminDescriptionAsync(tenantId);
+
+            await uow.CompleteAsync();
         }
 
         private async Task EnsureRoleAsync(
