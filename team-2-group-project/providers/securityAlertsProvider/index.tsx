@@ -113,6 +113,40 @@ export const SecurityAlertsProvider: React.FC<{
     [state.appliedFilters, state.currentPage, state.pageSize],
   );
 
+  const loadTriageAnalysis = useCallback(
+    async (alerts: (typeof state)["alerts"], totalCount: number) => {
+      if (alerts.length === 0) return;
+      dispatch(setSecurityAlertsState({ isTriageLoading: true, triageError: null }));
+      try {
+        const analysis = await generateAlertsTriageAnalysis({
+          totalCount,
+          alerts: alerts.map((a) => ({
+            title: a.title,
+            severity: a.severity,
+            status: a.status,
+            riskScore: a.riskScore,
+            relatedEventCount: a.relatedEventCount,
+            triggeredAt: a.triggeredAt,
+            primaryActorUser: a.primaryActorUser,
+            databaseName: a.databaseName,
+            tableName: a.tableName,
+          })),
+        });
+        dispatch(setSecurityAlertsState({ triageAnalysis: analysis, triageError: null }));
+      } catch (error: unknown) {
+        const message =
+          error instanceof AiUnavailableError
+            ? error.message
+            : "AI analysis is temporarily unavailable.";
+        dispatch(setSecurityAlertsState({ triageAnalysis: null, triageError: message }));
+        console.error("[SecurityAlertsProvider] Triage analysis failed:", error);
+      } finally {
+        dispatch(setSecurityAlertsState({ isTriageLoading: false }));
+      }
+    },
+    [],
+  );
+
   const loadAlerts = useCallback(
     async (refreshing = false) => {
       dispatch(
@@ -150,7 +184,7 @@ export const SecurityAlertsProvider: React.FC<{
         );
       }
     },
-    [buildRequestFilters],
+    [buildRequestFilters, loadTriageAnalysis],
   );
 
   const loadFilterOptions = useCallback(async () => {
@@ -176,40 +210,6 @@ export const SecurityAlertsProvider: React.FC<{
       dispatch(setSecurityAlertsState({ isFilterOptionsLoading: false }));
     }
   }, []);
-
-  const loadTriageAnalysis = useCallback(
-    async (alerts: (typeof state)["alerts"], totalCount: number) => {
-      if (alerts.length === 0) return;
-      dispatch(setSecurityAlertsState({ isTriageLoading: true, triageError: null }));
-      try {
-        const analysis = await generateAlertsTriageAnalysis({
-          totalCount,
-          alerts: alerts.map((a) => ({
-            title: a.title,
-            severity: a.severity,
-            status: a.status,
-            riskScore: a.riskScore,
-            relatedEventCount: a.relatedEventCount,
-            triggeredAt: a.triggeredAt,
-            primaryActorUser: a.primaryActorUser,
-            databaseName: a.databaseName,
-            tableName: a.tableName,
-          })),
-        });
-        dispatch(setSecurityAlertsState({ triageAnalysis: analysis, triageError: null }));
-      } catch (error: unknown) {
-        const message =
-          error instanceof AiUnavailableError
-            ? error.message
-            : "AI analysis is temporarily unavailable.";
-        dispatch(setSecurityAlertsState({ triageAnalysis: null, triageError: message }));
-        console.error("[SecurityAlertsProvider] Triage analysis failed:", error);
-      } finally {
-        dispatch(setSecurityAlertsState({ isTriageLoading: false }));
-      }
-    },
-    [],
-  );
 
   const loadAiAnalysis = useCallback(async (alert: ISecurityAlertDetail) => {
     dispatch(setSecurityAlertsState({ isAiLoading: true, aiError: null, aiAnalysis: null }));

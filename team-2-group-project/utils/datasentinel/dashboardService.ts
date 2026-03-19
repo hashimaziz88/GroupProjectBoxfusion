@@ -87,13 +87,16 @@ export const getDashboardTopRisk = async (input: ITopRiskInput) => {
   return unwrapAbpResponse(response.data);
 };
 
-export const getDashboardRecentAlerts = async (windowDays: number) => {
+export const getDashboardRecentAlerts = async (
+  windowDays: number,
+  maxResultCount = 5,
+) => {
   const response = await axiosInstance().get<
     IAbpResponse<IPagedResult<ISecurityAlertListItem>>
   >("/api/services/app/SecurityAlert/GetPaged", {
     params: {
       SkipCount: 0,
-      MaxResultCount: 5,
+      MaxResultCount: maxResultCount,
       StartDate: new Date(
         Date.now() - Math.max(windowDays, 1) * 24 * 60 * 60 * 1000,
       ).toISOString(),

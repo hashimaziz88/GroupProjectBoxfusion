@@ -54,6 +54,10 @@ export const canAccessDataSentinelAlerts = (
   permissions?: string[] | null,
 ) => hasPermission(permissions, PERMISSIONS.dataSentinelAlertsView);
 
+export const canAccessDataSentinelReportsExport = (
+  permissions?: string[] | null,
+) => hasPermission(permissions, PERMISSIONS.dataSentinelReportsExport);
+
 export const selectBestAuthenticatedRoute = (
   user?: IRouteSelectorUser | null,
 ) => {
@@ -77,6 +81,10 @@ export const selectBestAuthenticatedRoute = (
 
   if (hasTenantContext && canAccessDataSentinelAlerts(user?.permissions)) {
     return "/datasentinel/alerts";
+  }
+
+  if (hasTenantContext && canAccessDataSentinelReportsExport(user?.permissions)) {
+    return "/datasentinel/reports";
   }
 
   if (canAccessUsers(user?.permissions)) {

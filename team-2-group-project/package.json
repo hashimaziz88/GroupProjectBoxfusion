@@ -6,9 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
+    "@react-pdf/renderer": "^4.3.2",
     "@types/redux-actions": "^2.6.5",
     "antd": "^6.3.2",
     "antd-style": "^4.1.0",
@@ -19,6 +23,7 @@
     "redux-actions": "^3.0.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

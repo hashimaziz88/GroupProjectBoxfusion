@@ -221,7 +221,14 @@ export const ActivityMonitoringProvider: React.FC<{
         );
       }
     },
-    [buildRequestFilters, loadAiAnalysis],
+    [
+      buildRequestFilters,
+      loadAiAnalysis,
+      state.activeTab,
+      state.appliedFilters.actorUser,
+      state.appliedFilters.operation,
+      state.summary,
+    ],
   );
 
   useEffect(() => {

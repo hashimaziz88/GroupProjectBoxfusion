@@ -242,7 +242,7 @@ export const DashboardProvider: React.FC<{
     return () => {
       cancelled = true;
     };
-  }, [hasTenantContext, state.appliedFilters]);
+  }, [hasTenantContext, loadAiAnalysis, state.appliedFilters]);
 
   const setFilterValue = <K extends keyof typeof state.filters>(
     key: K,
