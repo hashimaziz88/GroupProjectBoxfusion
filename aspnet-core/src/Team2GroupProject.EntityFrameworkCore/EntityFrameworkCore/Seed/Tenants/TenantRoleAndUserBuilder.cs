@@ -16,11 +16,16 @@ namespace Team2GroupProject.EntityFrameworkCore.Seed.Tenants
     {
         private readonly Team2GroupProjectDbContext _context;
         private readonly int _tenantId;
+        private readonly IDataSentinelRoleSeeder _dataSentinelRoleSeeder;
 
-        public TenantRoleAndUserBuilder(Team2GroupProjectDbContext context, int tenantId)
+        public TenantRoleAndUserBuilder(
+            Team2GroupProjectDbContext context,
+            int tenantId,
+            IDataSentinelRoleSeeder dataSentinelRoleSeeder = null)
         {
             _context = context;
             _tenantId = tenantId;
+            _dataSentinelRoleSeeder = dataSentinelRoleSeeder;
         }
 
         public void Create()
@@ -84,6 +89,8 @@ namespace Team2GroupProject.EntityFrameworkCore.Seed.Tenants
                 _context.UserRoles.Add(new UserRole(_tenantId, adminUser.Id, adminRole.Id));
                 _context.SaveChanges();
             }
+
+            _dataSentinelRoleSeeder?.SeedAsync(_tenantId).GetAwaiter().GetResult();
         }
     }
 }
