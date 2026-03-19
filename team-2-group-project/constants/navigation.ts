@@ -4,6 +4,7 @@ import {
   canAccessDataSentinelDashboard,
   canAccessDataSentinelInfrastructure,
   canAccessDataSentinelIntake,
+  canAccessDataSentinelReportsExport,
   canAccessRoles,
   canAccessTenants,
   canAccessUsers,
@@ -80,6 +81,12 @@ export const NAVIGATION_ITEMS: INavigationItem[] = [
     permission: PERMISSIONS.dataSentinelAlertsView,
   },
   {
+    key: "datasentinel-reports",
+    href: "/datasentinel/reports",
+    label: "Reports",
+    permission: PERMISSIONS.dataSentinelReportsExport,
+  },
+  {
     key: "roles",
     href: "/roles",
     label: "Roles",
@@ -118,7 +125,8 @@ const canAccessNavigationItem = (
     item.permission === PERMISSIONS.dataSentinelInfrastructureView ||
     item.permission === PERMISSIONS.dataSentinelIntake ||
     item.permission === PERMISSIONS.dataSentinelActivity ||
-    item.permission === PERMISSIONS.dataSentinelAlertsView;
+    item.permission === PERMISSIONS.dataSentinelAlertsView ||
+    item.permission === PERMISSIONS.dataSentinelReportsExport;
 
   if (isDataSentinelItem && !hasTenantContext) {
     return false;
@@ -154,6 +162,10 @@ const canAccessNavigationItem = (
 
   if (item.permission === PERMISSIONS.dataSentinelAlertsView) {
     return canAccessDataSentinelAlerts(permissions);
+  }
+
+  if (item.permission === PERMISSIONS.dataSentinelReportsExport) {
+    return canAccessDataSentinelReportsExport(permissions);
   }
 
   return false;
