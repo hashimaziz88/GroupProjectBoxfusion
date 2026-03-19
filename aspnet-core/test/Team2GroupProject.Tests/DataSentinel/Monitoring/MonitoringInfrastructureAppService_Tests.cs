@@ -51,6 +51,11 @@ namespace Team2GroupProject.Tests.DataSentinel.Monitoring
             persistedCounts.Servers.ShouldBe(1);
             persistedCounts.Databases.ShouldBe(2);
             persistedCounts.Tables.ShouldBe(6);
+
+            var persistedRuleCount = await UsingDbContextAsync(async context =>
+                await Task.FromResult(context.AlertRules.Count()));
+
+            persistedRuleCount.ShouldBeGreaterThan(0);
         }
 
         [Fact]
@@ -110,6 +115,25 @@ namespace Team2GroupProject.Tests.DataSentinel.Monitoring
             persisted.DatabaseId.ShouldBe(database.Id);
             persisted.ServerId.ShouldBe(database.ServerId);
             persisted.ActorUser.ShouldBe("admin");
+        }
+
+        [Fact]
+        public async Task BootstrapDemoAsync_should_seed_default_alert_rules_for_the_current_tenant()
+        {
+            await _monitoringInfrastructureAppService.BootstrapDemoAsync(new BootstrapMonitoringDemoInput());
+
+            var persistedRules = await UsingDbContextAsync(async context =>
+                await Task.FromResult(context.AlertRules
+                    .Where(x => x.TenantId == AbpSession.TenantId)
+                    .OrderBy(x => x.Name)
+                    .Select(x => x.Name)
+                    .ToList()));
+
+            persistedRules.ShouldContain("Default: Failed login burst");
+            persistedRules.ShouldContain("Default: Write spike");
+            persistedRules.ShouldContain("Default: Large write operation");
+            persistedRules.ShouldContain("Default: After-hours risky activity");
+            persistedRules.ShouldContain("Default: Privileged action activity");
         }
     }
 }
