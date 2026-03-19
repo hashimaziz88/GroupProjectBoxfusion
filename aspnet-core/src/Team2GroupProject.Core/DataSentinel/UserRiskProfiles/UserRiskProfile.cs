@@ -51,6 +51,15 @@ namespace Team2GroupProject.DataSentinel.UserRiskProfiles
         /// <summary>Number of events flagged as out-of-hours for this actor.</summary>
         public int OutOfHoursEventCount { get; set; }
 
+        /// <summary>Total number of activity events ingested for this actor.</summary>
+        public int TotalEventCount { get; set; }
+
+        /// <summary>Timestamp of the most recent activity event for this actor. Null until first event is ingested.</summary>
+        public DateTime? LastActivityAt { get; set; }
+
+        /// <summary>Analyst-assigned status label for this actor profile.</summary>
+        public UserProfileStatus Status { get; set; }
+
         protected UserRiskProfile()
         {
         }
@@ -62,6 +71,7 @@ namespace Team2GroupProject.DataSentinel.UserRiskProfiles
             ActorUser = actorUser.Trim();
             RiskScore = 0;
             RiskLevel = UserRiskLevel.None;
+            Status = UserProfileStatus.Normal;
             LastEvaluatedAt = DateTime.UtcNow;
         }
 
