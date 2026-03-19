@@ -28,17 +28,20 @@ namespace Team2GroupProject.DataSentinel.SecurityAlerts
 
         private readonly ISecurityAlertRepository _securityAlertRepository;
         private readonly IAlertStatusHistoryRepository _alertStatusHistoryRepository;
+        private readonly IMonitoredServerRepository _monitoredServerRepository;
         private readonly IMonitoredDatabaseRepository _monitoredDatabaseRepository;
         private readonly IMonitoredTableRepository _monitoredTableRepository;
 
         public SecurityAlertAppService(
             ISecurityAlertRepository securityAlertRepository,
             IAlertStatusHistoryRepository alertStatusHistoryRepository,
+            IMonitoredServerRepository monitoredServerRepository,
             IMonitoredDatabaseRepository monitoredDatabaseRepository,
             IMonitoredTableRepository monitoredTableRepository)
         {
             _securityAlertRepository = securityAlertRepository;
             _alertStatusHistoryRepository = alertStatusHistoryRepository;
+            _monitoredServerRepository = monitoredServerRepository;
             _monitoredDatabaseRepository = monitoredDatabaseRepository;
             _monitoredTableRepository = monitoredTableRepository;
         }
@@ -52,14 +55,22 @@ namespace Team2GroupProject.DataSentinel.SecurityAlerts
 
             var rows = await (
                 from a in query.OrderByDescending(x => x.TriggeredAt).Skip(input.SkipCount).Take(input.MaxResultCount)
+                join s in _monitoredServerRepository.GetAll() on a.ServerId equals s.Id into serverJoin
+                from srv in serverJoin.DefaultIfEmpty()
                 join d in _monitoredDatabaseRepository.GetAll() on a.DatabaseId equals d.Id into dbJoin
                 from db in dbJoin.DefaultIfEmpty()
                 join t in _monitoredTableRepository.GetAll() on a.TableId equals t.Id into tableJoin
                 from tbl in tableJoin.DefaultIfEmpty()
-                select new { Alert = a, DatabaseName = (string)db.Name, TableName = (string)tbl.Name }
+                select new
+                {
+                    Alert = a,
+                    ServerName = (string)srv.Name,
+                    DatabaseName = (string)db.Name,
+                    TableName = (string)tbl.Name
+                }
             ).ToListAsync();
 
-            var items = rows.Select(x => MapToDto(x.Alert, x.DatabaseName, x.TableName)).ToList();
+            var items = rows.Select(x => MapToDto(x.Alert, x.ServerName, x.DatabaseName, x.TableName)).ToList();
 
             return new PagedResultDto<SecurityAlertDto>(totalCount, items);
         }
@@ -70,11 +81,19 @@ namespace Team2GroupProject.DataSentinel.SecurityAlerts
 
             var row = await (
                 from a in _securityAlertRepository.GetAll().Where(x => x.TenantId == tenantId && x.Id == id)
+                join s in _monitoredServerRepository.GetAll() on a.ServerId equals s.Id into serverJoin
+                from srv in serverJoin.DefaultIfEmpty()
                 join d in _monitoredDatabaseRepository.GetAll() on a.DatabaseId equals d.Id into dbJoin
                 from db in dbJoin.DefaultIfEmpty()
                 join t in _monitoredTableRepository.GetAll() on a.TableId equals t.Id into tableJoin
                 from tbl in tableJoin.DefaultIfEmpty()
-                select new { Alert = a, DatabaseName = (string)db.Name, TableName = (string)tbl.Name }
+                select new
+                {
+                    Alert = a,
+                    ServerName = (string)srv.Name,
+                    DatabaseName = (string)db.Name,
+                    TableName = (string)tbl.Name
+                }
             ).FirstOrDefaultAsync();
 
             if (row == null)
@@ -82,7 +101,7 @@ namespace Team2GroupProject.DataSentinel.SecurityAlerts
                 throw new UserFriendlyException("Security alert not found.");
             }
 
-            var dto = MapToDto(row.Alert, row.DatabaseName, row.TableName);
+            var dto = MapToDto(row.Alert, row.ServerName, row.DatabaseName, row.TableName);
 
             return new SecurityAlertDetailDto
             {
@@ -94,11 +113,17 @@ namespace Team2GroupProject.DataSentinel.SecurityAlerts
                 RiskScore = dto.RiskScore,
                 Status = dto.Status,
                 TriggeredAt = dto.TriggeredAt,
+                ServerId = dto.ServerId,
+                ServerName = dto.ServerName,
                 DatabaseId = dto.DatabaseId,
                 DatabaseName = dto.DatabaseName,
                 TableId = dto.TableId,
                 TableName = dto.TableName,
                 PrimaryActorUser = dto.PrimaryActorUser,
+                PrimaryActorIp = dto.PrimaryActorIp,
+                EventTimeStart = dto.EventTimeStart,
+                EventTimeEnd = dto.EventTimeEnd,
+                RelatedEventCount = dto.RelatedEventCount,
                 RecommendedActions = DefaultRecommendedActions
             };
         }
@@ -141,6 +166,70 @@ namespace Team2GroupProject.DataSentinel.SecurityAlerts
 
             var historyEntry = new AlertStatusHistory(tenantId, alert.Id, fromStatus, alert.Status, input.Comment);
             await _alertStatusHistoryRepository.InsertAsync(historyEntry);
+        }
+
+        [AbpAuthorize(PermissionNames.Pages_DataSentinel_Alerts_Review)]
+        public async Task BulkUpdateStatusAsync(BulkUpdateAlertStatusInput input)
+        {
+            var alertIds = input.AlertIds?
+                .Where(x => x != Guid.Empty)
+                .Distinct()
+                .ToList() ?? new List<Guid>();
+
+            if (alertIds.Count == 0)
+            {
+                throw new UserFriendlyException("Select at least one alert to update.");
+            }
+
+            if (input.NewStatus != SecurityAlertStatus.Resolved &&
+                input.NewStatus != SecurityAlertStatus.Dismissed)
+            {
+                throw new UserFriendlyException(
+                    "Bulk review only supports resolving or dismissing alerts.");
+            }
+
+            var tenantId = AbpSession.GetTenantId();
+            var alerts = await _securityAlertRepository.GetAll()
+                .Where(x => x.TenantId == tenantId && alertIds.Contains(x.Id))
+                .ToListAsync();
+
+            if (alerts.Count != alertIds.Count)
+            {
+                throw new UserFriendlyException(
+                    "One or more selected alerts were not found for this tenant.");
+            }
+
+            if (alerts.Any(x => x.Status != SecurityAlertStatus.New))
+            {
+                throw new UserFriendlyException(
+                    "Bulk review is only available for new alerts.");
+            }
+
+            var now = DateTime.UtcNow;
+            var userId = AbpSession.UserId;
+
+            foreach (var alert in alerts)
+            {
+                if (input.NewStatus == SecurityAlertStatus.Resolved)
+                {
+                    alert.Resolve(now, userId);
+                }
+                else
+                {
+                    alert.Dismiss(now, userId);
+                }
+
+                await _securityAlertRepository.UpdateAsync(alert);
+
+                var historyEntry = new AlertStatusHistory(
+                    tenantId,
+                    alert.Id,
+                    SecurityAlertStatus.New,
+                    alert.Status,
+                    input.Comment);
+
+                await _alertStatusHistoryRepository.InsertAsync(historyEntry);
+            }
         }
 
         public async Task<SecurityAlertFilterOptionsDto> GetFilterOptionsAsync()
@@ -207,7 +296,11 @@ namespace Team2GroupProject.DataSentinel.SecurityAlerts
             return query;
         }
 
-        private static SecurityAlertDto MapToDto(SecurityAlert alert, string databaseName, string tableName)
+        private static SecurityAlertDto MapToDto(
+            SecurityAlert alert,
+            string serverName,
+            string databaseName,
+            string tableName)
         {
             return new SecurityAlertDto
             {
@@ -219,11 +312,17 @@ namespace Team2GroupProject.DataSentinel.SecurityAlerts
                 RiskScore = ComputeRiskScore(alert.Severity, alert.RelatedEventCount),
                 Status = alert.Status,
                 TriggeredAt = alert.TriggeredAt,
+                ServerId = alert.ServerId,
+                ServerName = serverName,
                 DatabaseId = alert.DatabaseId,
                 DatabaseName = databaseName,
                 TableId = alert.TableId,
                 TableName = tableName,
-                PrimaryActorUser = alert.PrimaryActorUser
+                PrimaryActorUser = alert.PrimaryActorUser,
+                PrimaryActorIp = alert.PrimaryActorIp,
+                EventTimeStart = alert.EventTimeStart,
+                EventTimeEnd = alert.EventTimeEnd,
+                RelatedEventCount = alert.RelatedEventCount
             };
         }
 
