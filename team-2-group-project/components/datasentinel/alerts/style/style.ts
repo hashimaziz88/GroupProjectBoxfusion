@@ -7,6 +7,12 @@ export const useStyles = createStyles(() => ({
     }
   `,
 
+  backRow: css`
+    display: flex;
+    align-items: center;
+    margin-bottom: 16px;
+  `,
+
   pageCard: css`
     &.ant-card {
       border-radius: 24px;

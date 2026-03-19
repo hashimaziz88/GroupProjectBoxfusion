@@ -190,7 +190,6 @@ export const SecurityAlertsProvider: React.FC<{
           selectedAlert: detail,
           notes: toArray(notes),
           history: toArray(history),
-          drawerOpen: true,
           detailErrorMessage: null,
         }),
       );
@@ -201,7 +200,6 @@ export const SecurityAlertsProvider: React.FC<{
           selectedAlert: null,
           notes: [],
           history: [],
-          drawerOpen: true,
           detailErrorMessage: resolveErrorMessage(error),
         }),
       );
@@ -278,22 +276,9 @@ export const SecurityAlertsProvider: React.FC<{
     ]);
   };
 
-  const openAlert = async (alertId: string) => {
+  const openAlert = useCallback(async (alertId: string) => {
     await loadAlertDetail(alertId);
-  };
-
-  const closeAlert = () => {
-    dispatch(
-      setSecurityAlertsState({
-        drawerOpen: false,
-        selectedAlertId: undefined,
-        selectedAlert: null,
-        notes: [],
-        history: [],
-        detailErrorMessage: null,
-      }),
-    );
-  };
+  }, [loadAlertDetail]);
 
   const setPagination = async (page: number, pageSize: number) => {
     dispatch(setSecurityAlertsPagination({ page, pageSize }));
@@ -490,7 +475,6 @@ export const SecurityAlertsProvider: React.FC<{
           resetFilters,
           refresh,
           openAlert,
-          closeAlert,
           setPagination,
           setSelectedAlertIds,
           updateStatus,

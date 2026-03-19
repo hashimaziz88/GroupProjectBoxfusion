@@ -3,8 +3,8 @@
 import {
   Alert,
   Button,
+  Card,
   Checkbox,
-  Drawer,
   Empty,
   Form,
   Input,
@@ -31,13 +31,12 @@ import { useStyles } from "./style/style";
 
 const { Paragraph, Text, Title } = Typography;
 
-const SecurityAlertDetailDrawer = () => {
+const SecurityAlertDetailView = () => {
   const { styles } = useStyles();
   const {
     canExportReports,
     canReviewAlerts,
     detailErrorMessage,
-    drawerOpen,
     history,
     isCreatingNote,
     isDetailLoading,
@@ -46,29 +45,21 @@ const SecurityAlertDetailDrawer = () => {
     notes,
     selectedAlert,
   } = useSecurityAlertsState();
-  const { closeAlert, createNote, exportReport, updateStatus } =
-    useSecurityAlertsActions();
+  const { createNote, exportReport, updateStatus } = useSecurityAlertsActions();
 
   const [statusForm] = Form.useForm();
   const [noteForm] = Form.useForm();
 
   return (
-    <Drawer
-      title="Alert details"
-      placement="right"
-      size={620}
-      open={drawerOpen}
-      onClose={closeAlert}
-      destroyOnHidden
-    >
+    <Card className={styles.pageCard}>
       {detailErrorMessage ? (
-        <Alert type="error" showIcon title={detailErrorMessage} />
+        <Alert type="error" showIcon title={detailErrorMessage} className={styles.alert} />
       ) : null}
 
       {isDetailLoading ? (
         <Paragraph>Loading alert details...</Paragraph>
       ) : !selectedAlert ? (
-        <Empty description="Select an alert to inspect its details." />
+        <Empty description="The selected alert could not be loaded." />
       ) : (
         <>
           <div className={styles.detailHero}>
@@ -298,8 +289,8 @@ const SecurityAlertDetailDrawer = () => {
           ) : null}
         </>
       )}
-    </Drawer>
+    </Card>
   );
 };
 
-export default SecurityAlertDetailDrawer;
+export default SecurityAlertDetailView;

@@ -28,7 +28,6 @@ export interface ISecurityAlertsStateContext {
   selectedAlert?: ISecurityAlertDetail | null;
   notes: IIncidentNote[];
   history: IAlertStatusHistoryItem[];
-  drawerOpen: boolean;
   selectedAlertIds: string[];
   isLoading: boolean;
   isRefreshing: boolean;
@@ -58,7 +57,6 @@ export interface ISecurityAlertsActionContext {
   resetFilters: () => Promise<void>;
   refresh: () => Promise<void>;
   openAlert: (alertId: string) => Promise<void>;
-  closeAlert: () => void;
   setPagination: (page: number, pageSize: number) => Promise<void>;
   setSelectedAlertIds: (alertIds: string[]) => void;
   updateStatus: (input: Omit<IUpdateAlertStatusInput, "alertId">) => Promise<boolean>;
@@ -93,7 +91,6 @@ export const INITIAL_STATE: ISecurityAlertsStateContext = {
   selectedAlert: null,
   notes: [],
   history: [],
-  drawerOpen: false,
   selectedAlertIds: [],
   isLoading: true,
   isRefreshing: false,
