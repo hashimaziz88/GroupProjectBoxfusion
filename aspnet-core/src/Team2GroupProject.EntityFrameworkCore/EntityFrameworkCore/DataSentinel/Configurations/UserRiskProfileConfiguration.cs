@@ -21,15 +21,21 @@ namespace Team2GroupProject.EntityFrameworkCore.DataSentinel.Configurations
             builder.Property(x => x.RiskLevel)
                 .HasConversion<int>();
 
+            builder.Property(x => x.Status)
+                .HasConversion<int>();
+
             // One profile per actor per tenant — enforced at the DB level.
             builder.HasIndex(x => new { x.TenantId, x.ActorUser })
                 .IsUnique();
 
-            // Top risky users dashboard query (issue #48): ORDER BY RiskScore DESC
+            // Top risky users dashboard query: ORDER BY RiskScore DESC
             builder.HasIndex(x => new { x.TenantId, x.RiskScore });
 
             // Risk level filter panel on dashboard
             builder.HasIndex(x => new { x.TenantId, x.RiskLevel });
+
+            // Status filter
+            builder.HasIndex(x => new { x.TenantId, x.Status });
 
             // Scoring engine stale-profile detection
             builder.HasIndex(x => new { x.TenantId, x.LastEvaluatedAt });
