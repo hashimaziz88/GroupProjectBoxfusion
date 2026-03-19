@@ -25,7 +25,7 @@ namespace Team2GroupProject.DataSentinel.AlertRules
 
         /// <summary>
         /// The event type this rule applies to.
-        /// Null means the rule evaluates against all event types (e.g. OutOfHours applies to any event).
+        /// Null means the rule evaluates without a per-event-type selector (e.g. OutOfHours rules use their own risky-action filter).
         /// </summary>
         public ActivityEventType? EventType { get; set; }
 
