@@ -1,51 +1,21 @@
 /**
- * Client-side AI service for DataSentinel alert analysis (Issue #7).
+ * Client-side AI service for DataSentinel (Issue #7 — AI workflow §6.9).
  *
- * All prompt logic and the Groq API key live server-side in:
- *   app/api/ai/analyze-alert/route.ts
+ * All prompt logic and the Groq API key live server-side in app/api/ai/.
+ * This file only defines shared types and thin fetch wrappers.
  *
- * This file only defines the shared types and the thin fetch wrapper
- * that calls the internal Next.js API route.
- *
- * Features:
- *   #47 — AI-Generated Alert Summary and Explanation  (analysis.summary)
- *   #52 — Suggested Investigation Next Step           (analysis.nextStep)
- *   #53 — High-Severity Rationale (High/Critical only)(analysis.severityRationale)
- *   #54 — AiUnavailableError thrown on any failure — caller renders fallback panel
+ * Alert detail  → /api/ai/analyze-alert   (#47 summary, #52 next step, #53 severity)
+ * Dashboard     → /api/ai/dashboard-summary  (posture summary + top concern)
+ * Alerts list   → /api/ai/alerts-triage      (triage guidance)
+ * Activity      → /api/ai/activity-summary   (suspicious pattern summary)
  */
 
 import { ISecurityAlertDetail } from "@/interfaces/datasentinel/alerts";
 import { IActivityEventListItem } from "@/interfaces/datasentinel/activity";
 
-// ─── Shared types (also imported by the API route) ────────────────────────────
+// ─── Shared error (#54) ───────────────────────────────────────────────────────
 
-/** All context the caller must supply before calling generateAlertAnalysis. */
-export interface IAiAlertContext {
-  alert: ISecurityAlertDetail;
-  /** Up to 10 representative activity events that triggered the alert. */
-  recentEvents?: IActivityEventListItem[];
-  /** Open alerts attributed to the same actor across all tables. */
-  actorPriorOpenAlerts?: number;
-  /** Resolved/dismissed alerts attributed to the same actor. */
-  actorPriorClosedAlerts?: number;
-  /** Prior alerts where actor AND affected table both match this alert. */
-  actorPriorAlertsOnSameTable?: number;
-}
-
-/** Shape returned to the caller — each field maps to one AI panel section. */
-export interface IAiAlertAnalysis {
-  /** #47 — Plain-language explanation of what happened and why it was flagged. */
-  summary: string;
-  /** #52 — Single most actionable next investigation step. */
-  nextStep: string;
-  /**
-   * #53 — Rationale for High/Critical severity assignment.
-   * null when severity is Medium (2), Low (1), or Info (0).
-   */
-  severityRationale: string | null;
-}
-
-/** Thrown when the AI route is unreachable or returns an error (#54). */
+/** Thrown on network failure or non-2xx from any AI route. */
 export class AiUnavailableError extends Error {
   constructor(cause?: unknown) {
     super("AI analysis is temporarily unavailable.");
@@ -54,37 +24,141 @@ export class AiUnavailableError extends Error {
   }
 }
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// ─── Alert detail (#47 / #52 / #53) ──────────────────────────────────────────
 
-/**
- * Sends alert context to the server-side AI route and returns the full analysis.
- *
- * Throws AiUnavailableError on network failure or a non-2xx response so callers
- * can render a graceful fallback panel per Issue #54.
- */
-export async function generateAlertAnalysis(
-  ctx: IAiAlertContext,
-): Promise<IAiAlertAnalysis> {
+export interface IAiAlertContext {
+  alert: ISecurityAlertDetail;
+  recentEvents?: IActivityEventListItem[];
+  actorPriorOpenAlerts?: number;
+  actorPriorClosedAlerts?: number;
+  actorPriorAlertsOnSameTable?: number;
+}
+
+export interface IAiAlertAnalysis {
+  summary: string;
+  nextStep: string;
+  severityRationale: string | null;
+}
+
+export async function generateAlertAnalysis(ctx: IAiAlertContext): Promise<IAiAlertAnalysis> {
+  return callAiRoute<IAiAlertAnalysis>("/api/ai/analyze-alert", ctx);
+}
+
+// ─── Dashboard posture ────────────────────────────────────────────────────────
+
+export interface IAiDashboardContext {
+  windowDays: number;
+  totalAlerts: number;
+  criticalAlerts: number;
+  newAlerts: number;
+  totalFailedAccessAttempts: number;
+  suspiciousWriteActivityCount: number;
+  highRiskUsersCount: number;
+  anomalyBucketCount: number;
+  topRiskyUsers: Array<{
+    actorUser: string;
+    riskScore: number;
+    alertCount: number;
+    highSeverityAlertCount: number;
+    failedLoginCount: number;
+    outOfHoursEventCount: number;
+  }>;
+  recentAlerts: Array<{
+    title: string;
+    severity: number;
+    primaryActorUser?: string | null;
+  }>;
+}
+
+export interface IAiDashboardAnalysis {
+  /** 2-3 sentence plain-language summary of the current security posture. */
+  postureSummary: string;
+  /** Single most urgent action the security team should take right now. */
+  topConcern: string;
+}
+
+export async function generateDashboardAnalysis(ctx: IAiDashboardContext): Promise<IAiDashboardAnalysis> {
+  return callAiRoute<IAiDashboardAnalysis>("/api/ai/dashboard-summary", ctx);
+}
+
+// ─── Alerts triage ────────────────────────────────────────────────────────────
+
+export interface IAiAlertsTriageContext {
+  totalCount: number;
+  alerts: Array<{
+    title: string;
+    severity: number;
+    status: number;
+    riskScore: number;
+    relatedEventCount: number;
+    triggeredAt: string;
+    primaryActorUser?: string | null;
+    databaseName?: string | null;
+    tableName?: string | null;
+  }>;
+}
+
+export interface IAiAlertsTriageAnalysis {
+  /** 2-3 sentences: which 1-2 alerts to investigate first and why. */
+  triageGuidance: string;
+}
+
+export async function generateAlertsTriageAnalysis(ctx: IAiAlertsTriageContext): Promise<IAiAlertsTriageAnalysis> {
+  return callAiRoute<IAiAlertsTriageAnalysis>("/api/ai/alerts-triage", ctx);
+}
+
+// ─── Activity patterns ────────────────────────────────────────────────────────
+
+export interface IAiActivityContext {
+  totalEvents: number;
+  readOps: number;
+  writeOps: number;
+  authEvents: number;
+  privilegedOps: number;
+  suspiciousActivityCount: number;
+  failedEventsCount: number;
+  activeTab: string;
+  actorUser?: string;
+  operation?: string;
+  sampleEvents: Array<{
+    eventTime: string;
+    operation?: string | null;
+    objectName?: string | null;
+    actorUser?: string | null;
+    isSuccess: boolean;
+    isOutOfHours: boolean;
+    failureReason?: string | null;
+  }>;
+}
+
+export interface IAiActivityAnalysis {
+  /** 2-3 sentences describing the suspicious patterns visible in the activity data. */
+  patternSummary: string;
+}
+
+export async function generateActivityAnalysis(ctx: IAiActivityContext): Promise<IAiActivityAnalysis> {
+  return callAiRoute<IAiActivityAnalysis>("/api/ai/activity-summary", ctx);
+}
+
+// ─── Internal helper ──────────────────────────────────────────────────────────
+
+async function callAiRoute<T>(route: string, body: unknown): Promise<T> {
   let response: Response;
   try {
-    response = await fetch("/api/ai/analyze-alert", {
+    response = await fetch(route, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(ctx),
+      body: JSON.stringify(body),
     });
   } catch (networkError) {
     throw new AiUnavailableError(networkError);
   }
 
   if (!response.ok) {
-    throw new AiUnavailableError(`API route returned HTTP ${response.status}`);
+    throw new AiUnavailableError(`AI route ${route} returned HTTP ${response.status}`);
   }
 
   const json = await response.json();
-
-  if (json.error) {
-    throw new AiUnavailableError(json.error);
-  }
-
-  return json as IAiAlertAnalysis;
+  if (json.error) throw new AiUnavailableError(json.error);
+  return json as T;
 }

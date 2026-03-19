@@ -6,6 +6,7 @@ import { PERMISSIONS } from "@/constants/auth/roles";
 import {
   IBulkUpdateAlertStatusInput,
   ICreateIncidentNoteInput,
+  ISecurityAlertDetail,
   ISecurityAlertFilters,
   ISecurityAlertFilterDraft,
   IUpdateAlertStatusInput,
@@ -23,6 +24,10 @@ import {
   getSecurityAlerts,
   updateSecurityAlertStatus,
 } from "@/utils/datasentinel/alertsService";
+import {
+  AiUnavailableError,
+  generateAlertAnalysis,
+} from "@/utils/datasentinel/aiService";
 import { toArray } from "@/utils/helpers";
 import {
   DEFAULT_FILTER_OPTIONS,
@@ -169,11 +174,30 @@ export const SecurityAlertsProvider: React.FC<{
     }
   }, []);
 
+  const loadAiAnalysis = useCallback(async (alert: ISecurityAlertDetail) => {
+    dispatch(setSecurityAlertsState({ isAiLoading: true, aiError: null, aiAnalysis: null }));
+    try {
+      const analysis = await generateAlertAnalysis({ alert });
+      dispatch(setSecurityAlertsState({ aiAnalysis: analysis, aiError: null }));
+    } catch (error: unknown) {
+      const message =
+        error instanceof AiUnavailableError
+          ? error.message
+          : "AI analysis is temporarily unavailable.";
+      dispatch(setSecurityAlertsState({ aiAnalysis: null, aiError: message }));
+      console.error("[SecurityAlertsProvider] AI analysis failed:", error);
+    } finally {
+      dispatch(setSecurityAlertsState({ isAiLoading: false }));
+    }
+  }, []);
+
   const loadAlertDetail = useCallback(async (alertId: string) => {
     dispatch(
       setSecurityAlertsState({
         isDetailLoading: true,
         detailErrorMessage: null,
+        aiAnalysis: null,
+        aiError: null,
       }),
     );
 
@@ -193,6 +217,8 @@ export const SecurityAlertsProvider: React.FC<{
           detailErrorMessage: null,
         }),
       );
+
+      void loadAiAnalysis(detail);
     } catch (error: unknown) {
       dispatch(
         setSecurityAlertsState({
@@ -206,7 +232,7 @@ export const SecurityAlertsProvider: React.FC<{
     } finally {
       dispatch(setSecurityAlertsState({ isDetailLoading: false }));
     }
-  }, []);
+  }, [loadAiAnalysis]);
 
   useEffect(() => {
     if (!hasTenantContext) {
@@ -450,6 +476,12 @@ export const SecurityAlertsProvider: React.FC<{
     }
   };
 
+  const retryAiAnalysis = async () => {
+    if (state.selectedAlert) {
+      await loadAiAnalysis(state.selectedAlert);
+    }
+  };
+
   const clearMessages = () => {
     dispatch(
       setSecurityAlertsState({
@@ -483,6 +515,7 @@ export const SecurityAlertsProvider: React.FC<{
           exportReport,
           clearMessages,
           buildRequestFilters,
+          retryAiAnalysis,
         }}
       >
         {children}
