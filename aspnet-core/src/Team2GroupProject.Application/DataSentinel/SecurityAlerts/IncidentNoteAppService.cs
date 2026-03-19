@@ -8,6 +8,7 @@ using Abp.Runtime.Session;
 using Abp.UI;
 using Microsoft.EntityFrameworkCore;
 using Team2GroupProject.Authorization;
+using Team2GroupProject.Authorization.Users;
 using Team2GroupProject.DataSentinel.SecurityAlerts.Dto;
 
 namespace Team2GroupProject.DataSentinel.SecurityAlerts
@@ -47,7 +48,8 @@ namespace Team2GroupProject.DataSentinel.SecurityAlerts
             var note = new IncidentNote(tenantId, input.AlertId, input.Body, input.IsInternal);
             await _incidentNoteRepository.InsertAsync(note);
 
-            return MapToDto(note);
+            var userNames = await ResolveUserNamesAsync(new[] { AbpSession.UserId });
+            return MapToDto(note, userNames);
         }
 
         public async Task<List<IncidentNoteDto>> GetByAlertAsync(Guid alertId)
@@ -67,10 +69,46 @@ namespace Team2GroupProject.DataSentinel.SecurityAlerts
                 .OrderByDescending(x => x.CreationTime)
                 .ToListAsync();
 
-            return notes.Select(MapToDto).ToList();
+            var userNames = await ResolveUserNamesAsync(notes.Select(x => x.CreatorUserId));
+            return notes.Select(x => MapToDto(x, userNames)).ToList();
         }
 
-        private static IncidentNoteDto MapToDto(IncidentNote note)
+        private async Task<Dictionary<long, string>> ResolveUserNamesAsync(IEnumerable<long?> userIds)
+        {
+            var resolvedIds = userIds
+                .Where(x => x.HasValue)
+                .Select(x => x.Value)
+                .Distinct()
+                .ToList();
+
+            if (resolvedIds.Count == 0)
+            {
+                return new Dictionary<long, string>();
+            }
+
+            var users = await UserManager.Users
+                .Where(x => resolvedIds.Contains(x.Id))
+                .Select(x => new
+                {
+                    x.Id,
+                    x.UserName,
+                    x.Name,
+                    x.Surname
+                })
+                .ToListAsync();
+
+            return users.ToDictionary(
+                x => x.Id,
+                x =>
+                {
+                    var fullName = $"{x.Name} {x.Surname}".Trim();
+                    return fullName.IsNullOrWhiteSpace() ? x.UserName : fullName;
+                });
+        }
+
+        private static IncidentNoteDto MapToDto(
+            IncidentNote note,
+            IReadOnlyDictionary<long, string> userNames)
         {
             return new IncidentNoteDto
             {
@@ -79,7 +117,11 @@ namespace Team2GroupProject.DataSentinel.SecurityAlerts
                 Body = note.Body,
                 IsInternal = note.IsInternal,
                 CreationTime = note.CreationTime,
-                CreatorUserId = note.CreatorUserId
+                CreatorUserId = note.CreatorUserId,
+                CreatorUserDisplayName = note.CreatorUserId.HasValue &&
+                    userNames.TryGetValue(note.CreatorUserId.Value, out var name)
+                    ? name
+                    : null
             };
         }
     }

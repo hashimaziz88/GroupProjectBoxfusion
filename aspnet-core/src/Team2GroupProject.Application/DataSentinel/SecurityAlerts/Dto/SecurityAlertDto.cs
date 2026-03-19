@@ -23,6 +23,10 @@ namespace Team2GroupProject.DataSentinel.SecurityAlerts.Dto
 
         public DateTime TriggeredAt { get; set; }
 
+        public Guid? ServerId { get; set; }
+
+        public string ServerName { get; set; }
+
         public Guid? DatabaseId { get; set; }
 
         public string DatabaseName { get; set; }
@@ -32,5 +36,13 @@ namespace Team2GroupProject.DataSentinel.SecurityAlerts.Dto
         public string TableName { get; set; }
 
         public string PrimaryActorUser { get; set; }
+
+        public string PrimaryActorIp { get; set; }
+
+        public DateTime EventTimeStart { get; set; }
+
+        public DateTime EventTimeEnd { get; set; }
+
+        public int RelatedEventCount { get; set; }
     }
 }

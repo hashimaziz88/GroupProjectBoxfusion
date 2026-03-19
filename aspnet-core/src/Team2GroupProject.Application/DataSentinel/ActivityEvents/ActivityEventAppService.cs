@@ -15,6 +15,8 @@ using Microsoft.EntityFrameworkCore;
 using Team2GroupProject.Authorization;
 using Team2GroupProject.DataSentinel;
 using Team2GroupProject.DataSentinel.ActivityEvents.Dto;
+using Team2GroupProject.DataSentinel.AlertRules;
+using Team2GroupProject.DataSentinel.Detection;
 using Team2GroupProject.DataSentinel.Monitoring;
 using Team2GroupProject.DataSentinel.UserRiskProfiles;
 
@@ -52,17 +54,35 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
         private readonly IMonitoredServerRepository _monitoredServerRepository;
         private readonly IMonitoredDatabaseRepository _monitoredDatabaseRepository;
         private readonly IUserRiskProfileRepository _userRiskProfileRepository;
+        private readonly IDefaultAlertRuleSeeder _defaultAlertRuleSeeder;
+        private readonly IThresholdRuleEvaluator _thresholdRuleEvaluator;
+        private readonly IOutOfHoursRuleEvaluator _outOfHoursRuleEvaluator;
+        private readonly IRepeatedFailureEvaluator _repeatedFailureEvaluator;
+        private readonly ILargeReadWriteEvaluator _largeReadWriteEvaluator;
+        private readonly IPrivilegedActionEvaluator _privilegedActionEvaluator;
 
         public ActivityEventAppService(
             IActivityEventRepository activityEventRepository,
             IMonitoredServerRepository monitoredServerRepository,
             IMonitoredDatabaseRepository monitoredDatabaseRepository,
             IUserRiskProfileRepository userRiskProfileRepository)
+            IDefaultAlertRuleSeeder defaultAlertRuleSeeder,
+            IThresholdRuleEvaluator thresholdRuleEvaluator,
+            IOutOfHoursRuleEvaluator outOfHoursRuleEvaluator,
+            IRepeatedFailureEvaluator repeatedFailureEvaluator,
+            ILargeReadWriteEvaluator largeReadWriteEvaluator,
+            IPrivilegedActionEvaluator privilegedActionEvaluator)
         {
             _activityEventRepository = activityEventRepository;
             _monitoredServerRepository = monitoredServerRepository;
             _monitoredDatabaseRepository = monitoredDatabaseRepository;
             _userRiskProfileRepository = userRiskProfileRepository;
+            _defaultAlertRuleSeeder = defaultAlertRuleSeeder;
+            _thresholdRuleEvaluator = thresholdRuleEvaluator;
+            _outOfHoursRuleEvaluator = outOfHoursRuleEvaluator;
+            _repeatedFailureEvaluator = repeatedFailureEvaluator;
+            _largeReadWriteEvaluator = largeReadWriteEvaluator;
+            _privilegedActionEvaluator = privilegedActionEvaluator;
         }
 
 
@@ -117,6 +137,7 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
                 var mappedResult = await IngestInternalAsync(tenantId, mappedEvents, sourceIndexes);
                 result.CreatedEventIds.AddRange(mappedResult.CreatedEventIds);
                 result.Errors.AddRange(mappedResult.Errors);
+                result.DetectionSummary = mappedResult.DetectionSummary;
             }
 
             result.AcceptedCount = result.CreatedEventIds.Count;
@@ -258,6 +279,7 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
 
             result.AcceptedCount = result.CreatedEventIds.Count;
             result.RejectedCount = result.Errors.Count;
+            result.DetectionSummary = await RunDetectionAsync(tenantId, validEvents);
 
             return result;
         }
@@ -314,6 +336,156 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
                     await _userRiskProfileRepository.InsertAsync(profile);
                 }
             }
+        }
+
+        private async Task<IngestionDetectionSummaryDto> RunDetectionAsync(
+            int tenantId,
+            IReadOnlyCollection<ActivityEvent> acceptedEvents)
+        {
+            var summary = new IngestionDetectionSummaryDto();
+            if (acceptedEvents == null || acceptedEvents.Count == 0)
+            {
+                return summary;
+            }
+
+            await _defaultAlertRuleSeeder.EnsureSeededAsync(tenantId);
+
+            var createdAlertIds = new HashSet<Guid>();
+            var anchors = acceptedEvents
+                .GroupBy(x => new { x.EventType, x.EventTime })
+                .Select(group => new DetectionAnchor(group.Key.EventType, group.Key.EventTime))
+                .OrderBy(x => x.EventTimeUtc)
+                .ThenBy(x => x.EventType)
+                .ToList();
+
+            foreach (var anchor in anchors)
+            {
+                var evaluation = await _thresholdRuleEvaluator.EvaluateAsync(
+                    tenantId,
+                    anchor.EventTimeUtc,
+                    eventType: anchor.EventType);
+
+                await MergeDetectionEvaluationAsync(
+                    summary,
+                    createdAlertIds,
+                    evaluation.CreatedAlertIds,
+                    evaluation.DuplicateAlertCount);
+            }
+
+            var outOfHoursAnchors = acceptedEvents
+                .Where(IsRiskyOutOfHoursCandidate)
+                .Select(x => x.EventTime)
+                .Distinct()
+                .OrderBy(x => x)
+                .ToList();
+
+            foreach (var anchor in outOfHoursAnchors)
+            {
+                var evaluation = await _outOfHoursRuleEvaluator.EvaluateAsync(tenantId, anchor);
+
+                await MergeDetectionEvaluationAsync(
+                    summary,
+                    createdAlertIds,
+                    evaluation.CreatedAlertIds,
+                    evaluation.DuplicateAlertCount);
+            }
+
+            var repeatedFailureAnchors = acceptedEvents
+                .Where(x => !x.IsSuccess)
+                .Select(x => x.EventTime)
+                .Distinct()
+                .OrderBy(x => x)
+                .ToList();
+
+            foreach (var anchor in repeatedFailureAnchors)
+            {
+                var evaluation = await _repeatedFailureEvaluator.EvaluateAsync(tenantId, anchor);
+
+                await MergeDetectionEvaluationAsync(
+                    summary,
+                    createdAlertIds,
+                    evaluation.CreatedAlertIds,
+                    evaluation.DuplicateAlertCount);
+            }
+
+            var bulkOperationAnchors = acceptedEvents
+                .Where(IsBulkOperationCandidate)
+                .Select(x => x.EventTime)
+                .Distinct()
+                .OrderBy(x => x)
+                .ToList();
+
+            foreach (var anchor in bulkOperationAnchors)
+            {
+                var evaluation = await _largeReadWriteEvaluator.EvaluateAsync(tenantId, anchor);
+
+                await MergeDetectionEvaluationAsync(
+                    summary,
+                    createdAlertIds,
+                    evaluation.CreatedAlertIds,
+                    evaluation.DuplicateAlertCount);
+            }
+
+            var privilegedActionAnchors = acceptedEvents
+                .Where(IsPrivilegedActionCandidate)
+                .Select(x => x.EventTime)
+                .Distinct()
+                .OrderBy(x => x)
+                .ToList();
+
+            foreach (var anchor in privilegedActionAnchors)
+            {
+                var evaluation = await _privilegedActionEvaluator.EvaluateAsync(tenantId, anchor);
+
+                await MergeDetectionEvaluationAsync(
+                    summary,
+                    createdAlertIds,
+                    evaluation.CreatedAlertIds,
+                    evaluation.DuplicateAlertCount);
+            }
+
+            summary.CreatedAlertIds = createdAlertIds.OrderBy(x => x).ToList();
+            summary.CreatedAlertCount = summary.CreatedAlertIds.Count;
+
+            return summary;
+        }
+
+        private async Task MergeDetectionEvaluationAsync(
+            IngestionDetectionSummaryDto summary,
+            ISet<Guid> createdAlertIds,
+            IReadOnlyCollection<Guid> newAlertIds,
+            int duplicateAlertCount)
+        {
+            summary.EvaluatedAnchorCount++;
+            summary.DuplicateAlertCount += duplicateAlertCount;
+
+            foreach (var alertId in newAlertIds)
+            {
+                createdAlertIds.Add(alertId);
+            }
+
+            if (newAlertIds.Count > 0)
+            {
+                await CurrentUnitOfWork.SaveChangesAsync();
+            }
+        }
+
+        private static bool IsRiskyOutOfHoursCandidate(ActivityEvent activityEvent)
+        {
+            return activityEvent.IsOutOfHours &&
+                   (activityEvent.EventType == ActivityEventType.Write ||
+                    activityEvent.EventType == ActivityEventType.PrivilegedAction);
+        }
+
+        private static bool IsPrivilegedActionCandidate(ActivityEvent activityEvent)
+        {
+            return activityEvent.EventType == ActivityEventType.PrivilegedAction ||
+                   activityEvent.EventType == ActivityEventType.PermissionChange;
+        }
+
+        private static bool IsBulkOperationCandidate(ActivityEvent activityEvent)
+        {
+            return activityEvent.RowsAffected.HasValue && activityEvent.RowsAffected.Value > 0;
         }
 
         private static IReadOnlyList<ActivityEventIngestionItemDto> GetValidatedActivityEventBatchItems(IngestActivityEventsInput input)
@@ -1333,6 +1505,19 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
             return objectName.IsNullOrWhiteSpace()
                 ? operation
                 : $"{operation} {objectName}";
+        }
+
+        private sealed class DetectionAnchor
+        {
+            public DetectionAnchor(ActivityEventType eventType, DateTime eventTimeUtc)
+            {
+                EventType = eventType;
+                EventTimeUtc = eventTimeUtc;
+            }
+
+            public ActivityEventType EventType { get; }
+
+            public DateTime EventTimeUtc { get; }
         }
     }
 }

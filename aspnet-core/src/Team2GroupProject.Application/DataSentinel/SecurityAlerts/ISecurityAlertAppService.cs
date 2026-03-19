@@ -14,6 +14,8 @@ namespace Team2GroupProject.DataSentinel.SecurityAlerts
 
         Task UpdateStatusAsync(UpdateAlertStatusInput input);
 
+        Task BulkUpdateStatusAsync(BulkUpdateAlertStatusInput input);
+
         Task<SecurityAlertFilterOptionsDto> GetFilterOptionsAsync();
     }
 }

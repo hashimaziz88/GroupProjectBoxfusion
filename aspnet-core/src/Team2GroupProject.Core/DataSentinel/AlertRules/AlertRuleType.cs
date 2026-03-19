@@ -20,5 +20,6 @@ namespace Team2GroupProject.DataSentinel.AlertRules
 
         /// <summary>Fires when a single operation affects a row count exceeding the threshold.</summary>
         BulkOperation = 4
+        // LargeReadWrite (5) was removed — BulkOperation covers read/write row-count threshold detection.
     }
 }

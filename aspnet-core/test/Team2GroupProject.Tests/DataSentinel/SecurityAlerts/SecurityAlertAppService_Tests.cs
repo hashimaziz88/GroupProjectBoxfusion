@@ -255,6 +255,27 @@ namespace Team2GroupProject.Tests.DataSentinel.SecurityAlerts
             detail.TableName.ShouldBe("customers");
         }
 
+        [Fact]
+        public async Task GetByIdAsync_should_include_server_context_and_actor_ip()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            var rule = await CreateRuleAsync(tenantId);
+            var (server, database, table) = await CreateServerDatabaseAndTableAsync(tenantId);
+
+            var alert = await SeedAlertAsync(tenantId, rule.Id, new SeedAlertOptions
+            {
+                ServerId = server.Id,
+                DatabaseId = database.Id,
+                TableId = table.Id,
+                ActorIp = "10.20.30.40"
+            });
+
+            var detail = await _securityAlertAppService.GetByIdAsync(alert.Id);
+
+            detail.ServerName.ShouldBe("Prod Server");
+            detail.PrimaryActorIp.ShouldBe("10.20.30.40");
+        }
+
         // ── UpdateStatus tests ────────────────────────────────────────────────
 
         [Fact]
@@ -321,6 +342,59 @@ namespace Team2GroupProject.Tests.DataSentinel.SecurityAlerts
             history[0].FromStatus.ShouldBe(SecurityAlertStatus.New);
             history[0].ToStatus.ShouldBe(SecurityAlertStatus.Acknowledged);
             history[0].Comment.ShouldBe("Starting review");
+        }
+
+        [Fact]
+        public async Task BulkUpdateStatusAsync_should_resolve_multiple_new_alerts()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            var rule = await CreateRuleAsync(tenantId);
+            var alertOne = await SeedAlertAsync(tenantId, rule.Id);
+            var alertTwo = await SeedAlertAsync(tenantId, rule.Id);
+
+            await _securityAlertAppService.BulkUpdateStatusAsync(new BulkUpdateAlertStatusInput
+            {
+                AlertIds = { alertOne.Id, alertTwo.Id },
+                NewStatus = SecurityAlertStatus.Resolved,
+                Comment = "Known benign batch."
+            });
+
+            await UsingDbContextAsync(async context =>
+            {
+                var alerts = await context.SecurityAlerts
+                    .Where(x => x.Id == alertOne.Id || x.Id == alertTwo.Id)
+                    .ToListAsync();
+                var history = await context.AlertStatusHistoryEntries
+                    .Where(x => x.AlertId == alertOne.Id || x.AlertId == alertTwo.Id)
+                    .ToListAsync();
+
+                alerts.ShouldAllBe(x => x.Status == SecurityAlertStatus.Resolved);
+                history.Count.ShouldBe(2);
+                history.ShouldAllBe(x => x.Comment == "Known benign batch.");
+            });
+        }
+
+        [Fact]
+        public async Task BulkUpdateStatusAsync_should_reject_alerts_that_are_not_new()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            var rule = await CreateRuleAsync(tenantId);
+            var alert = await SeedAlertAsync(tenantId, rule.Id);
+
+            await _securityAlertAppService.UpdateStatusAsync(new UpdateAlertStatusInput
+            {
+                AlertId = alert.Id,
+                NewStatus = SecurityAlertStatus.Acknowledged
+            });
+
+            var exception = await Should.ThrowAsync<Abp.UI.UserFriendlyException>(() =>
+                _securityAlertAppService.BulkUpdateStatusAsync(new BulkUpdateAlertStatusInput
+                {
+                    AlertIds = { alert.Id },
+                    NewStatus = SecurityAlertStatus.Dismissed
+                }));
+
+            exception.Message.ShouldBe("Bulk review is only available for new alerts.");
         }
 
         [Fact]
@@ -397,6 +471,8 @@ namespace Team2GroupProject.Tests.DataSentinel.SecurityAlerts
             public string Summary = "Automated detection flagged this event.";
             public ActivitySeverity Severity = ActivitySeverity.High;
             public string ActorUser = "test_user";
+            public string ActorIp = "127.0.0.1";
+            public Guid? ServerId = null;
             public Guid? DatabaseId = null;
             public Guid? TableId = null;
         }
@@ -429,6 +505,8 @@ namespace Team2GroupProject.Tests.DataSentinel.SecurityAlerts
                 relatedEventCount: 3)
             {
                 PrimaryActorUser = opts.ActorUser,
+                PrimaryActorIp = opts.ActorIp,
+                ServerId = opts.ServerId,
                 DatabaseId = opts.DatabaseId,
                 TableId = opts.TableId
             };
@@ -481,6 +559,23 @@ namespace Team2GroupProject.Tests.DataSentinel.SecurityAlerts
             });
 
             return (database, table);
+        }
+
+        private async Task<(MonitoredServer, MonitoredDatabase, MonitoredTable)> CreateServerDatabaseAndTableAsync(int tenantId)
+        {
+            var server = new MonitoredServer(tenantId, "Prod Server", "pg-prod-01", "Production", "Production server.");
+            var database = new MonitoredDatabase(tenantId, server.Id, "ProdDb", "PostgreSQL", "Production database.");
+            var table = new MonitoredTable(tenantId, database.Id, "public", "customers", "Customer records.");
+
+            database.Tables.Add(table);
+            server.Databases.Add(database);
+
+            await UsingDbContextAsync(async context =>
+            {
+                await context.MonitoredServers.AddAsync(server);
+            });
+
+            return (server, database, table);
         }
     }
 }
