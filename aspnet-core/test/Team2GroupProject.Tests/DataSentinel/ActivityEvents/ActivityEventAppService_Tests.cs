@@ -535,6 +535,48 @@ namespace Team2GroupProject.Tests.DataSentinel.ActivityEvents
         }
 
         [Fact]
+        public async Task ImportBatchAsync_should_trigger_bulk_operation_detection_for_qualifying_ingested_activity_events()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            var database = await CreateDatabaseAsync(tenantId);
+            var baseTime = new DateTime(2026, 3, 18, 17, 30, 0, DateTimeKind.Utc);
+            var rule = await CreateBulkOperationRuleAsync(
+                tenantId,
+                "Large Export",
+                ActivityEventType.Read,
+                AlertRuleGroupByField.ActorUser,
+                thresholdCount: 100,
+                windowMinutes: 20,
+                severity: ActivitySeverity.High);
+
+            var result = await _activityEventAppService.ImportBatchAsync(new IngestActivityEventsInput
+            {
+                Events = new List<ActivityEventIngestionItemDto>
+                {
+                    CreateBulkOperationEvent(database.Id, baseTime.AddMinutes(-4), "bulk-user", "bulk-op-1", ActivityEventType.Read, 140),
+                    CreateBulkOperationEvent(database.Id, baseTime.AddMinutes(-1), "bulk-user", "bulk-op-2", ActivityEventType.Read, 180)
+                }
+            });
+
+            result.AcceptedCount.ShouldBe(2);
+            result.DetectionSummary.EvaluatedAnchorCount.ShouldBe(4);
+            result.DetectionSummary.CreatedAlertCount.ShouldBe(2);
+            result.DetectionSummary.DuplicateAlertCount.ShouldBe(0);
+
+            var alerts = await UsingDbContextAsync(async context =>
+                await Task.FromResult(context.SecurityAlerts
+                    .Where(x => result.DetectionSummary.CreatedAlertIds.Contains(x.Id))
+                    .OrderBy(x => x.TriggeredAt)
+                    .ToList()));
+
+            alerts.Count.ShouldBe(2);
+            alerts.ShouldAllBe(x => x.RuleId == rule.Id);
+            alerts.ShouldAllBe(x => x.PrimaryActorUser == "bulk-user");
+            alerts.ShouldAllBe(x => x.DatabaseId == database.Id);
+            alerts.ShouldAllBe(x => x.RelatedEventCount == 1);
+        }
+
+        [Fact]
         public async Task ImportBatchAsync_should_trigger_privileged_action_detection_for_ingested_privileged_events()
         {
             var tenantId = AbpSession.TenantId!.Value;
@@ -762,6 +804,99 @@ namespace Team2GroupProject.Tests.DataSentinel.ActivityEvents
         }
 
         [Fact]
+        public async Task IngestAsync_should_only_evaluate_accepted_events_for_bulk_operation_detection()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            var database = await CreateDatabaseAsync(tenantId);
+            var baseTime = new DateTime(2026, 3, 18, 19, 30, 0, DateTimeKind.Utc);
+
+            await CreateBulkOperationRuleAsync(
+                tenantId,
+                "Accepted Bulk Operations Only",
+                ActivityEventType.Write,
+                AlertRuleGroupByField.ActorUser,
+                thresholdCount: 150,
+                windowMinutes: 20,
+                severity: ActivitySeverity.High);
+
+            var result = await _activityEventAppService.IngestAsync(new IngestActivityEventsInput
+            {
+                Events = new List<ActivityEventIngestionItemDto>
+                {
+                    CreateBulkOperationEvent(database.Id, baseTime.AddMinutes(-5), "bulk-writer", "accepted-bulk-1", ActivityEventType.Write, 170),
+                    CreateBulkOperationEvent(database.Id, baseTime.AddMinutes(-1), "bulk-writer", "accepted-bulk-2", ActivityEventType.Write, 190),
+                    new ActivityEventIngestionItemDto
+                    {
+                        DatabaseId = Guid.NewGuid(),
+                        EventTime = baseTime,
+                        EventType = ActivityEventType.Write,
+                        ActorUser = "bulk-writer",
+                        Severity = ActivitySeverity.High,
+                        IsSuccess = true,
+                        RowsAffected = 250
+                    }
+                }
+            });
+
+            result.AcceptedCount.ShouldBe(2);
+            result.RejectedCount.ShouldBe(1);
+            result.DetectionSummary.EvaluatedAnchorCount.ShouldBe(4);
+            result.DetectionSummary.CreatedAlertCount.ShouldBe(2);
+            result.DetectionSummary.DuplicateAlertCount.ShouldBe(0);
+        }
+
+        [Fact]
+        public async Task ImportBatchAsync_should_not_trigger_bulk_operation_detection_for_null_or_zero_rows_affected()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            var database = await CreateDatabaseAsync(tenantId);
+
+            await CreateBulkOperationRuleAsync(
+                tenantId,
+                "Bulk Ops Need Rows",
+                ActivityEventType.Write,
+                AlertRuleGroupByField.ActorUser,
+                thresholdCount: 1,
+                windowMinutes: 20,
+                severity: ActivitySeverity.High);
+
+            var result = await _activityEventAppService.ImportBatchAsync(new IngestActivityEventsInput
+            {
+                Events = new List<ActivityEventIngestionItemDto>
+                {
+                    new ActivityEventIngestionItemDto
+                    {
+                        DatabaseId = database.Id,
+                        EventTime = DateTime.UtcNow.AddMinutes(-2),
+                        EventType = ActivityEventType.Write,
+                        ActorUser = "row-check-user",
+                        Severity = ActivitySeverity.Low,
+                        IsSuccess = true,
+                        RowsAffected = 0,
+                        SourceSystem = "TestImport",
+                        SourceEventKey = "bulk-zero-rows"
+                    },
+                    new ActivityEventIngestionItemDto
+                    {
+                        DatabaseId = database.Id,
+                        EventTime = DateTime.UtcNow.AddMinutes(-1),
+                        EventType = ActivityEventType.Write,
+                        ActorUser = "row-check-user",
+                        Severity = ActivitySeverity.Low,
+                        IsSuccess = true,
+                        SourceSystem = "TestImport",
+                        SourceEventKey = "bulk-null-rows"
+                    }
+                }
+            });
+
+            result.AcceptedCount.ShouldBe(2);
+            result.DetectionSummary.EvaluatedAnchorCount.ShouldBe(2);
+            result.DetectionSummary.CreatedAlertCount.ShouldBe(0);
+            result.DetectionSummary.DuplicateAlertCount.ShouldBe(0);
+        }
+
+        [Fact]
         public async Task IngestAsync_should_only_evaluate_accepted_events_for_repeated_failure_detection()
         {
             var tenantId = AbpSession.TenantId!.Value;
@@ -801,6 +936,49 @@ namespace Team2GroupProject.Tests.DataSentinel.ActivityEvents
             result.DetectionSummary.EvaluatedAnchorCount.ShouldBe(4);
             result.DetectionSummary.CreatedAlertCount.ShouldBe(0);
             result.DetectionSummary.DuplicateAlertCount.ShouldBe(0);
+        }
+
+        [Fact]
+        public async Task ImportBatchAsync_should_report_duplicate_bulk_operation_alerts_when_existing_cluster_is_re_evaluated()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            var database = await CreateDatabaseAsync(tenantId);
+            var firstTime = new DateTime(2026, 3, 18, 20, 30, 0, DateTimeKind.Utc);
+
+            await CreateBulkOperationRuleAsync(
+                tenantId,
+                "Bulk Duplicate Check",
+                ActivityEventType.Write,
+                AlertRuleGroupByField.ActorUser,
+                thresholdCount: 100,
+                windowMinutes: 15,
+                severity: ActivitySeverity.Medium);
+
+            var firstImport = await _activityEventAppService.ImportBatchAsync(new IngestActivityEventsInput
+            {
+                Events = new List<ActivityEventIngestionItemDto>
+                {
+                    CreateBulkOperationEvent(database.Id, firstTime, "bulk-admin", "bulk-duplicate-1", ActivityEventType.Write, 120),
+                    CreateBulkOperationEvent(database.Id, firstTime.AddMinutes(4), "bulk-admin", "bulk-duplicate-2", ActivityEventType.Write, 140)
+                }
+            });
+
+            var secondImport = await _activityEventAppService.ImportBatchAsync(new IngestActivityEventsInput
+            {
+                Events = new List<ActivityEventIngestionItemDto>
+                {
+                    CreateBulkOperationEvent(database.Id, firstTime.AddMinutes(6), "other-user", "bulk-duplicate-3", ActivityEventType.Read, 160)
+                }
+            });
+
+            firstImport.DetectionSummary.CreatedAlertCount.ShouldBe(2);
+            secondImport.DetectionSummary.CreatedAlertCount.ShouldBe(0);
+            secondImport.DetectionSummary.DuplicateAlertCount.ShouldBe(2);
+
+            var alertCount = await UsingDbContextAsync(async context =>
+                await Task.FromResult(context.SecurityAlerts.Count()));
+
+            alertCount.ShouldBe(2);
         }
 
         [Fact]
@@ -1563,6 +1741,29 @@ namespace Team2GroupProject.Tests.DataSentinel.ActivityEvents
             return rule;
         }
 
+        private async Task<AlertRule> CreateBulkOperationRuleAsync(
+            int tenantId,
+            string name,
+            ActivityEventType eventType,
+            AlertRuleGroupByField groupByField,
+            int thresholdCount,
+            int windowMinutes,
+            ActivitySeverity severity)
+        {
+            var rule = new AlertRule(tenantId, name, AlertRuleType.BulkOperation, severity, windowMinutes, thresholdCount)
+            {
+                EventType = eventType,
+                GroupByField = groupByField
+            };
+
+            await UsingDbContextAsync(async context =>
+            {
+                await context.AlertRules.AddAsync(rule);
+            });
+
+            return rule;
+        }
+
         private async Task<AlertRule> CreatePrivilegedActionRuleAsync(
             int tenantId,
             string name,
@@ -1639,6 +1840,29 @@ namespace Team2GroupProject.Tests.DataSentinel.ActivityEvents
                 IsSuccess = true,
                 Operation = "RESET PASSWORD",
                 ObjectName = "security.users",
+                SourceSystem = "TestImport",
+                SourceEventKey = sourceEventKey
+            };
+        }
+
+        private static ActivityEventIngestionItemDto CreateBulkOperationEvent(
+            Guid databaseId,
+            DateTime eventTime,
+            string actorUser,
+            string sourceEventKey,
+            ActivityEventType eventType,
+            int rowsAffected)
+        {
+            return new ActivityEventIngestionItemDto
+            {
+                DatabaseId = databaseId,
+                EventTime = eventTime,
+                EventType = eventType,
+                ActorUser = actorUser,
+                Severity = ActivitySeverity.High,
+                IsSuccess = true,
+                Operation = eventType == ActivityEventType.Read ? "SELECT" : "UPDATE",
+                RowsAffected = rowsAffected,
                 SourceSystem = "TestImport",
                 SourceEventKey = sourceEventKey
             };

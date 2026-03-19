@@ -54,6 +54,7 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
         private readonly IThresholdRuleEvaluator _thresholdRuleEvaluator;
         private readonly IOutOfHoursRuleEvaluator _outOfHoursRuleEvaluator;
         private readonly IRepeatedFailureEvaluator _repeatedFailureEvaluator;
+        private readonly ILargeReadWriteEvaluator _largeReadWriteEvaluator;
         private readonly IPrivilegedActionEvaluator _privilegedActionEvaluator;
 
         public ActivityEventAppService(
@@ -63,6 +64,7 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
             IThresholdRuleEvaluator thresholdRuleEvaluator,
             IOutOfHoursRuleEvaluator outOfHoursRuleEvaluator,
             IRepeatedFailureEvaluator repeatedFailureEvaluator,
+            ILargeReadWriteEvaluator largeReadWriteEvaluator,
             IPrivilegedActionEvaluator privilegedActionEvaluator)
         {
             _activityEventRepository = activityEventRepository;
@@ -71,6 +73,7 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
             _thresholdRuleEvaluator = thresholdRuleEvaluator;
             _outOfHoursRuleEvaluator = outOfHoursRuleEvaluator;
             _repeatedFailureEvaluator = repeatedFailureEvaluator;
+            _largeReadWriteEvaluator = largeReadWriteEvaluator;
             _privilegedActionEvaluator = privilegedActionEvaluator;
         }
 
@@ -340,6 +343,24 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
                     evaluation.DuplicateAlertCount);
             }
 
+            var bulkOperationAnchors = acceptedEvents
+                .Where(IsBulkOperationCandidate)
+                .Select(x => x.EventTime)
+                .Distinct()
+                .OrderBy(x => x)
+                .ToList();
+
+            foreach (var anchor in bulkOperationAnchors)
+            {
+                var evaluation = await _largeReadWriteEvaluator.EvaluateAsync(tenantId, anchor);
+
+                await MergeDetectionEvaluationAsync(
+                    summary,
+                    createdAlertIds,
+                    evaluation.CreatedAlertIds,
+                    evaluation.DuplicateAlertCount);
+            }
+
             var privilegedActionAnchors = acceptedEvents
                 .Where(IsPrivilegedActionCandidate)
                 .Select(x => x.EventTime)
@@ -395,6 +416,11 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
         {
             return activityEvent.EventType == ActivityEventType.PrivilegedAction ||
                    activityEvent.EventType == ActivityEventType.PermissionChange;
+        }
+
+        private static bool IsBulkOperationCandidate(ActivityEvent activityEvent)
+        {
+            return activityEvent.RowsAffected.HasValue && activityEvent.RowsAffected.Value > 0;
         }
 
         private static IReadOnlyList<ActivityEventIngestionItemDto> GetValidatedActivityEventBatchItems(IngestActivityEventsInput input)
