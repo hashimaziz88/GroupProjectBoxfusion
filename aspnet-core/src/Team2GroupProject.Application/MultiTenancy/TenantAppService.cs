@@ -25,6 +25,7 @@ namespace Team2GroupProject.MultiTenancy
         private readonly EditionManager _editionManager;
         private readonly UserManager _userManager;
         private readonly RoleManager _roleManager;
+        private readonly IDataSentinelRoleSeeder _dataSentinelRoleSeeder;
         private readonly IAbpZeroDbMigrator _abpZeroDbMigrator;
 
         public TenantAppService(
@@ -33,6 +34,7 @@ namespace Team2GroupProject.MultiTenancy
             EditionManager editionManager,
             UserManager userManager,
             RoleManager roleManager,
+            IDataSentinelRoleSeeder dataSentinelRoleSeeder,
             IAbpZeroDbMigrator abpZeroDbMigrator)
             : base(repository)
         {
@@ -40,6 +42,7 @@ namespace Team2GroupProject.MultiTenancy
             _editionManager = editionManager;
             _userManager = userManager;
             _roleManager = roleManager;
+            _dataSentinelRoleSeeder = dataSentinelRoleSeeder;
             _abpZeroDbMigrator = abpZeroDbMigrator;
         }
 
@@ -85,6 +88,8 @@ namespace Team2GroupProject.MultiTenancy
 
                 // Assign admin user to role!
                 CheckErrors(await _userManager.AddToRoleAsync(adminUser, adminRole.Name));
+
+                await _dataSentinelRoleSeeder.SeedAsync(tenant.Id);
                 await CurrentUnitOfWork.SaveChangesAsync();
             }
 

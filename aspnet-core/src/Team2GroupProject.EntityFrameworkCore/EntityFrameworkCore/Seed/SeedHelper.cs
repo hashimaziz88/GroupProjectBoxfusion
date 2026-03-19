@@ -5,6 +5,7 @@ using Abp.Dependency;
 using Abp.Domain.Uow;
 using Abp.EntityFrameworkCore.Uow;
 using Abp.MultiTenancy;
+using Team2GroupProject.Authorization.Roles;
 using Team2GroupProject.EntityFrameworkCore.Seed.Host;
 using Team2GroupProject.EntityFrameworkCore.Seed.Tenants;
 
@@ -14,10 +15,20 @@ namespace Team2GroupProject.EntityFrameworkCore.Seed
     {
         public static void SeedHostDb(IIocResolver iocResolver)
         {
-            WithDbContext<Team2GroupProjectDbContext>(iocResolver, SeedHostDb);
+            using (var dataSentinelRoleSeeder = iocResolver.ResolveAsDisposable<IDataSentinelRoleSeeder>())
+            {
+                WithDbContext<Team2GroupProjectDbContext>(
+                    iocResolver,
+                    context => SeedHostDb(context, dataSentinelRoleSeeder.Object));
+            }
         }
 
         public static void SeedHostDb(Team2GroupProjectDbContext context)
+        {
+            SeedHostDb(context, null);
+        }
+
+        private static void SeedHostDb(Team2GroupProjectDbContext context, IDataSentinelRoleSeeder dataSentinelRoleSeeder)
         {
             context.SuppressAutoSetTenantId = true;
 
@@ -26,7 +37,7 @@ namespace Team2GroupProject.EntityFrameworkCore.Seed
 
             // Default tenant seed (in host database).
             new DefaultTenantBuilder(context).Create();
-            new TenantRoleAndUserBuilder(context, 1).Create();
+            new TenantRoleAndUserBuilder(context, 1, dataSentinelRoleSeeder).Create();
         }
 
         private static void WithDbContext<TDbContext>(IIocResolver iocResolver, Action<TDbContext> contextAction)

@@ -2,17 +2,20 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Abp.Authorization;
 using Abp.Runtime.Session;
 using Abp.UI;
 using Microsoft.EntityFrameworkCore;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+using Team2GroupProject.Authorization;
 using Team2GroupProject.Authorization.Users;
 using Team2GroupProject.DataSentinel.Monitoring;
 
 namespace Team2GroupProject.DataSentinel.SecurityAlerts
 {
+    [AbpAuthorize(PermissionNames.Pages_DataSentinel_Reports_Export)]
     public class IncidentReportAppService : IIncidentReportAppService
     {
         private readonly ISecurityAlertRepository _securityAlertRepository;
