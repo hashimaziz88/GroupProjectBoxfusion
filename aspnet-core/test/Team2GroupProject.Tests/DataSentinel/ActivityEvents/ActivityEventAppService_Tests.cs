@@ -444,7 +444,7 @@ namespace Team2GroupProject.Tests.DataSentinel.ActivityEvents
             });
 
             result.AcceptedCount.ShouldBe(2);
-            result.DetectionSummary.EvaluatedAnchorCount.ShouldBe(2);
+            result.DetectionSummary.EvaluatedAnchorCount.ShouldBe(4);
             result.DetectionSummary.CreatedAlertCount.ShouldBe(1);
             result.DetectionSummary.DuplicateAlertCount.ShouldBe(0);
 
@@ -453,6 +453,149 @@ namespace Team2GroupProject.Tests.DataSentinel.ActivityEvents
 
             alert.ShouldNotBeNull();
             alert.PrimaryActorUser.ShouldBe("admin");
+            alert.DatabaseId.ShouldBe(database.Id);
+        }
+
+        [Fact]
+        public async Task ImportBatchAsync_should_trigger_repeated_failure_detection_for_ingested_failed_activity_events()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            var database = await CreateDatabaseAsync(tenantId);
+            var baseTime = new DateTime(2026, 3, 18, 16, 0, 0, DateTimeKind.Utc);
+            var rule = await CreateRepeatedFailureRuleAsync(
+                tenantId,
+                "Repeated Login Failures",
+                ActivityEventType.Login,
+                AlertRuleGroupByField.ActorUser,
+                thresholdCount: 2,
+                windowMinutes: 15,
+                severity: ActivitySeverity.High);
+
+            var result = await _activityEventAppService.ImportBatchAsync(new IngestActivityEventsInput
+            {
+                Events = new List<ActivityEventIngestionItemDto>
+                {
+                    CreateFailedLoginEvent(database.Id, baseTime.AddMinutes(-6), "analyst-a", "repeat-failure-1"),
+                    CreateFailedLoginEvent(database.Id, baseTime.AddMinutes(-1), "analyst-a", "repeat-failure-2")
+                }
+            });
+
+            result.AcceptedCount.ShouldBe(2);
+            result.DetectionSummary.EvaluatedAnchorCount.ShouldBe(4);
+            result.DetectionSummary.CreatedAlertCount.ShouldBe(1);
+            result.DetectionSummary.DuplicateAlertCount.ShouldBe(0);
+
+            var alert = await UsingDbContextAsync(async context =>
+                await context.SecurityAlerts.FindAsync(result.DetectionSummary.CreatedAlertIds.Single()));
+
+            alert.ShouldNotBeNull();
+            alert.RuleId.ShouldBe(rule.Id);
+            alert.PrimaryActorUser.ShouldBe("analyst-a");
+            alert.RelatedEventCount.ShouldBe(2);
+        }
+
+        [Fact]
+        public async Task IngestAbpAuditLogsAsync_should_trigger_repeated_failure_detection_after_mapping_to_activity_events()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            var database = await CreateDatabaseAsync(tenantId);
+            var baseTime = new DateTime(2026, 3, 18, 17, 0, 0, DateTimeKind.Utc);
+            var rule = await CreateRepeatedFailureRuleAsync(
+                tenantId,
+                "Mapped Login Failures",
+                ActivityEventType.Login,
+                AlertRuleGroupByField.ActorUser,
+                thresholdCount: 2,
+                windowMinutes: 20,
+                severity: ActivitySeverity.High);
+
+            var result = await _activityEventAppService.IngestAbpAuditLogsAsync(new IngestAbpAuditLogsInput
+            {
+                DatabaseId = database.Id,
+                AbpAuditLogs = new List<AbpAuditLogIngestionItemDto>
+                {
+                    CreateAuthenticateAuditLog(tenantId, 2001, baseTime.AddMinutes(-7), "mapped-admin"),
+                    CreateAuthenticateAuditLog(tenantId, 2002, baseTime.AddMinutes(-2), "mapped-admin")
+                }
+            });
+
+            result.AcceptedCount.ShouldBe(2);
+            result.DetectionSummary.EvaluatedAnchorCount.ShouldBe(4);
+            result.DetectionSummary.CreatedAlertCount.ShouldBe(1);
+            result.DetectionSummary.DuplicateAlertCount.ShouldBe(0);
+
+            var alert = await UsingDbContextAsync(async context =>
+                await context.SecurityAlerts.FindAsync(result.DetectionSummary.CreatedAlertIds.Single()));
+
+            alert.ShouldNotBeNull();
+            alert.RuleId.ShouldBe(rule.Id);
+            alert.PrimaryActorUser.ShouldBe("mapped-admin");
+            alert.RelatedEventCount.ShouldBe(2);
+            alert.DatabaseId.ShouldBe(database.Id);
+        }
+
+        [Fact]
+        public async Task ImportBatchAsync_should_trigger_privileged_action_detection_for_ingested_privileged_events()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            var database = await CreateDatabaseAsync(tenantId);
+            var eventTime = new DateTime(2026, 3, 18, 18, 0, 0, DateTimeKind.Utc);
+            var rule = await CreatePrivilegedActionRuleAsync(tenantId, "Sensitive Admin Activity", ActivitySeverity.High);
+
+            var result = await _activityEventAppService.ImportBatchAsync(new IngestActivityEventsInput
+            {
+                Events = new List<ActivityEventIngestionItemDto>
+                {
+                    CreatePrivilegedActionEvent(database.Id, eventTime, "security-admin", "privileged-action-1"),
+                    CreatePermissionChangeEvent(database.Id, eventTime, "security-admin", "permission-change-1")
+                }
+            });
+
+            result.AcceptedCount.ShouldBe(2);
+            result.DetectionSummary.EvaluatedAnchorCount.ShouldBe(3);
+            result.DetectionSummary.CreatedAlertCount.ShouldBe(2);
+            result.DetectionSummary.DuplicateAlertCount.ShouldBe(0);
+
+            var alerts = await UsingDbContextAsync(async context =>
+                await Task.FromResult(context.SecurityAlerts
+                    .Where(x => result.DetectionSummary.CreatedAlertIds.Contains(x.Id))
+                    .OrderBy(x => x.TriggeredAt)
+                    .ToList()));
+
+            alerts.Count.ShouldBe(2);
+            alerts.ShouldAllBe(x => x.RuleId == rule.Id);
+            alerts.Select(x => x.TriggeringActivityEventId!.Value).OrderBy(x => x)
+                .ShouldBe(result.CreatedEventIds.OrderBy(x => x));
+        }
+
+        [Fact]
+        public async Task IngestAbpAuditLogsAsync_should_trigger_privileged_action_detection_after_mapping_to_activity_events()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            var database = await CreateDatabaseAsync(tenantId);
+            var eventTime = new DateTime(2026, 3, 18, 19, 0, 0, DateTimeKind.Utc);
+            var rule = await CreatePrivilegedActionRuleAsync(tenantId, "Mapped Privileged Activity", ActivitySeverity.High);
+
+            var result = await _activityEventAppService.IngestAbpAuditLogsAsync(new IngestAbpAuditLogsInput
+            {
+                DatabaseId = database.Id,
+                AbpAuditLogs = new List<AbpAuditLogIngestionItemDto>
+                {
+                    CreatePrivilegedActionAuditLog(tenantId, 3001, eventTime, "tenant-admin")
+                }
+            });
+
+            result.AcceptedCount.ShouldBe(1);
+            result.DetectionSummary.EvaluatedAnchorCount.ShouldBe(2);
+            result.DetectionSummary.CreatedAlertCount.ShouldBe(1);
+            result.DetectionSummary.DuplicateAlertCount.ShouldBe(0);
+
+            var alert = await UsingDbContextAsync(async context =>
+                await context.SecurityAlerts.FindAsync(result.DetectionSummary.CreatedAlertIds.Single()));
+
+            alert.ShouldNotBeNull();
+            alert.RuleId.ShouldBe(rule.Id);
+            alert.PrimaryActorUser.ShouldBe("tenant-admin");
             alert.DatabaseId.ShouldBe(database.Id);
         }
 
@@ -605,6 +748,91 @@ namespace Team2GroupProject.Tests.DataSentinel.ActivityEvents
                 Events = new List<ActivityEventIngestionItemDto>
                 {
                     CreateWriteEvent(database.Id, secondTime, "writer-b", "dup-3")
+                }
+            });
+
+            firstImport.DetectionSummary.CreatedAlertCount.ShouldBe(1);
+            secondImport.DetectionSummary.CreatedAlertCount.ShouldBe(0);
+            secondImport.DetectionSummary.DuplicateAlertCount.ShouldBe(1);
+
+            var alertCount = await UsingDbContextAsync(async context =>
+                await Task.FromResult(context.SecurityAlerts.Count()));
+
+            alertCount.ShouldBe(1);
+        }
+
+        [Fact]
+        public async Task IngestAsync_should_only_evaluate_accepted_events_for_repeated_failure_detection()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            var database = await CreateDatabaseAsync(tenantId);
+            var baseTime = new DateTime(2026, 3, 18, 20, 0, 0, DateTimeKind.Utc);
+
+            await CreateRepeatedFailureRuleAsync(
+                tenantId,
+                "Accepted Failures Only",
+                ActivityEventType.Login,
+                AlertRuleGroupByField.ActorUser,
+                thresholdCount: 3,
+                windowMinutes: 20,
+                severity: ActivitySeverity.High);
+
+            var result = await _activityEventAppService.IngestAsync(new IngestActivityEventsInput
+            {
+                Events = new List<ActivityEventIngestionItemDto>
+                {
+                    CreateFailedLoginEvent(database.Id, baseTime.AddMinutes(-6), "accepted-only", "accepted-failure-1"),
+                    CreateFailedLoginEvent(database.Id, baseTime.AddMinutes(-1), "accepted-only", "accepted-failure-2"),
+                    new ActivityEventIngestionItemDto
+                    {
+                        DatabaseId = Guid.NewGuid(),
+                        EventTime = baseTime,
+                        EventType = ActivityEventType.Login,
+                        ActorUser = "accepted-only",
+                        Severity = ActivitySeverity.Medium,
+                        IsSuccess = false,
+                        FailureReason = "Login failed!"
+                    }
+                }
+            });
+
+            result.AcceptedCount.ShouldBe(2);
+            result.RejectedCount.ShouldBe(1);
+            result.DetectionSummary.EvaluatedAnchorCount.ShouldBe(4);
+            result.DetectionSummary.CreatedAlertCount.ShouldBe(0);
+            result.DetectionSummary.DuplicateAlertCount.ShouldBe(0);
+        }
+
+        [Fact]
+        public async Task ImportBatchAsync_should_report_duplicate_repeated_failure_alerts_when_existing_cluster_is_re_evaluated()
+        {
+            var tenantId = AbpSession.TenantId!.Value;
+            var database = await CreateDatabaseAsync(tenantId);
+            var firstTime = new DateTime(2026, 3, 18, 21, 0, 0, DateTimeKind.Utc);
+
+            await CreateRepeatedFailureRuleAsync(
+                tenantId,
+                "Failure Duplicate Check",
+                ActivityEventType.Login,
+                AlertRuleGroupByField.ActorUser,
+                thresholdCount: 2,
+                windowMinutes: 15,
+                severity: ActivitySeverity.Medium);
+
+            var firstImport = await _activityEventAppService.ImportBatchAsync(new IngestActivityEventsInput
+            {
+                Events = new List<ActivityEventIngestionItemDto>
+                {
+                    CreateFailedLoginEvent(database.Id, firstTime, "duplicate-admin", "duplicate-failure-1"),
+                    CreateFailedLoginEvent(database.Id, firstTime.AddMinutes(4), "duplicate-admin", "duplicate-failure-2")
+                }
+            });
+
+            var secondImport = await _activityEventAppService.ImportBatchAsync(new IngestActivityEventsInput
+            {
+                Events = new List<ActivityEventIngestionItemDto>
+                {
+                    CreateFailedLoginEvent(database.Id, firstTime.AddMinutes(6), "other-user", "duplicate-failure-3")
                 }
             });
 
@@ -1312,6 +1540,49 @@ namespace Team2GroupProject.Tests.DataSentinel.ActivityEvents
             return rule;
         }
 
+        private async Task<AlertRule> CreateRepeatedFailureRuleAsync(
+            int tenantId,
+            string name,
+            ActivityEventType eventType,
+            AlertRuleGroupByField groupByField,
+            int thresholdCount,
+            int windowMinutes,
+            ActivitySeverity severity)
+        {
+            var rule = new AlertRule(tenantId, name, AlertRuleType.RepeatedFailure, severity, windowMinutes, thresholdCount)
+            {
+                EventType = eventType,
+                GroupByField = groupByField
+            };
+
+            await UsingDbContextAsync(async context =>
+            {
+                await context.AlertRules.AddAsync(rule);
+            });
+
+            return rule;
+        }
+
+        private async Task<AlertRule> CreatePrivilegedActionRuleAsync(
+            int tenantId,
+            string name,
+            ActivitySeverity severity,
+            ActivityEventType? eventType = null,
+            bool isEnabled = true)
+        {
+            var rule = new AlertRule(tenantId, name, AlertRuleType.PrivilegedAction, severity, 0, 1, isEnabled: isEnabled)
+            {
+                EventType = eventType
+            };
+
+            await UsingDbContextAsync(async context =>
+            {
+                await context.AlertRules.AddAsync(rule);
+            });
+
+            return rule;
+        }
+
         private static ActivityEventIngestionItemDto CreateWriteEvent(
             Guid databaseId,
             DateTime eventTime,
@@ -1327,6 +1598,68 @@ namespace Team2GroupProject.Tests.DataSentinel.ActivityEvents
                 Severity = ActivitySeverity.Low,
                 IsSuccess = true,
                 Operation = "UPDATE",
+                SourceSystem = "TestImport",
+                SourceEventKey = sourceEventKey
+            };
+        }
+
+        private static ActivityEventIngestionItemDto CreateFailedLoginEvent(
+            Guid databaseId,
+            DateTime eventTime,
+            string actorUser,
+            string sourceEventKey)
+        {
+            return new ActivityEventIngestionItemDto
+            {
+                DatabaseId = databaseId,
+                EventTime = eventTime,
+                EventType = ActivityEventType.Login,
+                ActorUser = actorUser,
+                Severity = ActivitySeverity.Medium,
+                IsSuccess = false,
+                FailureReason = "Login failed!",
+                SourceSystem = "TestImport",
+                SourceEventKey = sourceEventKey
+            };
+        }
+
+        private static ActivityEventIngestionItemDto CreatePrivilegedActionEvent(
+            Guid databaseId,
+            DateTime eventTime,
+            string actorUser,
+            string sourceEventKey)
+        {
+            return new ActivityEventIngestionItemDto
+            {
+                DatabaseId = databaseId,
+                EventTime = eventTime,
+                EventType = ActivityEventType.PrivilegedAction,
+                ActorUser = actorUser,
+                Severity = ActivitySeverity.High,
+                IsSuccess = true,
+                Operation = "RESET PASSWORD",
+                ObjectName = "security.users",
+                SourceSystem = "TestImport",
+                SourceEventKey = sourceEventKey
+            };
+        }
+
+        private static ActivityEventIngestionItemDto CreatePermissionChangeEvent(
+            Guid databaseId,
+            DateTime eventTime,
+            string actorUser,
+            string sourceEventKey)
+        {
+            return new ActivityEventIngestionItemDto
+            {
+                DatabaseId = databaseId,
+                EventTime = eventTime,
+                EventType = ActivityEventType.PermissionChange,
+                ActorUser = actorUser,
+                Severity = ActivitySeverity.High,
+                IsSuccess = true,
+                Operation = "GRANT ROLE",
+                ObjectName = "security.roles",
                 SourceSystem = "TestImport",
                 SourceEventKey = sourceEventKey
             };
@@ -1351,6 +1684,26 @@ namespace Team2GroupProject.Tests.DataSentinel.ActivityEvents
                 BrowserInfo = "Mozilla/5.0",
                 ExceptionMessage = "Login failed!",
                 Exception = "Abp.UI.UserFriendlyException: Login failed!"
+            };
+        }
+
+        private static AbpAuditLogIngestionItemDto CreatePrivilegedActionAuditLog(
+            int tenantId,
+            long id,
+            DateTime executionTime,
+            string actorUser)
+        {
+            return new AbpAuditLogIngestionItemDto
+            {
+                Id = id,
+                TenantId = tenantId,
+                ServiceName = "Team2GroupProject.Users.UserAppService",
+                MethodName = "ResetPassword",
+                Parameters = $"{{\"input\":{{\"userName\":\"{actorUser}\"}}}}",
+                ExecutionTime = executionTime,
+                ExecutionDuration = 1200,
+                ClientIpAddress = "::1",
+                BrowserInfo = "Mozilla/5.0"
             };
         }
 
