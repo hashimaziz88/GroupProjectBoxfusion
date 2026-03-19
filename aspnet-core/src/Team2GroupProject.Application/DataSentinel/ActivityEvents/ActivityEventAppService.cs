@@ -16,6 +16,7 @@ using Team2GroupProject.Authorization;
 using Team2GroupProject.DataSentinel;
 using Team2GroupProject.DataSentinel.ActivityEvents.Dto;
 using Team2GroupProject.DataSentinel.Monitoring;
+using Team2GroupProject.DataSentinel.UserRiskProfiles;
 
 namespace Team2GroupProject.DataSentinel.ActivityEvents
 {
@@ -50,15 +51,18 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
         private readonly IActivityEventRepository _activityEventRepository;
         private readonly IMonitoredServerRepository _monitoredServerRepository;
         private readonly IMonitoredDatabaseRepository _monitoredDatabaseRepository;
+        private readonly IUserRiskProfileRepository _userRiskProfileRepository;
 
         public ActivityEventAppService(
             IActivityEventRepository activityEventRepository,
             IMonitoredServerRepository monitoredServerRepository,
-            IMonitoredDatabaseRepository monitoredDatabaseRepository)
+            IMonitoredDatabaseRepository monitoredDatabaseRepository,
+            IUserRiskProfileRepository userRiskProfileRepository)
         {
             _activityEventRepository = activityEventRepository;
             _monitoredServerRepository = monitoredServerRepository;
             _monitoredDatabaseRepository = monitoredDatabaseRepository;
+            _userRiskProfileRepository = userRiskProfileRepository;
         }
 
 
@@ -249,12 +253,67 @@ namespace Team2GroupProject.DataSentinel.ActivityEvents
             if (validEvents.Count > 0)
             {
                 await CurrentUnitOfWork.SaveChangesAsync();
+                await UpdateRiskProfilesFromEventsAsync(tenantId, validEvents);
             }
 
             result.AcceptedCount = result.CreatedEventIds.Count;
             result.RejectedCount = result.Errors.Count;
 
             return result;
+        }
+
+        private async Task UpdateRiskProfilesFromEventsAsync(int tenantId, IReadOnlyList<ActivityEvent> events)
+        {
+            var now = DateTime.UtcNow;
+
+            // Group events by actor so we do one profile load per actor, not one per event.
+            var byActor = events
+                .Where(e => !e.ActorUser.IsNullOrWhiteSpace())
+                .GroupBy(e => e.ActorUser, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var group in byActor)
+            {
+                var profile = await _userRiskProfileRepository.FindByActorAsync(tenantId, group.Key);
+                var isNew = profile == null;
+
+                if (isNew)
+                {
+                    profile = new UserRiskProfile(tenantId, group.Key);
+                }
+
+                foreach (var e in group)
+                {
+                    profile.ActorIp = e.ActorIp ?? profile.ActorIp;
+                    profile.TotalEventCount++;
+
+                    if (profile.LastActivityAt == null || e.EventTime > profile.LastActivityAt)
+                    {
+                        profile.LastActivityAt = e.EventTime;
+                    }
+
+                    if (!e.IsSuccess && e.EventType == ActivityEventType.Login)
+                    {
+                        profile.FailedLoginCount++;
+                    }
+
+                    if (e.EventType == ActivityEventType.PrivilegedAction)
+                    {
+                        profile.PrivilegedActionCount++;
+                    }
+
+                    if (e.IsOutOfHours)
+                    {
+                        profile.OutOfHoursEventCount++;
+                    }
+                }
+
+                profile.RecalculateRisk(now);
+
+                if (isNew)
+                {
+                    await _userRiskProfileRepository.InsertAsync(profile);
+                }
+            }
         }
 
         private static IReadOnlyList<ActivityEventIngestionItemDto> GetValidatedActivityEventBatchItems(IngestActivityEventsInput input)
