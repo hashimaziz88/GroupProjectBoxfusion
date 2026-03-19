@@ -57,10 +57,6 @@ export const canAccessDataSentinelAlerts = (
 export const selectBestAuthenticatedRoute = (
   user?: IRouteSelectorUser | null,
 ) => {
-  if (canAccessUsers(user?.permissions)) {
-    return "/users";
-  }
-
   const hasTenantContext = Boolean(user?.tenantId);
 
   if (hasTenantContext && canAccessDataSentinelDashboard(user?.permissions)) {
@@ -81,6 +77,10 @@ export const selectBestAuthenticatedRoute = (
 
   if (hasTenantContext && canAccessDataSentinelAlerts(user?.permissions)) {
     return "/datasentinel/alerts";
+  }
+
+  if (canAccessUsers(user?.permissions)) {
+    return "/users";
   }
 
   return "/home";

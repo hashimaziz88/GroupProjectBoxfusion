@@ -55,8 +55,7 @@ const SecurityAlertsWorkspace = ({
           type="error"
           showIcon
           title={errorMessage}
-          closable
-          onClose={clearMessages}
+          closable={{ onClose: clearMessages }}
           className={styles.alert}
         />
       ) : null}
@@ -65,8 +64,7 @@ const SecurityAlertsWorkspace = ({
           type={actionMessage.type}
           showIcon
           title={actionMessage.text}
-          closable
-          onClose={clearMessages}
+          closable={{ onClose: clearMessages }}
           className={styles.alert}
         />
       ) : null}

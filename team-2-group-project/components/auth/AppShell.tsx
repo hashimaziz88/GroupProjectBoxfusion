@@ -109,13 +109,10 @@ const AppShell = ({ title, subtitle, children }: IAppShellProps) => {
           <Image
             src="/logoipsum-custom-logo.svg"
             alt="DataSentinel"
-            width={160}
-            height={27}
+            width={140}
+            height={24}
             className={styles.brandLogo}
           />
-          <Paragraph className={styles.brandText}>
-            Database activity monitoring and security intelligence platform.
-          </Paragraph>
           <Tag className={styles.tenantBadge}>
             {currentTenant?.tenancyName ?? "Host context"}
           </Tag>
