@@ -41,12 +41,20 @@ export interface IActivityEventIngestionError {
   errors?: string[] | null;
 }
 
+export interface IIngestionDetectionSummary {
+  evaluatedAnchorCount: number;
+  createdAlertCount: number;
+  duplicateAlertCount: number;
+  createdAlertIds?: string[] | null;
+}
+
 export interface IActivityEventIngestionResult {
   receivedCount: number;
   acceptedCount: number;
   rejectedCount: number;
   createdEventIds?: string[] | null;
   errors?: IActivityEventIngestionError[] | null;
+  detectionSummary?: IIngestionDetectionSummary | null;
 }
 
 export interface IIngestActivityEventsInput {

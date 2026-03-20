@@ -7,7 +7,7 @@ import ReportExportPackages from "@/components/datasentinel/reports/ReportExport
 import ReportExportSummary from "@/components/datasentinel/reports/ReportExportSummary";
 import ReportIncidentPicker from "@/components/datasentinel/reports/ReportIncidentPicker";
 import { useStyles } from "@/components/datasentinel/reports/style/style";
-import { PERMISSIONS } from "@/constants/auth/roles";
+import { DATA_SENTINEL_ROLE_ALIASES, PERMISSIONS } from "@/constants/auth/roles";
 import { withAuth } from "@/hoc/withAuth";
 import {
   ReportExportProvider,
@@ -87,5 +87,9 @@ const ReportExportPage = () => (
 
 export default withAuth(
   ReportExportPage,
-  PERMISSIONS.dataSentinelReportsExport,
+  {
+    requiredPermission: PERMISSIONS.dataSentinelReportsExport,
+    disallowedRoles: [...DATA_SENTINEL_ROLE_ALIASES.securityAnalyst],
+    requireTenantContext: true,
+  },
 );

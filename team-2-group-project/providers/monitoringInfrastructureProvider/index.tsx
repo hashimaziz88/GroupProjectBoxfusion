@@ -333,6 +333,20 @@ export const MonitoringInfrastructureProvider: React.FC<{
     mutation: () => Promise<void>,
     successText: string,
     ) => {
+    if (!canManageInfrastructure) {
+      dispatch(
+        setMonitoringInfrastructureMessages({
+          actionMessage: {
+            type: "error",
+            text: "You do not have permission to modify monitored infrastructure.",
+          },
+          errorMessage: state.errorMessage,
+          bootstrapResult: state.bootstrapResult,
+        }),
+      );
+      return false;
+    }
+
     try {
       await mutation();
       dispatch(
@@ -387,6 +401,20 @@ export const MonitoringInfrastructureProvider: React.FC<{
     );
 
   const bootstrapDemoAction = async (input: IBootstrapMonitoringDemoInput) => {
+    if (!canManageInfrastructure) {
+      dispatch(
+        setMonitoringInfrastructureMessages({
+          actionMessage: {
+            type: "error",
+            text: "You do not have permission to bootstrap monitored infrastructure.",
+          },
+          errorMessage: state.errorMessage,
+          bootstrapResult: state.bootstrapResult,
+        }),
+      );
+      return false;
+    }
+
     try {
       const result = await bootstrapMonitoringDemo(input);
       dispatch(

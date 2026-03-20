@@ -86,6 +86,7 @@ const AppShell = ({ title, subtitle, children }: IAppShellProps) => {
 
   const visibleItems = getVisibleNavigationItems(
     permissions,
+    user?.roles,
     Boolean(currentTenant?.tenantId),
   );
   const menuSelection = resolveMenuSelection(visibleItems, pathname) ?? {

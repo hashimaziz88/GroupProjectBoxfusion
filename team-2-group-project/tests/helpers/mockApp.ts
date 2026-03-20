@@ -311,10 +311,9 @@ const createInitialState = (): MockState => ({
       id: 3,
       name: "Analyst",
       displayName: "Security analyst",
-      description: "Investigates alerts and reviews activity.",
+      description: "Investigates alerts and follows investigation guidance.",
       grantedPermissions: [
         PERMISSIONS.dataSentinelDashboard,
-        PERMISSIONS.dataSentinelActivity,
         PERMISSIONS.dataSentinelAlertsView,
       ],
       isStatic: false,

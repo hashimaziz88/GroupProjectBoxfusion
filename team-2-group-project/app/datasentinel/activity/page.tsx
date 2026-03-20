@@ -7,7 +7,7 @@ import ActivityEventsTable from "@/components/datasentinel/activity/ActivityEven
 import ActivityFilterPanel from "@/components/datasentinel/activity/ActivityFilterPanel";
 import ActivityOverviewCard from "@/components/datasentinel/activity/ActivityOverviewCard";
 import ActivitySummaryCards from "@/components/datasentinel/activity/ActivitySummaryCards";
-import { PERMISSIONS } from "@/constants/auth/roles";
+import { DATA_SENTINEL_ROLE_ALIASES, PERMISSIONS } from "@/constants/auth/roles";
 import { withAuth } from "@/hoc/withAuth";
 import {
   ActivityMonitoringProvider,
@@ -56,4 +56,8 @@ const ActivityMonitoringPage = () => (
   </ActivityMonitoringProvider>
 );
 
-export default withAuth(ActivityMonitoringPage, PERMISSIONS.dataSentinelActivity);
+export default withAuth(ActivityMonitoringPage, {
+  requiredPermission: PERMISSIONS.dataSentinelActivity,
+  disallowedRoles: [...DATA_SENTINEL_ROLE_ALIASES.securityAnalyst],
+  requireTenantContext: true,
+});

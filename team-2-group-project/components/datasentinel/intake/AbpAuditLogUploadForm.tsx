@@ -8,6 +8,7 @@ import { IIntakeFormSharedProps } from "@/interfaces/datasentinel/intakeComponen
 import { ingestAbpAuditLogs } from "@/utils/datasentinel/intakeService";
 import {
   extractAuditLogs,
+  normalizeAuditLogsForTenant,
   parseJsonPayload,
   resolveDatabaseOptions,
   resolveErrorMessage,
@@ -16,6 +17,7 @@ import {
 const { Paragraph } = Typography;
 
 const AbpAuditLogUploadForm = ({
+  currentTenantId,
   allDatabases,
   isLoadingReferences,
   monitoredServers,
@@ -45,15 +47,23 @@ const AbpAuditLogUploadForm = ({
         try {
           const parsed = parseJsonPayload(values.payload);
           const abpAuditLogs = extractAuditLogs(parsed);
+          const { normalizedAuditLogs, normalizedCount } =
+            normalizeAuditLogsForTenant(abpAuditLogs, currentTenantId);
 
           const result = await ingestAbpAuditLogs({
             serverId: values.serverId,
             databaseId: values.databaseId,
-            abpAuditLogs,
+            abpAuditLogs: normalizedAuditLogs,
           });
 
           onResult("ABP audit log upload", result);
-          onMessage({ type: "success", text: "ABP audit logs submitted successfully." });
+          onMessage({
+            type: "success",
+            text:
+              normalizedCount > 0
+                ? `ABP audit logs submitted successfully. TenantId was aligned to the active tenant for ${normalizedCount} item(s).`
+                : "ABP audit logs submitted successfully.",
+          });
         } catch (error: unknown) {
           onMessage({ type: "error", text: resolveErrorMessage(error) });
         } finally {

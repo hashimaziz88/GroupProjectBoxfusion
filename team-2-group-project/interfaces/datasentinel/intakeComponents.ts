@@ -15,6 +15,7 @@ export interface IIntakeSummaryCardsProps {
 }
 
 export interface IIntakeFormSharedProps {
+  currentTenantId: number;
   monitoredServers: IMonitoredServerListItem[];
   allDatabases: IIntakeDatabaseOption[];
   isLoadingReferences: boolean;

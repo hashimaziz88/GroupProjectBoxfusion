@@ -56,22 +56,25 @@ const IntakeResultPanel = ({ lastResult }: IIntakeResultPanelProps) => {
               <span className={styles.statLabel}>Rejected</span>
               <span className={styles.statValue}>{lastResult.result.rejectedCount}</span>
             </div>
-          </div>
-
-          {toArray(lastResult.result.createdEventIds).length ? (
-            <div className={styles.stackedCards}>
-              <Text strong>Created activity event IDs</Text>
-              <div className={styles.tagRow}>
-                {toArray(lastResult.result.createdEventIds)
-                  .slice(0, 12)
-                  .map((id) => (
-                    <Tag key={id} className={styles.infoTag}>
-                      {id}
-                    </Tag>
-                  ))}
-              </div>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>Alerts created</span>
+              <span className={styles.statValue}>
+                {lastResult.result.detectionSummary?.createdAlertCount ?? 0}
+              </span>
             </div>
-          ) : null}
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>Duplicate alerts skipped</span>
+              <span className={styles.statValue}>
+                {lastResult.result.detectionSummary?.duplicateAlertCount ?? 0}
+              </span>
+            </div>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>Detection checks</span>
+              <span className={styles.statValue}>
+                {lastResult.result.detectionSummary?.evaluatedAnchorCount ?? 0}
+              </span>
+            </div>
+          </div>
 
           <Table
             rowKey={(record) => `${record.itemIndex}-${toArray(record.errors).join("|")}`}

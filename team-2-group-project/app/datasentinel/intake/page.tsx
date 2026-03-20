@@ -24,7 +24,8 @@ const PAGE_SUBTITLE =
 const ActivityIntakePageContent = () => {
   const { styles } = useStyles();
   const { currentTenant } = useAuthState();
-  const hasTenantContext = Boolean(currentTenant?.tenantId);
+  const currentTenantId = currentTenant?.tenantId;
+  const hasTenantContext = currentTenantId != null;
 
   const [monitoredServers, setMonitoredServers] = useState<IMonitoredServerListItem[]>([]);
   const [isLoadingReferences, setIsLoadingReferences] = useState(true);
@@ -106,6 +107,7 @@ const ActivityIntakePageContent = () => {
         lastAcceptedCount={lastResult?.result.acceptedCount ?? 0}
       />
       <IntakeWorkflowTabs
+        currentTenantId={currentTenantId}
         monitoredServers={monitoredServers}
         allDatabases={allDatabases}
         isLoadingReferences={isLoadingReferences}
@@ -117,4 +119,7 @@ const ActivityIntakePageContent = () => {
   );
 };
 
-export default withAuth(ActivityIntakePageContent, PERMISSIONS.dataSentinelIntake);
+export default withAuth(ActivityIntakePageContent, {
+  requiredPermission: PERMISSIONS.dataSentinelIntake,
+  requireTenantContext: true,
+});
