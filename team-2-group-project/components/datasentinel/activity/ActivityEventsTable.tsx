@@ -48,7 +48,7 @@ const ActivityEventsTable = () => {
         loading={isLoading}
         dataSource={events}
         className={styles.table}
-        scroll={{ x: 1320 }}
+        scroll={{ x: "max-content" }}
         locale={{
           emptyText: (
             <Empty

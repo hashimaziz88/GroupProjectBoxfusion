@@ -12,20 +12,24 @@ export const useStyles = createStyles(() => ({
     &.ant-layout-sider {
       background: #0c1a2e;
       border-right: 1px solid rgba(8, 145, 178, 0.18);
+      height: auto !important;
+      min-height: 100vh;
+      overflow: visible;
     }
 
     .ant-layout-sider-children {
       display: flex;
       flex-direction: column;
-      height: 100%;
+      min-height: 100vh;
+      height: auto;
     }
   `,
 
   brandBlock: css`
-    padding: 16px 16px 10px;
+    padding: 14px 14px 8px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 5px;
   `,
 
   brandLogo: css`
@@ -76,11 +80,11 @@ export const useStyles = createStyles(() => ({
       flex: 1;
       background: transparent;
       border-inline-end: none;
-      padding: 4px 10px 16px;
+      padding: 4px 8px 12px;
     }
 
     .ant-menu-item {
-      border-radius: 10px;
+      border-radius: 8px;
       margin-block: 2px;
     }
   `,
@@ -88,18 +92,21 @@ export const useStyles = createStyles(() => ({
   innerLayout: css`
     &.ant-layout {
       background: transparent;
+      min-width: 0;
     }
   `,
 
   header: css`
     &.ant-layout-header {
       height: auto;
-      padding: 14px 24px 10px;
+      width: min(100%, 1440px);
+      margin: 0 auto;
+      padding: 12px 18px 8px;
       background: transparent;
       display: flex;
       flex-wrap: wrap;
       justify-content: space-between;
-      gap: 10px;
+      gap: 8px;
       align-items: center;
     }
   `,
@@ -113,7 +120,7 @@ export const useStyles = createStyles(() => ({
   pageTitle: css`
     &.ant-typography {
       margin: 0;
-      font-size: 17px;
+      font-size: 16px;
       font-weight: 700;
       color: #0c1a2e;
     }
@@ -124,7 +131,7 @@ export const useStyles = createStyles(() => ({
       margin: 0;
       font-size: 12px;
       color: #4a6a7c;
-      max-width: 620px;
+      max-width: 560px;
     }
   `,
 
@@ -132,7 +139,7 @@ export const useStyles = createStyles(() => ({
     display: flex;
     flex-wrap: wrap;
     justify-content: flex-end;
-    gap: 8px;
+    gap: 6px;
     align-items: center;
   `,
 
@@ -181,9 +188,11 @@ export const useStyles = createStyles(() => ({
   `,
 
   content: css`
-    padding: 0 20px 20px;
+    width: min(100%, 1440px);
+    margin: 0 auto;
+    padding: 0 18px 18px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
   `,
 }));

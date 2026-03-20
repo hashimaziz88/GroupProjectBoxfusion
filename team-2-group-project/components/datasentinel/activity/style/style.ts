@@ -102,6 +102,19 @@ export const useStyles = createStyles(() => ({
     margin-top: 18px;
   `,
 
+  activeFiltersRow: css`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    margin-bottom: 12px;
+  `,
+
+  mutedText: css`
+    color: #64748b;
+    font-size: 13px;
+  `,
+
   tableToolbar: css`
     display: flex;
     align-items: center;
@@ -116,9 +129,15 @@ export const useStyles = createStyles(() => ({
   `,
 
   table: css`
+    width: 100%;
+
+    .ant-table-content,
+    .ant-table-body {
+      overflow: auto !important;
+    }
+
     .ant-table-container {
       border-radius: 18px !important;
-      overflow: hidden;
     }
   `,
 

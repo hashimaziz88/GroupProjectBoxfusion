@@ -48,6 +48,8 @@ const DashboardFilters = () => {
           />
         </div>
 
+        {/* Search removed — dashboard uses existing filter options only */}
+
         <div className={styles.filterField}>
           <Typography.Text strong>Trend bucket</Typography.Text>
           <Select

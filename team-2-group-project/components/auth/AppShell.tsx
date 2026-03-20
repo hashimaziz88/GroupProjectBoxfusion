@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Button, Layout, Menu, Tag, Typography } from "antd";
 import type { ItemType } from "antd/es/menu/interface";
 import { usePathname, useRouter } from "next/navigation";
@@ -104,11 +105,7 @@ const AppShell = ({ title, subtitle, children }: IAppShellProps) => {
   return (
     <Layout className={styles.shell}>
       <Sider breakpoint="lg" collapsedWidth="0" className={styles.sider}>
-        <div
-          className={styles.brandBlock}
-          onClick={() => router.push("/landing")}
-          style={{ cursor: "pointer" }}
-        >
+        <Link className={styles.brandBlock} href="/landing">
           <Image
             src="/logoipsum-custom-logo.svg"
             alt="DataSentinel"
@@ -119,7 +116,7 @@ const AppShell = ({ title, subtitle, children }: IAppShellProps) => {
           <Tag className={styles.tenantBadge}>
             {currentTenant?.tenancyName ?? "Host context"}
           </Tag>
-        </div>
+        </Link>
 
         <Menu
           theme="dark"

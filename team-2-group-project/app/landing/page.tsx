@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { Button, Typography } from "antd";
 import { useRouter } from "next/navigation";
 import { useAuthState } from "@/providers/authProvider";
@@ -9,42 +10,40 @@ import { useStyles } from "@/app/landing/style/style";
 
 const { Paragraph, Text, Title } = Typography;
 
-
 const FEATURES = [
   {
-    icon: "🔍",
+    icon: "DB",
     title: "Real-Time Activity Monitoring",
     text: "Capture every query, login, schema change, and privileged operation as it happens across all monitored databases.",
   },
   {
-    icon: "🛡️",
+    icon: "AL",
     title: "Threat Detection",
     text: "Automatically flag suspicious events, brute-force attempts, and anomalous data access patterns for immediate review.",
   },
   {
-    icon: "📊",
+    icon: "AU",
     title: "Audit & Compliance",
     text: "Generate detailed audit trails for SOC 2, HIPAA, and GDPR compliance with immutable event records.",
   },
   {
-    icon: "🏗️",
+    icon: "SV",
     title: "Infrastructure Inventory",
     text: "Maintain a live catalogue of monitored servers, databases, and tables with environment tagging and health tracking.",
   },
   {
-    icon: "⚡",
+    icon: "IN",
     title: "Flexible Intake Pipelines",
-    text: "Ingest activity events via direct API, ABP audit log upload, or seeded simulation — all through the same normalized schema.",
+    text: "Ingest activity events via direct API, ABP audit log upload, or seeded simulation - all through the same normalized schema.",
   },
   {
-    icon: "🔐",
+    icon: "TN",
     title: "Multi-Tenant Isolation",
     text: "Every tenant operates in a fully isolated context. Host admins manage tenants and users without crossing data boundaries.",
   },
 ];
 
 const STATS = [
-  { value: "< 50ms", label: "Average ingestion latency" },
   { value: "100%", label: "Audit trail coverage" },
   { value: "6 event types", label: "Classified activity categories" },
 ];
@@ -64,16 +63,15 @@ export default function LandingPage() {
 
   return (
     <div className={styles.page}>
-      {/* Nav */}
       <nav className={styles.nav}>
-        <div className={styles.navBrand}>
+        <Link href="/landing" className={styles.navBrand}>
           <Image
             src="/logoipsum-custom-logo.svg"
             alt="DataSentinel"
             width={172}
             height={29}
           />
-        </div>
+        </Link>
         <div className={styles.navActions}>
           {isAuthenticated ? (
             <Button className={styles.navPrimaryButton} onClick={handleEnter}>
@@ -95,7 +93,6 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* Hero */}
       <section className={styles.hero}>
         <span className={styles.heroBadge}>Database Activity Monitoring</span>
         <Title className={styles.heroTitle}>
@@ -104,25 +101,24 @@ export default function LandingPage() {
         </Title>
         <Paragraph className={styles.heroSub}>
           DataSentinel captures, classifies, and surfaces every database event in
-          real time — giving security and compliance teams full visibility into
+          real time - giving security and compliance teams full visibility into
           who accessed what, when, and why.
         </Paragraph>
         <div className={styles.heroActions}>
           <Button className={styles.primaryButton} onClick={handleEnter}>
             {isAuthenticated ? "Go to dashboard" : "Get started free"}
           </Button>
-          {!isAuthenticated && (
+          {!isAuthenticated ? (
             <Button
               className={styles.secondaryButton}
               onClick={() => router.push("/login")}
             >
               Sign in
             </Button>
-          )}
+          ) : null}
         </div>
       </section>
 
-      {/* Stats */}
       <div className={styles.statsRow}>
         {STATS.map((stat) => (
           <div key={stat.label} className={styles.statCard}>
@@ -132,7 +128,6 @@ export default function LandingPage() {
         ))}
       </div>
 
-      {/* Features */}
       <section className={styles.featuresSection}>
         <span className={styles.sectionLabel}>Platform capabilities</span>
         <Title level={2} className={styles.sectionTitle}>
@@ -153,7 +148,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CTA */}
       <div className={styles.ctaSection}>
         <Title level={2} className={styles.ctaTitle}>
           Ready to take control of your database security?
@@ -169,10 +163,9 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* Footer */}
       <footer className={styles.footer}>
         <Text className={styles.footerText}>
-          © 2026 DataSentinel. Database activity monitoring platform.
+          Copyright 2026 DataSentinel. Database activity monitoring platform.
         </Text>
         <Text className={styles.footerBrand}>DataSentinel</Text>
       </footer>
