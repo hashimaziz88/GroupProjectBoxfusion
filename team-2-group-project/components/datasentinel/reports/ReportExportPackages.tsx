@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, Card, Empty, Typography } from "antd";
-import { DownloadOutlined, FilePdfOutlined } from "@ant-design/icons";
+import { DownloadOutlined } from "@ant-design/icons";
 import {
   useReportExportActions,
   useReportExportState,
@@ -16,7 +16,6 @@ const ReportExportPackages = () => {
     exportActivityCsv,
     exportAlertsCsv,
     exportBundlePdf,
-    exportIncidentPdf,
   } = useReportExportActions();
 
   const packages = [
@@ -47,15 +46,7 @@ const ReportExportPackages = () => {
       label: "Export activity CSV",
       isVisible: canAccessActivity,
     },
-    {
-      key: "incident",
-      title: "Incident PDF",
-      meta: "Generate a single incident report PDF for the selected alert below.",
-      icon: <FilePdfOutlined />,
-      action: exportIncidentPdf,
-      label: "Export incident PDF",
-      isVisible: canAccessAlerts,
-    },
+
   ].filter((item) => item.isVisible);
 
   return (

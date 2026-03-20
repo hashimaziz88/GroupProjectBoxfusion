@@ -1,12 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Button, Card, Empty, Select, Table, Tag, Typography } from "antd";
+import { Button, Card, Empty, Table, Tag } from "antd";
 import { EyeOutlined } from "@ant-design/icons";
-import {
-  useReportExportActions,
-  useReportExportState,
-} from "@/providers/reportExportProvider";
+import { useReportExportState } from "@/providers/reportExportProvider";
 import {
   resolveAlertSeverityColor,
   resolveAlertSeverityLabel,
@@ -18,47 +15,10 @@ import { useStyles } from "./style/style";
 
 const ReportIncidentPicker = () => {
   const { styles } = useStyles();
-  const { alerts, canAccessAlerts, selectedAlertId } = useReportExportState();
-  const { setSelectedAlertId } = useReportExportActions();
-
-  if (!canAccessAlerts) {
-    return (
-      <Card className={styles.pageCard}>
-        <Typography.Title level={4} className={styles.sectionTitle}>
-          Incident Report Source
-        </Typography.Title>
-        <Typography.Paragraph className={styles.sectionLead}>
-          Incident report selection is available only when the current role can also view security alerts.
-        </Typography.Paragraph>
-        <Empty
-          image={Empty.PRESENTED_IMAGE_SIMPLE}
-          description="Alert review access is required before incident PDFs can be generated."
-        />
-      </Card>
-    );
-  }
+  const { alerts, canAccessAlerts } = useReportExportState();
 
   return (
     <Card className={styles.pageCard}>
-      <Typography.Title level={4} className={styles.sectionTitle}>
-        Incident Report Source
-      </Typography.Title>
-      <Typography.Paragraph className={styles.sectionLead}>
-        Pick the alert to use when generating a single incident PDF.
-      </Typography.Paragraph>
-
-      <div className={styles.controlField} style={{ marginBottom: 16 }}>
-        <span>Selected alert</span>
-        <Select
-          value={selectedAlertId ?? undefined}
-          placeholder="Choose an alert"
-          options={alerts.map((alert) => ({
-            value: alert.id,
-            label: `${alert.alertId} | ${alert.title}`,
-          }))}
-          onChange={(value) => setSelectedAlertId(value)}
-        />
-      </div>
 
       <Table
         rowKey="id"
