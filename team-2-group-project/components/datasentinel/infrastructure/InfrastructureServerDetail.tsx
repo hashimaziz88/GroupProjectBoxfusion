@@ -117,6 +117,7 @@ const InfrastructureServerDetail = ({ serverId }: { serverId: string }) => {
           dataSource={relatedDatabases}
           columns={columns}
           className={styles.table}
+          scroll={{ x: "max-content" }}
           pagination={false}
         />
       </Card>

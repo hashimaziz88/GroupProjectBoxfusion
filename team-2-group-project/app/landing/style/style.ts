@@ -13,7 +13,7 @@ export const useStyles = createStyles(() => ({
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 20px 48px;
+    padding: 16px 32px;
     position: sticky;
     top: 0;
     z-index: 100;
@@ -57,17 +57,17 @@ export const useStyles = createStyles(() => ({
   `,
 
   hero: css`
-    max-width: 1160px;
+    max-width: 1120px;
     margin: 0 auto;
-    padding: 96px 48px 80px;
+    padding: 72px 32px 56px;
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
-    gap: 32px;
+    gap: 24px;
 
     @media (max-width: 768px) {
-      padding: 64px 24px 56px;
+      padding: 52px 20px 40px;
     }
   `,
 
@@ -107,8 +107,8 @@ export const useStyles = createStyles(() => ({
       margin: 0;
       color: #4a6a7c;
       font-size: clamp(1rem, 2vw, 1.2rem);
-      line-height: 1.7;
-      max-width: 620px;
+      line-height: 1.6;
+      max-width: 600px;
     }
   `,
 
@@ -185,28 +185,28 @@ export const useStyles = createStyles(() => ({
   `,
 
   statsRow: css`
-    max-width: 1160px;
-    margin: 0 auto 80px;
-    padding: 0 48px;
+    max-width: 1120px;
+    margin: 0 auto 64px;
+    padding: 0 32px;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
+    gap: 16px;
 
     @media (max-width: 900px) {
       grid-template-columns: 1fr;
-      padding: 0 24px;
+      padding: 0 20px;
     }
   `,
 
   statCard: css`
     border-radius: 24px;
-    padding: 28px 32px;
+    padding: 22px 24px;
     background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(240,250,253,0.95) 100%);
     border: 1px solid rgba(8, 145, 178, 0.18);
-    box-shadow: 0 8px 32px rgba(12, 26, 46, 0.06);
+    box-shadow: 0 8px 24px rgba(12, 26, 46, 0.05);
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
   `,
 
   statValue: css`
@@ -226,13 +226,13 @@ export const useStyles = createStyles(() => ({
   `,
 
   featuresSection: css`
-    max-width: 1160px;
-    margin: 0 auto 100px;
-    padding: 0 48px;
+    max-width: 1120px;
+    margin: 0 auto 72px;
+    padding: 0 32px;
 
     @media (max-width: 768px) {
-      padding: 0 24px;
-      margin-bottom: 64px;
+      padding: 0 20px;
+      margin-bottom: 52px;
     }
   `,
 
@@ -248,7 +248,7 @@ export const useStyles = createStyles(() => ({
 
   sectionTitle: css`
     &.ant-typography {
-      margin: 0 0 48px;
+      margin: 0 0 32px;
       color: #0c1a2e;
       font-size: clamp(1.8rem, 3.5vw, 2.6rem);
       font-weight: 800;
@@ -259,7 +259,7 @@ export const useStyles = createStyles(() => ({
   featureGrid: css`
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
+    gap: 16px;
 
     @media (max-width: 960px) {
       grid-template-columns: 1fr;
@@ -268,13 +268,13 @@ export const useStyles = createStyles(() => ({
 
   featureCard: css`
     border-radius: 20px;
-    padding: 28px;
+    padding: 22px;
     background: rgba(255, 255, 255, 0.9);
     border: 1px solid rgba(8, 145, 178, 0.14);
-    box-shadow: 0 4px 20px rgba(12, 26, 46, 0.05);
+    box-shadow: 0 4px 16px rgba(12, 26, 46, 0.045);
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
   `,
 
   featureIcon: css`
@@ -285,7 +285,10 @@ export const useStyles = createStyles(() => ({
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: #0c4a58;
   `,
 
   featureTitle: css`
@@ -308,20 +311,20 @@ export const useStyles = createStyles(() => ({
 
   ctaSection: css`
     background: linear-gradient(135deg, #0c1a2e 0%, #0e3347 100%);
-    margin: 0 48px 80px;
+    margin: 0 32px 64px;
     border-radius: 28px;
-    padding: 64px 56px;
+    padding: 48px 40px;
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
-    gap: 24px;
-    max-width: 1064px;
+    gap: 18px;
+    max-width: 1040px;
     margin-inline: auto;
 
     @media (max-width: 768px) {
-      margin: 0 24px 56px;
-      padding: 48px 32px;
+      margin: 0 20px 44px;
+      padding: 36px 24px;
     }
   `,
 
@@ -347,7 +350,7 @@ export const useStyles = createStyles(() => ({
 
   footer: css`
     border-top: 1px solid rgba(8, 145, 178, 0.12);
-    padding: 32px 48px;
+    padding: 24px 32px;
     display: flex;
     align-items: center;
     justify-content: space-between;

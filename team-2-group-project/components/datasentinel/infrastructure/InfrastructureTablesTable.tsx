@@ -128,6 +128,7 @@ const InfrastructureTablesTable = () => {
         dataSource={dataSource}
         columns={columns}
         className={styles.table}
+        scroll={{ x: "max-content" }}
         pagination={false}
       />
     </Card>

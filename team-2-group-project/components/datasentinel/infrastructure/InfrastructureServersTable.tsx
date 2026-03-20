@@ -75,6 +75,7 @@ const InfrastructureServersTable = () => {
         dataSource={servers}
         columns={columns}
         className={styles.table}
+        scroll={{ x: "max-content" }}
         pagination={false}
       />
     </Card>

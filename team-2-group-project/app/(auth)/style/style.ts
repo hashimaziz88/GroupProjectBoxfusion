@@ -4,7 +4,7 @@ export const useStyles = createStyles(({ token }) => ({
   page: css`
     min-height: 100vh;
     display: grid;
-    grid-template-columns: minmax(300px, 1.05fr) minmax(380px, 0.95fr);
+    grid-template-columns: minmax(300px, 1fr) minmax(380px, 0.92fr);
     background:
       radial-gradient(circle at top left, rgba(8, 145, 178, 0.20) 0%, transparent 34%),
       radial-gradient(circle at bottom right, rgba(8, 145, 178, 0.08) 0%, transparent 28%),
@@ -16,7 +16,7 @@ export const useStyles = createStyles(({ token }) => ({
   `,
 
   heroPanel: css`
-    padding: 56px;
+    padding: 44px;
     display: flex;
     align-items: center;
     background:
@@ -32,10 +32,10 @@ export const useStyles = createStyles(({ token }) => ({
   `,
 
   heroContent: css`
-    max-width: 520px;
+    max-width: 500px;
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 14px;
   `,
 
   heroBrand: css`
@@ -82,8 +82,8 @@ export const useStyles = createStyles(({ token }) => ({
     &.ant-typography {
       margin: 0;
       color: #f8fbfd;
-      font-size: clamp(2.5rem, 5vw, 4.25rem);
-      line-height: 0.98;
+      font-size: clamp(2.2rem, 4vw, 3.6rem);
+      line-height: 1;
     }
   `,
 
@@ -91,13 +91,13 @@ export const useStyles = createStyles(({ token }) => ({
     &.ant-typography {
       margin: 0;
       color: rgba(220, 235, 244, 0.82);
-      font-size: 16px;
-      line-height: 1.7;
+      font-size: 15px;
+      line-height: 1.6;
     }
   `,
 
   formSection: css`
-    padding: 48px 32px;
+    padding: 36px 24px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -111,19 +111,23 @@ export const useStyles = createStyles(({ token }) => ({
     &.ant-card {
       width: min(100%, 540px);
       border: 1px solid rgba(148, 163, 184, 0.25);
-      box-shadow: 0 30px 80px rgba(15, 23, 42, 0.12);
-      border-radius: 28px;
+      box-shadow: 0 20px 48px rgba(15, 23, 42, 0.1);
+      border-radius: 24px;
       background: rgba(255, 255, 255, 0.94);
       backdrop-filter: blur(12px);
+
+      .ant-card-body {
+        padding: 28px 28px 24px;
+      }
     }
   `,
 
   formBrand: css`
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    padding-bottom: 18px;
-    margin-bottom: 24px;
+    gap: 8px;
+    padding-bottom: 14px;
+    margin-bottom: 18px;
     border-bottom: 1px solid rgba(148, 163, 184, 0.18);
   `,
 
@@ -144,8 +148,8 @@ export const useStyles = createStyles(({ token }) => ({
   headerBlock: css`
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    margin-bottom: 28px;
+    gap: 8px;
+    margin-bottom: 22px;
   `,
 
   tenantTag: css`
@@ -175,14 +179,14 @@ export const useStyles = createStyles(({ token }) => ({
   `,
 
   sectionCard: css`
-    border-radius: 20px;
+    border-radius: 18px;
     background: #f8fbff;
     border: 1px solid #d9e6fb;
-    padding: 18px;
+    padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    margin-bottom: 18px;
+    gap: 12px;
+    margin-bottom: 16px;
   `,
 
   tenantSummary: css`
@@ -210,7 +214,7 @@ export const useStyles = createStyles(({ token }) => ({
   fieldStack: css`
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 12px;
   `,
 
   fieldLabel: css`
@@ -222,8 +226,8 @@ export const useStyles = createStyles(({ token }) => ({
   formActions: css`
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
-    margin-top: 6px;
+    gap: 10px;
+    margin-top: 4px;
   `,
 
   primaryButton: css`
