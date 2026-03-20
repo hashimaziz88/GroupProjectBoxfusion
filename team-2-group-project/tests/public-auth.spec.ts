@@ -53,6 +53,17 @@ test.describe("Public and auth routes", () => {
     await expect(page.getByRole("heading", { name: /^Home$/i })).toBeVisible();
   });
 
+  test("login page hides tenant registration prompts in host context", async ({
+    page,
+  }) => {
+    await setupMockApp(page, { session: "anonymous" });
+
+    await page.goto("/login");
+
+    await expect(page.getByRole("link", { name: /Register/i })).toHaveCount(0);
+    await expect(page.getByText(/Need a tenant account\?/i)).toHaveCount(0);
+  });
+
   test("register page requires tenant context", async ({
     page,
   }) => {

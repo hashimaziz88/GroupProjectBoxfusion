@@ -64,7 +64,7 @@ const ReportExportPageContent = () => {
           style={{ marginBottom: 16 }}
         />
       ) : null}
-      <Space direction="vertical" size={18} style={{ width: "100%" }}>
+      <Space orientation="vertical" size={18} style={{ width: "100%" }}>
         <ReportExportControls />
         {/* User feedback: loading state */}
         {isLoading && !isRefreshing ? (

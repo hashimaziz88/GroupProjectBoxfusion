@@ -59,6 +59,10 @@ export const AuthReducer = handleActions<
       ...state,
       ...action.payload,
     }),
+    [AuthActionEnums.clearErrorMessage]: (state, action) => ({
+      ...state,
+      ...action.payload,
+    }),
     [AuthActionEnums.tenantContextUpdated]: (state, action) => ({
       ...state,
       ...action.payload,

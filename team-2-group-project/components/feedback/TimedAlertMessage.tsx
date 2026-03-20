@@ -7,10 +7,10 @@ import { Alert } from "antd";
 type AlertType = "success" | "info" | "warning" | "error";
 
 const DEFAULT_TIMEOUTS: Record<AlertType, number> = {
-  success: 6000,
-  info: 7000,
-  warning: 8000,
-  error: 9000,
+  success: 10000,
+  info: 10000,
+  warning: 10000,
+  error: 10000,
 };
 
 interface ITimedAlertMessageProps {

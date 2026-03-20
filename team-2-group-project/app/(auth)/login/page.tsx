@@ -6,6 +6,7 @@ import { Alert, Button, Checkbox, Form, Input, Typography } from "antd";
 import AuthFooterLink from "@/components/auth/AuthFooterLink";
 import AuthHeader from "@/components/auth/AuthHeader";
 import AuthLayout from "@/components/auth/AuthLayout";
+import TimedAlertMessage from "@/components/feedback/TimedAlertMessage";
 import AppSpinner from "@/components/spinner/AppSpinner";
 import { useAuthActions, useAuthState } from "@/providers/authProvider";
 import { selectBestAuthenticatedRoute } from "@/utils/auth/roles";
@@ -25,7 +26,7 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { styles } = useStyles();
-  const { changeTenant, login } = useAuthActions();
+  const { changeTenant, clearErrorMessage, login } = useAuthActions();
   const {
     currentTenant,
     errorMessage,
@@ -41,6 +42,9 @@ export default function LoginPage() {
   const [hasEditedTenantName, setHasEditedTenantName] = useState(false);
   const [tenantFeedback, setTenantFeedback] = useState<TenantFeedbackState>(null);
   const [isTenantChanging, setIsTenantChanging] = useState(false);
+  const [showRegisteredMessage, setShowRegisteredMessage] = useState(
+    searchParams.get("registered") === "1",
+  );
 
   useEffect(() => {
     if (!isReady || !isAuthenticated) {
@@ -62,7 +66,6 @@ export default function LoginPage() {
   const resolvedTenantName = hasEditedTenantName
     ? tenantName
     : currentTenant?.tenancyName ?? tenantName;
-  const showRegisteredMessage = searchParams.get("registered") === "1";
   const localApiConfigurationWarning = useMemo(() => {
     if (typeof window === "undefined") {
       return null;
@@ -157,19 +160,19 @@ export default function LoginPage() {
       />
 
       {showRegisteredMessage ? (
-        <Alert
+        <TimedAlertMessage
           type="success"
-          showIcon
           title="Registration completed. You can sign in now."
+          onDismiss={() => setShowRegisteredMessage(false)}
           className={styles.alert}
         />
       ) : null}
 
       {tenantFeedback ? (
-        <Alert
+        <TimedAlertMessage
           type={tenantFeedback.type}
-          showIcon
           title={tenantFeedback.message}
+          onDismiss={() => setTenantFeedback(null)}
           className={styles.alert}
         />
       ) : null}
@@ -184,10 +187,10 @@ export default function LoginPage() {
       ) : null}
 
       {isError && errorMessage ? (
-        <Alert
+        <TimedAlertMessage
           type="error"
-          showIcon
           title={errorMessage}
+          onDismiss={clearErrorMessage}
           className={styles.alert}
         />
       ) : null}
@@ -296,13 +299,7 @@ export default function LoginPage() {
           label="Register"
           href="/register"
         />
-      ) : (
-        <div className={styles.footerLinkRow}>
-          <Text className={styles.footerText}>
-            Registration is available only when a tenant is selected.
-          </Text>
-        </div>
-      )}
+      ) : null}
     </AuthLayout>
   );
 }
