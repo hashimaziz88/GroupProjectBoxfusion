@@ -3,6 +3,7 @@
 import { useEffect, useEffectEvent, useState } from "react";
 import { Alert } from "antd";
 import AppShell from "@/components/auth/AppShell";
+import TimedAlertMessage from "@/components/feedback/TimedAlertMessage";
 import IntakeResultPanel from "@/components/datasentinel/intake/IntakeResultPanel";
 import IntakeSummaryCards from "@/components/datasentinel/intake/IntakeSummaryCards";
 import IntakeWorkflowTabs from "@/components/datasentinel/intake/IntakeWorkflowTabs";
@@ -21,10 +22,13 @@ const PAGE_TITLE = "Activity Intake";
 const PAGE_SUBTITLE =
   "Send activity event batches, import audit log exports, or seed simulated data into the DataSentinel monitoring pipeline.";
 
+
+// User feedback: loading, error, success, and info states handled here per project standard.
 const ActivityIntakePageContent = () => {
   const { styles } = useStyles();
   const { currentTenant } = useAuthState();
-  const hasTenantContext = Boolean(currentTenant?.tenantId);
+  const currentTenantId = currentTenant?.tenantId;
+  const hasTenantContext = currentTenantId != null;
 
   const [monitoredServers, setMonitoredServers] = useState<IMonitoredServerListItem[]>([]);
   const [isLoadingReferences, setIsLoadingReferences] = useState(true);
@@ -74,6 +78,11 @@ const ActivityIntakePageContent = () => {
     setLastResult({ label, result });
   };
 
+  const clearMessages = () => {
+    setErrorMessage(null);
+    setActionMessage(null);
+  };
+
   if (!hasTenantContext) {
     return (
       <AppShell title={PAGE_TITLE} subtitle={PAGE_SUBTITLE}>
@@ -89,23 +98,35 @@ const ActivityIntakePageContent = () => {
 
   return (
     <AppShell title={PAGE_TITLE} subtitle={PAGE_SUBTITLE}>
+      {/* User feedback: loading state */}
+      {isLoadingReferences && (
+        <Alert type="info" showIcon title="Loading reference data..." className={styles.alert} />
+      )}
+      {/* User feedback: error state */}
       {errorMessage ? (
-        <Alert type="error" showIcon title={errorMessage} className={styles.alert} />
-      ) : null}
-      {actionMessage ? (
-        <Alert
-          type={actionMessage.type}
-          showIcon
-          title={actionMessage.text}
+        <TimedAlertMessage
+          type="error"
+          title={errorMessage}
+          onDismiss={clearMessages}
           className={styles.alert}
         />
       ) : null}
+      {actionMessage ? (
+        <TimedAlertMessage
+          type={actionMessage.type}
+          title={actionMessage.text}
+          onDismiss={clearMessages}
+          className={styles.alert}
+        />
+      ) : null}
+      {/* ...existing code... */}
       <IntakeSummaryCards
         monitoredServersCount={monitoredServers.length}
         databasesCount={allDatabases.length}
         lastAcceptedCount={lastResult?.result.acceptedCount ?? 0}
       />
       <IntakeWorkflowTabs
+        currentTenantId={currentTenantId}
         monitoredServers={monitoredServers}
         allDatabases={allDatabases}
         isLoadingReferences={isLoadingReferences}
@@ -117,4 +138,7 @@ const ActivityIntakePageContent = () => {
   );
 };
 
-export default withAuth(ActivityIntakePageContent, PERMISSIONS.dataSentinelIntake);
+export default withAuth(ActivityIntakePageContent, {
+  requiredPermission: PERMISSIONS.dataSentinelIntake,
+  requireTenantContext: true,
+});

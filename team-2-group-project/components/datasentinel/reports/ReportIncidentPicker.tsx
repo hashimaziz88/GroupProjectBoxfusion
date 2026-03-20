@@ -21,6 +21,23 @@ const ReportIncidentPicker = () => {
   const { alerts, canAccessAlerts, selectedAlertId } = useReportExportState();
   const { setSelectedAlertId } = useReportExportActions();
 
+  if (!canAccessAlerts) {
+    return (
+      <Card className={styles.pageCard}>
+        <Typography.Title level={4} className={styles.sectionTitle}>
+          Incident Report Source
+        </Typography.Title>
+        <Typography.Paragraph className={styles.sectionLead}>
+          Incident report selection is available only when the current role can also view security alerts.
+        </Typography.Paragraph>
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description="Alert review access is required before incident PDFs can be generated."
+        />
+      </Card>
+    );
+  }
+
   return (
     <Card className={styles.pageCard}>
       <Typography.Title level={4} className={styles.sectionTitle}>

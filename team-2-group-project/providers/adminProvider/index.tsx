@@ -2,10 +2,12 @@
 
 import React, { useCallback, useContext, useReducer } from "react";
 import { toArray } from "@/utils/helpers";
+import { resolveAbpErrorMessage } from "@/utils/abp";
 import {
   getAllPermissions,
   getRoles,
   getTenants,
+  getUserRoles,
   getUsers,
 } from "@/utils/auth/adminService";
 import {
@@ -15,6 +17,9 @@ import {
 } from "./context";
 import { setAdminState } from "./actions";
 import { AdminReducer } from "./reducer";
+
+const resolveAdminErrorMessage = (error: unknown, fallback: string) =>
+  resolveAbpErrorMessage(error, fallback);
 
 export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -35,8 +40,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (error: unknown) {
       dispatch(
         setAdminState({
-          errorMessage:
-            error instanceof Error ? error.message : "Failed to load users.",
+          errorMessage: resolveAdminErrorMessage(error, "Failed to load users."),
         }),
       );
     } finally {
@@ -53,8 +57,27 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (error: unknown) {
       dispatch(
         setAdminState({
-          errorMessage:
-            error instanceof Error ? error.message : "Failed to load roles.",
+          errorMessage: resolveAdminErrorMessage(error, "Failed to load roles."),
+        }),
+      );
+    } finally {
+      dispatch(setAdminState({ isLoadingRoles: false }));
+    }
+  }, []);
+
+  const fetchAssignableRoles = useCallback(async () => {
+    dispatch(setAdminState({ isLoadingRoles: true, errorMessage: null }));
+
+    try {
+      const result = await getUserRoles();
+      dispatch(setAdminState({ assignableRoles: toArray(result.items) }));
+    } catch (error: unknown) {
+      dispatch(
+        setAdminState({
+          errorMessage: resolveAdminErrorMessage(
+            error,
+            "Failed to load assignable roles.",
+          ),
         }),
       );
     } finally {
@@ -85,8 +108,10 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (error: unknown) {
       dispatch(
         setAdminState({
-          errorMessage:
-            error instanceof Error ? error.message : "Failed to load tenants.",
+          errorMessage: resolveAdminErrorMessage(
+            error,
+            "Failed to load tenants.",
+          ),
         }),
       );
     } finally {
@@ -101,6 +126,10 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({
     [],
   );
 
+  const clearMessages = useCallback(() => {
+    dispatch(setAdminState({ actionMessage: null, errorMessage: null }));
+  }, []);
+
   return (
     <AdminStateContext.Provider
       value={{
@@ -108,6 +137,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({
         isLoadingUsers: state.isLoadingUsers,
         totalUsersCount: state.totalUsersCount,
         roles: state.roles,
+        assignableRoles: state.assignableRoles,
         isLoadingRoles: state.isLoadingRoles,
         allPermissions: state.allPermissions,
         tenants: state.tenants,
@@ -121,9 +151,11 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({
         value={{
           fetchUsers,
           fetchRoles,
+          fetchAssignableRoles,
           fetchTenants,
           fetchAllPermissions,
           setActionMessage,
+          clearMessages,
         }}
       >
         {children}

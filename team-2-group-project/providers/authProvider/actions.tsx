@@ -19,6 +19,7 @@ export enum AuthActionEnums {
   getMePending = "GET_ME_PENDING",
   getMeSuccess = "GET_ME_SUCCESS",
   getMeError = "GET_ME_ERROR",
+  clearErrorMessage = "CLEAR_ERROR_MESSAGE",
   tenantContextUpdated = "TENANT_CONTEXT_UPDATED",
   tenantContextCleared = "TENANT_CONTEXT_CLEARED",
 }
@@ -221,6 +222,14 @@ export const getMeError = createAction<
     permissions: [],
     isAuthenticated: false,
     errorMessage: message ?? "Failed to load the current session.",
+  }),
+);
+
+export const clearErrorMessage = createAction<Partial<IAuthStateContext>>(
+  AuthActionEnums.clearErrorMessage,
+  () => ({
+    isError: false,
+    errorMessage: null,
   }),
 );
 

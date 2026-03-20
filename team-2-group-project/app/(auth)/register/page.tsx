@@ -2,10 +2,11 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Alert, Button, Form, Input, Typography } from "antd";
+import { Button, Form, Input, Typography } from "antd";
 import AuthFooterLink from "@/components/auth/AuthFooterLink";
 import AuthHeader from "@/components/auth/AuthHeader";
 import AuthLayout from "@/components/auth/AuthLayout";
+import TimedAlertMessage from "@/components/feedback/TimedAlertMessage";
 import AppSpinner from "@/components/spinner/AppSpinner";
 import { useAuthActions, useAuthState } from "@/providers/authProvider";
 import { selectBestAuthenticatedRoute } from "@/utils/auth/roles";
@@ -19,7 +20,7 @@ const { Paragraph, Title } = Typography;
 export default function RegisterPage() {
   const router = useRouter();
   const { styles } = useStyles();
-  const { register } = useAuthActions();
+  const { clearErrorMessage, register } = useAuthActions();
   const {
     currentTenant,
     errorMessage,
@@ -80,10 +81,10 @@ export default function RegisterPage() {
       ) : (
         <>
           {isError && errorMessage ? (
-            <Alert
+            <TimedAlertMessage
               type="error"
-              showIcon
               title={errorMessage}
+              onDismiss={clearErrorMessage}
               className={styles.alert}
             />
           ) : null}

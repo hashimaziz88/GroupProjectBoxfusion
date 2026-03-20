@@ -2,12 +2,13 @@
 
 import { Alert, Skeleton, Space } from "antd";
 import AppShell from "@/components/auth/AppShell";
+import TimedAlertMessage from "@/components/feedback/TimedAlertMessage";
 import ReportExportControls from "@/components/datasentinel/reports/ReportExportControls";
 import ReportExportPackages from "@/components/datasentinel/reports/ReportExportPackages";
 import ReportExportSummary from "@/components/datasentinel/reports/ReportExportSummary";
 import ReportIncidentPicker from "@/components/datasentinel/reports/ReportIncidentPicker";
 import { useStyles } from "@/components/datasentinel/reports/style/style";
-import { PERMISSIONS } from "@/constants/auth/roles";
+import { DATA_SENTINEL_ROLE_ALIASES, PERMISSIONS } from "@/constants/auth/roles";
 import { withAuth } from "@/hoc/withAuth";
 import {
   ReportExportProvider,
@@ -19,12 +20,16 @@ const PAGE_TITLE = "Reports & Exports";
 const PAGE_SUBTITLE =
   "Generate alert, activity, and incident report files for the active tenant without duplicating the dashboard.";
 
+
+// User feedback: loading, error, success, and info states handled here per project standard.
 const ReportExportPageContent = () => {
   const { styles } = useStyles();
   const { clearMessages } = useReportExportActions();
   const { actionMessage, errorMessage, hasTenantContext, isLoading, isRefreshing } =
     useReportExportState();
 
+
+  // User feedback: info state (no tenant context)
   if (!hasTenantContext) {
     return (
       <AppShell title={PAGE_TITLE} subtitle={PAGE_SUBTITLE}>
@@ -40,29 +45,28 @@ const ReportExportPageContent = () => {
 
   return (
     <AppShell title={PAGE_TITLE} subtitle={PAGE_SUBTITLE}>
+      {/* User feedback: error state */}
       {errorMessage ? (
-        <Alert
+        <TimedAlertMessage
           type="error"
-          showIcon
           title={errorMessage}
-          closable={{ onClose: clearMessages }}
+          onDismiss={clearMessages}
           className={styles.alert}
           style={{ marginBottom: 16 }}
         />
       ) : null}
       {actionMessage ? (
-        <Alert
+        <TimedAlertMessage
           type={actionMessage.type}
-          showIcon
           title={actionMessage.text}
-          closable={{ onClose: clearMessages }}
+          onDismiss={clearMessages}
           className={styles.alert}
           style={{ marginBottom: 16 }}
         />
       ) : null}
-
-      <Space direction="vertical" size={18} style={{ width: "100%" }}>
+      <Space orientation="vertical" size={18} style={{ width: "100%" }}>
         <ReportExportControls />
+        {/* User feedback: loading state */}
         {isLoading && !isRefreshing ? (
           <Skeleton active paragraph={{ rows: 14 }} />
         ) : (
@@ -87,5 +91,9 @@ const ReportExportPage = () => (
 
 export default withAuth(
   ReportExportPage,
-  PERMISSIONS.dataSentinelReportsExport,
+  {
+    requiredPermission: PERMISSIONS.dataSentinelReportsExport,
+    disallowedRoles: [...DATA_SENTINEL_ROLE_ALIASES.securityAnalyst],
+    requireTenantContext: true,
+  },
 );

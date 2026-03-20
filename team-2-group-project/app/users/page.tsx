@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import {
-  Alert,
   Button,
   Card,
   Checkbox,
@@ -16,16 +15,20 @@ import {
   Tag,
   Typography,
 } from "antd";
+import { LoadingOutlined } from "@ant-design/icons";
 import AppShell from "@/components/auth/AppShell";
+import TimedAlertMessage from "@/components/feedback/TimedAlertMessage";
 import { withAuth } from "@/hoc/withAuth";
+import { useAuthState } from "@/providers/authProvider";
 import { useAdminState, useAdminActions } from "@/providers/adminProvider";
 import {
   createUser,
-  updateUser,
   deleteUser,
   activateUser,
   deActivateUser,
+  getUser,
   resetPassword,
+  updateUser,
 } from "@/utils/auth/adminService";
 import { formatDateTime, toArray } from "@/utils/helpers";
 import { useStyles } from "@/app/style/style";
@@ -36,36 +39,62 @@ import {
   IUserListItem,
 } from "@/interfaces/auth/adminService";
 import { PERMISSIONS } from "@/constants/auth/roles";
+import { resolveAbpErrorMessage } from "@/utils/abp";
+import {
+  canActivateUsers,
+  canManageUsersCrud,
+} from "@/utils/auth/roles";
 
 const { Paragraph, Title } = Typography;
 
 const UsersPageContent = () => {
   const { styles } = useStyles();
-  const { users, isLoadingUsers, roles, errorMessage, actionMessage } =
+  const { permissions, user } = useAuthState();
+  const {
+    users,
+    isLoadingUsers,
+    assignableRoles,
+    errorMessage,
+    actionMessage,
+  } =
     useAdminState();
-  const { fetchUsers, fetchRoles, setActionMessage } = useAdminActions();
+  const { fetchUsers, fetchAssignableRoles, setActionMessage, clearMessages } =
+    useAdminActions();
+  const canManageUsers = canManageUsersCrud(user?.roles, permissions);
+  const canToggleUserActivation = canActivateUsers(permissions);
 
   const [createForm] = Form.useForm();
   const [editForm] = Form.useForm();
+  const [assignRolesForm] = Form.useForm();
   const [resetForm] = Form.useForm();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isAssignRolesOpen, setIsAssignRolesOpen] = useState(false);
   const [isResetOpen, setIsResetOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<IUserListItem | null>(null);
+  const [assigningRolesUser, setAssigningRolesUser] = useState<IUserDto | null>(
+    null,
+  );
   const [resetUserId, setResetUserId] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingRoleAssignment, setIsLoadingRoleAssignment] = useState(false);
+  const [processingDeleteId, setProcessingDeleteId] = useState<number | null>(null);
+  const [processingToggleId, setProcessingToggleId] = useState<number | null>(null);
+  const [assignLoadingUserId, setAssignLoadingUserId] = useState<number | null>(null);
+  const [isRefreshingList, setIsRefreshingList] = useState(false);
 
   useEffect(() => {
     void fetchUsers();
-    void fetchRoles();
-  }, [fetchUsers, fetchRoles]);
+    void fetchAssignableRoles();
+  }, [fetchAssignableRoles, fetchUsers]);
 
-  const roleOptions = roles.map((r) => ({
-    value: r.name,
-    label: r.displayName,
+  const roleOptions = assignableRoles.map((r) => ({
+    value: r.name ?? "",
+    label: r.displayName ?? r.name ?? "",
   }));
 
   const handleCreate = async (values: ICreateUserDto) => {
+    if (!canManageUsers) return;
     setIsSubmitting(true);
     try {
       await createUser(values);
@@ -76,7 +105,7 @@ const UsersPageContent = () => {
     } catch (error: unknown) {
       setActionMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Failed to create user.",
+        text: resolveAbpErrorMessage(error, "Failed to create user."),
       });
     } finally {
       setIsSubmitting(false);
@@ -84,7 +113,7 @@ const UsersPageContent = () => {
   };
 
   const handleEdit = async (values: Omit<IUserDto, "id">) => {
-    if (!editingUser) return;
+    if (!editingUser || !canManageUsers) return;
     setIsSubmitting(true);
     try {
       await updateUser({ ...values, id: editingUser.id });
@@ -94,7 +123,7 @@ const UsersPageContent = () => {
     } catch (error: unknown) {
       setActionMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Failed to update user.",
+        text: resolveAbpErrorMessage(error, "Failed to update user."),
       });
     } finally {
       setIsSubmitting(false);
@@ -102,19 +131,27 @@ const UsersPageContent = () => {
   };
 
   const handleDelete = async (id: number) => {
+    if (!canManageUsers) return;
+    setProcessingDeleteId(id);
+    setIsRefreshingList(true);
     try {
       await deleteUser(id);
       setActionMessage({ type: "success", text: "User deleted." });
-      void fetchUsers();
+      await fetchUsers();
     } catch (error: unknown) {
       setActionMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Failed to delete user.",
+        text: resolveAbpErrorMessage(error, "Failed to delete user."),
       });
+    } finally {
+      setProcessingDeleteId(null);
+      setIsRefreshingList(false);
     }
   };
 
   const handleToggleActive = async (user: IUserListItem) => {
+    if (!canToggleUserActivation) return;
+    setProcessingToggleId(user.id);
     try {
       if (user.isActive) {
         await deActivateUser(user.id);
@@ -133,18 +170,17 @@ const UsersPageContent = () => {
     } catch (error: unknown) {
       setActionMessage({
         type: "error",
-        text:
-          error instanceof Error
-            ? error.message
-            : "Failed to change user status.",
+        text: resolveAbpErrorMessage(error, "Failed to change user status."),
       });
+    } finally {
+      setProcessingToggleId(null);
     }
   };
 
   const handleResetPassword = async (
     values: Omit<IResetPasswordDto, "userId">,
   ) => {
-    if (!resetUserId) return;
+    if (!resetUserId || !canManageUsers) return;
     setIsSubmitting(true);
     try {
       await resetPassword({ ...values, userId: resetUserId });
@@ -157,8 +193,34 @@ const UsersPageContent = () => {
     } catch (error: unknown) {
       setActionMessage({
         type: "error",
-        text:
-          error instanceof Error ? error.message : "Failed to reset password.",
+        text: resolveAbpErrorMessage(error, "Failed to reset password."),
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleAssignRoles = async (values: { roleNames?: string[] | null }) => {
+    if (!assigningRolesUser || !canManageUsers) return;
+
+    setIsSubmitting(true);
+    try {
+      await updateUser({
+        ...assigningRolesUser,
+        roleNames: values.roleNames ?? [],
+      });
+      setActionMessage({
+        type: "success",
+        text: "User roles updated successfully.",
+      });
+      setIsAssignRolesOpen(false);
+      assignRolesForm.resetFields();
+      setAssigningRolesUser(null);
+      void fetchUsers();
+    } catch (error: unknown) {
+      setActionMessage({
+        type: "error",
+        text: resolveAbpErrorMessage(error, "Failed to update user roles."),
       });
     } finally {
       setIsSubmitting(false);
@@ -166,6 +228,7 @@ const UsersPageContent = () => {
   };
 
   const openEdit = (user: IUserListItem) => {
+    if (!canManageUsers) return;
     setEditingUser(user);
     editForm.setFieldsValue({
       userName: user.userName,
@@ -178,7 +241,45 @@ const UsersPageContent = () => {
     setIsEditOpen(true);
   };
 
+  const openAssignRoles = async (user: IUserListItem) => {
+    if (!canManageUsers) return;
+
+    setAssignLoadingUserId(user.id);
+    setIsLoadingRoleAssignment(true);
+    setIsAssignRolesOpen(true);
+
+    try {
+      const userDetail = await getUser(user.id);
+      setAssigningRolesUser(userDetail);
+      assignRolesForm.setFieldsValue({
+        roleNames: toArray(userDetail.roleNames),
+      });
+    } catch {
+      const fallbackUser: IUserDto = {
+        id: user.id,
+        userName: user.userName,
+        name: user.name,
+        surname: user.surname,
+        emailAddress: user.emailAddress,
+        isActive: user.isActive,
+        fullName: user.fullName,
+        lastLoginTime: user.lastLoginTime,
+        creationTime: user.creationTime,
+        roleNames: toArray(user.roleNames),
+      };
+
+      setAssigningRolesUser(fallbackUser);
+      assignRolesForm.setFieldsValue({
+        roleNames: toArray(user.roleNames),
+      });
+    } finally {
+      setIsLoadingRoleAssignment(false);
+      setAssignLoadingUserId(null);
+    }
+  };
+
   const openReset = (userId: number) => {
+    if (!canManageUsers) return;
     setResetUserId(userId);
     resetForm.resetFields();
     setIsResetOpen(true);
@@ -189,64 +290,71 @@ const UsersPageContent = () => {
       title="Users"
       subtitle="Manage user accounts and access within the active tenant or host context."
     >
+      {/* User feedback: error state */}
       {errorMessage ? (
-        <Alert
+        <TimedAlertMessage
           type="error"
-          showIcon
           title={errorMessage}
+          onDismiss={clearMessages}
           className={styles.alert}
         />
       ) : null}
       {actionMessage ? (
-        <Alert
+        <TimedAlertMessage
           type={actionMessage.type}
-          showIcon
           title={actionMessage.text}
           className={styles.alert}
-          closable={{ onClose: () => setActionMessage(null) }}
+          onDismiss={clearMessages}
         />
       ) : null}
 
       <Card className={styles.pageCard}>
+        {/* User feedback: loading state handled by Table's loading prop */}
         <div className={styles.cardToolbar}>
           <Title level={4} className={styles.sectionTitle}>
             Tenant users
           </Title>
-          <Button
-            type="primary"
-            onClick={() => {
-              createForm.resetFields();
-              setIsCreateOpen(true);
-            }}
-          >
-            Create user
-          </Button>
+          {canManageUsers ? (
+            <Button
+              type="primary"
+              onClick={() => {
+                createForm.resetFields();
+                setIsCreateOpen(true);
+              }}
+            >
+              Create user
+            </Button>
+          ) : null}
         </div>
         <Paragraph className={styles.sectionLead}>
           This page is available only when `{PERMISSIONS.users}` is granted.
         </Paragraph>
         <Table<IUserListItem>
           rowKey="id"
-          loading={isLoadingUsers}
+          loading={isLoadingUsers || isRefreshingList}
           dataSource={users}
           className={styles.table}
           columns={[
             {
               title: "User",
-              key: "user",
-              render: (_, record) => (
-                <>
-                  <strong>
-                    {record.fullName || `${record.name} ${record.surname}`}
-                  </strong>
-                  <div className={styles.cellHint}>{record.userName}</div>
-                </>
-              ),
+                key: "user",
+                render: (_, record) => (
+                  <>
+                    <strong>
+                      {record.fullName || `${record.name} ${record.surname}`}
+                      {(processingDeleteId === record.id || processingToggleId === record.id || assignLoadingUserId === record.id) ? (
+                        <LoadingOutlined spin style={{ marginLeft: 8, color: "#ff4d4f", fontSize: 12 }} />
+                      ) : null}
+                    </strong>
+                    <div className={styles.cellHint}>{record.userName}</div>
+                  </>
+                ),
             },
             {
               title: "Email",
               dataIndex: "emailAddress",
               key: "emailAddress",
+              render: (value: string) => value,
             },
             {
               title: "Status",
@@ -264,9 +372,7 @@ const UsersPageContent = () => {
               key: "roleNames",
               render: (roleNames?: string[] | null) =>
                 toArray(roleNames).length ? (
-                  toArray(roleNames).map((role) => (
-                    <Tag key={role}>{role}</Tag>
-                  ))
+                  toArray(roleNames).map((role) => <Tag key={role}>{role}</Tag>)
                 ) : (
                   <span className={styles.mutedText}>No roles</span>
                 ),
@@ -280,33 +386,54 @@ const UsersPageContent = () => {
             {
               title: "Actions",
               key: "actions",
-              render: (_, record) => (
-                <Space size="small" wrap>
-                  <Button size="small" onClick={() => openEdit(record)}>
-                    Edit
-                  </Button>
-                  <Button
-                    size="small"
-                    onClick={() => void handleToggleActive(record)}
-                  >
-                    {record.isActive ? "Deactivate" : "Activate"}
-                  </Button>
-                  <Button size="small" onClick={() => openReset(record.id)}>
-                    Reset password
-                  </Button>
-                  <Popconfirm
-                    title="Delete user"
-                    description="This action cannot be undone."
-                    onConfirm={() => void handleDelete(record.id)}
-                    okText="Delete"
-                    okButtonProps={{ danger: true }}
-                  >
-                    <Button size="small" danger>
-                      Delete
-                    </Button>
-                  </Popconfirm>
-                </Space>
-              ),
+              render: (_, record) =>
+                canManageUsers || canToggleUserActivation ? (
+                  <Space size="small" wrap>
+                    {canManageUsers ? (
+                      <Button size="small" onClick={() => openEdit(record)}>
+                        Edit
+                      </Button>
+                    ) : null}
+                    {canManageUsers ? (
+                      <Button
+                        size="small"
+                        onClick={() => void openAssignRoles(record)}
+                        loading={assignLoadingUserId === record.id && isLoadingRoleAssignment}
+                      >
+                        Assign roles
+                      </Button>
+                    ) : null}
+                    {canToggleUserActivation ? (
+                      <Button
+                        size="small"
+                        onClick={() => void handleToggleActive(record)}
+                        loading={processingToggleId === record.id}
+                      >
+                        {record.isActive ? "Deactivate" : "Activate"}
+                      </Button>
+                    ) : null}
+                    {canManageUsers ? (
+                      <Button size="small" onClick={() => openReset(record.id)}>
+                        Reset password
+                      </Button>
+                    ) : null}
+                    {canManageUsers ? (
+                      <Popconfirm
+                        title="Delete user"
+                        description="This action cannot be undone."
+                        onConfirm={() => void handleDelete(record.id)}
+                        okText="Delete"
+                        okButtonProps={{ danger: true, loading: processingDeleteId === record.id }}
+                      >
+                        <Button size="small" danger>
+                          Delete
+                        </Button>
+                      </Popconfirm>
+                    ) : null}
+                  </Space>
+                ) : (
+                  <span className={styles.mutedText}>View only</span>
+                ),
             },
           ]}
           pagination={false}
@@ -315,7 +442,7 @@ const UsersPageContent = () => {
 
       <Modal
         title="Create user"
-        open={isCreateOpen}
+        open={canManageUsers && isCreateOpen}
         onCancel={() => setIsCreateOpen(false)}
         onOk={() => createForm.submit()}
         okText="Create"
@@ -374,7 +501,7 @@ const UsersPageContent = () => {
 
       <Modal
         title="Edit user"
-        open={isEditOpen}
+        open={canManageUsers && isEditOpen}
         onCancel={() => setIsEditOpen(false)}
         onOk={() => editForm.submit()}
         okText="Save"
@@ -406,13 +533,6 @@ const UsersPageContent = () => {
           >
             <Input />
           </Form.Item>
-          <Form.Item name="roleNames" label="Roles">
-            <Select
-              mode="multiple"
-              options={roleOptions}
-              placeholder="Select roles"
-            />
-          </Form.Item>
           <Form.Item name="isActive" valuePropName="checked">
             <Checkbox>Active</Checkbox>
           </Form.Item>
@@ -420,8 +540,40 @@ const UsersPageContent = () => {
       </Modal>
 
       <Modal
+        title={
+          assigningRolesUser
+            ? `Assign roles: ${assigningRolesUser.userName}`
+            : "Assign roles"
+        }
+        open={canManageUsers && isAssignRolesOpen}
+        onCancel={() => {
+          setIsAssignRolesOpen(false);
+          setAssigningRolesUser(null);
+        }}
+        onOk={() => assignRolesForm.submit()}
+        okText="Save roles"
+        confirmLoading={isSubmitting || isLoadingRoleAssignment}
+        destroyOnHidden
+      >
+        <Form
+          form={assignRolesForm}
+          layout="vertical"
+          onFinish={handleAssignRoles}
+        >
+          <Form.Item name="roleNames" label="Assigned roles">
+            <Select
+              mode="multiple"
+              options={roleOptions}
+              placeholder="Select roles"
+              loading={isLoadingRoleAssignment}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
         title="Reset password"
-        open={isResetOpen}
+        open={canManageUsers && isResetOpen}
         onCancel={() => setIsResetOpen(false)}
         onOk={() => resetForm.submit()}
         okText="Reset"

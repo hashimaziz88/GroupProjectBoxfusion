@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Card, Typography } from "antd";
+import { Button, Card, Empty, Typography } from "antd";
 import { DownloadOutlined, FilePdfOutlined } from "@ant-design/icons";
 import {
   useReportExportActions,
@@ -10,7 +10,8 @@ import { useStyles } from "./style/style";
 
 const ReportExportPackages = () => {
   const { styles } = useStyles();
-  const { alerts, activityEvents, exportingKey } = useReportExportState();
+  const { alerts, activityEvents, canAccessActivity, canAccessAlerts, exportingKey } =
+    useReportExportState();
   const {
     exportActivityCsv,
     exportAlertsCsv,
@@ -26,6 +27,7 @@ const ReportExportPackages = () => {
       icon: <DownloadOutlined />,
       action: exportBundlePdf,
       label: "Export PDF bundle",
+      isVisible: canAccessAlerts || canAccessActivity,
     },
     {
       key: "alerts",
@@ -34,6 +36,7 @@ const ReportExportPackages = () => {
       icon: <DownloadOutlined />,
       action: exportAlertsCsv,
       label: "Export alerts CSV",
+      isVisible: canAccessAlerts,
     },
     {
       key: "activity",
@@ -42,6 +45,7 @@ const ReportExportPackages = () => {
       icon: <DownloadOutlined />,
       action: exportActivityCsv,
       label: "Export activity CSV",
+      isVisible: canAccessActivity,
     },
     {
       key: "incident",
@@ -50,8 +54,9 @@ const ReportExportPackages = () => {
       icon: <FilePdfOutlined />,
       action: exportIncidentPdf,
       label: "Export incident PDF",
+      isVisible: canAccessAlerts,
     },
-  ];
+  ].filter((item) => item.isVisible);
 
   return (
     <Card className={styles.pageCard}>
@@ -62,24 +67,31 @@ const ReportExportPackages = () => {
         Generate shareable outputs without duplicating dashboard insight.
       </Typography.Paragraph>
 
-      <div className={styles.packageList}>
-        {packages.map((item) => (
-          <div key={item.key} className={styles.packageCard}>
-            <div>
-              <Typography.Text strong>{item.title}</Typography.Text>
-              <div className={styles.packageMeta}>{item.meta}</div>
+      {packages.length === 0 ? (
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description="No export packages are available for the current role."
+        />
+      ) : (
+        <div className={styles.packageList}>
+          {packages.map((item) => (
+            <div key={item.key} className={styles.packageCard}>
+              <div>
+                <Typography.Text strong>{item.title}</Typography.Text>
+                <div className={styles.packageMeta}>{item.meta}</div>
+              </div>
+              <Button
+                type="primary"
+                icon={item.icon}
+                loading={exportingKey === item.key}
+                onClick={() => void item.action()}
+              >
+                {item.label}
+              </Button>
             </div>
-            <Button
-              type="primary"
-              icon={item.icon}
-              loading={exportingKey === item.key}
-              onClick={() => void item.action()}
-            >
-              {item.label}
-            </Button>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </Card>
   );
 };

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import {
-  Alert,
   Button,
   Card,
   Checkbox,
@@ -16,7 +15,9 @@ import {
   Typography,
 } from "antd";
 import AppShell from "@/components/auth/AppShell";
+import TimedAlertMessage from "@/components/feedback/TimedAlertMessage";
 import { withAuth } from "@/hoc/withAuth";
+import { useAuthState } from "@/providers/authProvider";
 import { useAdminState, useAdminActions } from "@/providers/adminProvider";
 import {
   createTenant,
@@ -31,14 +32,18 @@ import {
   ITenantListItem,
 } from "@/interfaces/auth/adminService";
 import { PERMISSIONS } from "@/constants/auth/roles";
+import { resolveAbpErrorMessage } from "@/utils/abp";
+import { canManageTenantsCrud } from "@/utils/auth/roles";
 
 const { Paragraph, Title } = Typography;
 
 const TenantsPageContent = () => {
   const { styles } = useStyles();
+  const { permissions, user } = useAuthState();
   const { tenants, isLoadingTenants, errorMessage, actionMessage } =
     useAdminState();
-  const { fetchTenants, setActionMessage } = useAdminActions();
+  const { fetchTenants, setActionMessage, clearMessages } = useAdminActions();
+  const canManageTenants = canManageTenantsCrud(user?.roles, permissions);
 
   const [createForm] = Form.useForm();
   const [editForm] = Form.useForm();
@@ -49,12 +54,16 @@ const TenantsPageContent = () => {
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingEdit, setIsLoadingEdit] = useState(false);
+  const [processingDeleteId, setProcessingDeleteId] = useState<number | null>(null);
+  const [processingEditId, setProcessingEditId] = useState<number | null>(null);
+  const [isRefreshingList, setIsRefreshingList] = useState(false);
 
   useEffect(() => {
     void fetchTenants();
   }, [fetchTenants]);
 
   const handleCreate = async (values: ICreateTenantDto) => {
+    if (!canManageTenants) return;
     setIsSubmitting(true);
     try {
       await createTenant({ ...values, connectionString: null });
@@ -68,8 +77,7 @@ const TenantsPageContent = () => {
     } catch (error: unknown) {
       setActionMessage({
         type: "error",
-        text:
-          error instanceof Error ? error.message : "Failed to create tenant.",
+        text: resolveAbpErrorMessage(error, "Failed to create tenant."),
       });
     } finally {
       setIsSubmitting(false);
@@ -77,7 +85,7 @@ const TenantsPageContent = () => {
   };
 
   const handleEdit = async (values: Omit<ITenantDto, "id">) => {
-    if (!editingTenant) return;
+    if (!editingTenant || !canManageTenants) return;
     setIsSubmitting(true);
     try {
       await updateTenant({ ...values, id: editingTenant.id });
@@ -90,8 +98,7 @@ const TenantsPageContent = () => {
     } catch (error: unknown) {
       setActionMessage({
         type: "error",
-        text:
-          error instanceof Error ? error.message : "Failed to update tenant.",
+        text: resolveAbpErrorMessage(error, "Failed to update tenant."),
       });
     } finally {
       setIsSubmitting(false);
@@ -99,21 +106,28 @@ const TenantsPageContent = () => {
   };
 
   const handleDelete = async (id: number) => {
+    if (!canManageTenants) return;
+    setProcessingDeleteId(id);
+    setIsRefreshingList(true);
     try {
       await deleteTenant(id);
       setActionMessage({ type: "success", text: "Tenant deleted." });
-      void fetchTenants();
+      await fetchTenants();
     } catch (error: unknown) {
       setActionMessage({
         type: "error",
-        text:
-          error instanceof Error ? error.message : "Failed to delete tenant.",
+        text: resolveAbpErrorMessage(error, "Failed to delete tenant."),
       });
+    } finally {
+      setProcessingDeleteId(null);
+      setIsRefreshingList(false);
     }
   };
 
   const openEdit = async (tenant: ITenantListItem) => {
+    if (!canManageTenants) return;
     setEditingTenant(tenant);
+    setProcessingEditId(tenant.id);
     setIsLoadingEdit(true);
     setIsEditOpen(true);
     try {
@@ -131,6 +145,7 @@ const TenantsPageContent = () => {
       });
     } finally {
       setIsLoadingEdit(false);
+      setProcessingEditId(null);
     }
   };
 
@@ -139,38 +154,41 @@ const TenantsPageContent = () => {
       title="Tenants"
       subtitle="Create and manage tenants from the host context. Each tenant operates in full isolation."
     >
+      {/* User feedback: error state */}
       {errorMessage ? (
-        <Alert
+        <TimedAlertMessage
           type="error"
-          showIcon
           title={errorMessage}
+          onDismiss={clearMessages}
           className={styles.alert}
         />
       ) : null}
       {actionMessage ? (
-        <Alert
+        <TimedAlertMessage
           type={actionMessage.type}
-          showIcon
           title={actionMessage.text}
           className={styles.alert}
-          closable={{ onClose: () => setActionMessage(null) }}
+          onDismiss={clearMessages}
         />
       ) : null}
 
       <Card className={styles.pageCard}>
+        {/* User feedback: loading state handled by Table's loading prop */}
         <div className={styles.cardToolbar}>
           <Title level={4} className={styles.sectionTitle}>
             Tenant directory
           </Title>
-          <Button
-            type="primary"
-            onClick={() => {
-              createForm.resetFields();
-              setIsCreateOpen(true);
-            }}
-          >
-            Create tenant
-          </Button>
+          {canManageTenants ? (
+            <Button
+              type="primary"
+              onClick={() => {
+                createForm.resetFields();
+                setIsCreateOpen(true);
+              }}
+            >
+              Create tenant
+            </Button>
+          ) : null}
         </div>
         <Paragraph className={styles.sectionLead}>
           This route is available only when `{PERMISSIONS.tenants}` is granted,
@@ -178,7 +196,7 @@ const TenantsPageContent = () => {
         </Paragraph>
         <Table<ITenantListItem>
           rowKey="id"
-          loading={isLoadingTenants}
+          loading={isLoadingTenants || isRefreshingList}
           dataSource={tenants}
           className={styles.table}
           columns={[
@@ -211,22 +229,26 @@ const TenantsPageContent = () => {
               title: "Actions",
               key: "actions",
               render: (_, record) => (
-                <Space size="small" wrap>
-                  <Button size="small" onClick={() => void openEdit(record)}>
-                    Edit
-                  </Button>
-                  <Popconfirm
-                    title="Delete tenant"
-                    description="This will permanently remove the tenant and all associated data."
-                    onConfirm={() => void handleDelete(record.id)}
-                    okText="Delete"
-                    okButtonProps={{ danger: true }}
-                  >
-                    <Button size="small" danger>
-                      Delete
+                canManageTenants ? (
+                  <Space size="small" wrap>
+                    <Button size="small" onClick={() => void openEdit(record)} loading={processingEditId === record.id && isLoadingEdit}>
+                      Edit
                     </Button>
-                  </Popconfirm>
-                </Space>
+                    <Popconfirm
+                      title="Delete tenant"
+                      description="This will permanently remove the tenant and all associated data."
+                      onConfirm={() => void handleDelete(record.id)}
+                      okText="Delete"
+                      okButtonProps={{ danger: true, loading: processingDeleteId === record.id }}
+                    >
+                      <Button size="small" danger>
+                        Delete
+                      </Button>
+                    </Popconfirm>
+                  </Space>
+                ) : (
+                  <span className={styles.mutedText}>View only</span>
+                )
               ),
             },
           ]}
@@ -236,7 +258,7 @@ const TenantsPageContent = () => {
 
       <Modal
         title="Create tenant"
-        open={isCreateOpen}
+        open={canManageTenants && isCreateOpen}
         onCancel={() => setIsCreateOpen(false)}
         onOk={() => createForm.submit()}
         okText="Create"
@@ -285,7 +307,7 @@ const TenantsPageContent = () => {
 
       <Modal
         title="Edit tenant"
-        open={isEditOpen}
+        open={canManageTenants && isEditOpen}
         onCancel={() => setIsEditOpen(false)}
         onOk={() => editForm.submit()}
         okText="Save"
@@ -316,4 +338,7 @@ const TenantsPageContent = () => {
   );
 };
 
-export default withAuth(TenantsPageContent, PERMISSIONS.tenants);
+export default withAuth(TenantsPageContent, {
+  requiredPermission: PERMISSIONS.tenants,
+  requireHostContext: true,
+});

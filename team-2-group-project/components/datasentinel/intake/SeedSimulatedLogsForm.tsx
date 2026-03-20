@@ -52,22 +52,32 @@ const SeedSimulatedLogsForm = ({
       }}
     >
       <div className={styles.splitGrid}>
-        <Form.Item name="serverId" label="Monitored server">
+        <Form.Item
+          name="serverId"
+          label="Monitored server"
+          rules={[{ required: true, message: "Choose a monitored server." }]}
+        >
           <Select
-            allowClear
             loading={isLoadingReferences}
             className={styles.fullWidthControl}
+            placeholder="Select a monitored server"
+            onChange={() => form.setFieldValue("databaseId", undefined)}
             options={monitoredServers.map((server) => ({
               value: server.id,
               label: `${server.name} (${server.hostName})`,
             }))}
           />
         </Form.Item>
-        <Form.Item name="databaseId" label="Monitored database">
+        <Form.Item
+          name="databaseId"
+          label="Monitored database"
+          rules={[{ required: true, message: "Choose a monitored database." }]}
+        >
           <Select
-            allowClear
             loading={isLoadingReferences}
+            disabled={!seedServerId}
             className={styles.fullWidthControl}
+            placeholder="Select a monitored database"
             options={resolveDatabaseOptions(allDatabases, seedServerId)}
           />
         </Form.Item>

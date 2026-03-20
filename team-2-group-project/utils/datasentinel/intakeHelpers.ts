@@ -2,9 +2,10 @@ import {
   IAbpAuditLogIngestionItem,
   IActivityEventIngestionItem,
 } from "@/interfaces/datasentinel/intake";
+import { resolveAbpErrorMessage } from "@/utils/abp";
 
 export const resolveErrorMessage = (error: unknown): string =>
-  error instanceof Error ? error.message : "The intake request failed.";
+  resolveAbpErrorMessage(error, "The intake request failed.");
 
 export const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
@@ -47,6 +48,31 @@ export const extractAuditLogs = (payload: unknown): IAbpAuditLogIngestionItem[] 
   throw new Error(
     "ABP audit payload must be an array or an object with an abpAuditLogs/AbpAuditLogs array.",
   );
+};
+
+export const normalizeAuditLogsForTenant = (
+  auditLogs: IAbpAuditLogIngestionItem[],
+  tenantId: number,
+) => {
+  let normalizedCount = 0;
+
+  const normalizedAuditLogs = auditLogs.map((auditLog) => {
+    if (auditLog.tenantId === tenantId) {
+      return auditLog;
+    }
+
+    normalizedCount += 1;
+
+    return {
+      ...auditLog,
+      tenantId,
+    };
+  });
+
+  return {
+    normalizedAuditLogs,
+    normalizedCount,
+  };
 };
 
 export const applyReferenceDefaults = (

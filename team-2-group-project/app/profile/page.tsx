@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Alert, Button, Card, Form, Input, Tag, Typography } from "antd";
+import { Button, Card, Form, Input, Tag, Typography } from "antd";
 import AppShell from "@/components/auth/AppShell";
+import TimedAlertMessage from "@/components/feedback/TimedAlertMessage";
 import { withAuth } from "@/hoc/withAuth";
 import { useAuthState } from "@/providers/authProvider";
+import { resolveAbpErrorMessage } from "@/utils/abp";
 import { isHostAdmin, isTenantAdmin } from "@/utils/auth/roles";
 import { changePassword } from "@/utils/auth/adminService";
 import { useStyles } from "@/app/style/style";
@@ -51,11 +53,7 @@ const ProfilePageContent = () => {
         setErrorMessage("The password update was not accepted by the server.");
       })
       .catch((error: unknown) => {
-        setErrorMessage(
-          error instanceof Error
-            ? error.message
-            : "Failed to update the password.",
-        );
+        setErrorMessage(resolveAbpErrorMessage(error, "Failed to update the password."));
       })
       .finally(() => {
         setIsSubmitting(false);
@@ -94,6 +92,7 @@ const ProfilePageContent = () => {
           </div>
         </Card>
 
+
         <Card className={styles.pageCard}>
           <Title level={4} className={styles.sectionTitle}>
             Change password
@@ -102,21 +101,23 @@ const ProfilePageContent = () => {
             The new password must be at least 8 characters and include uppercase, lowercase, and numeric characters.
           </Paragraph>
 
+          {/* User feedback: success state */}
           {successMessage ? (
-            <Alert
+            <TimedAlertMessage
               type="success"
-              showIcon
               title={successMessage}
+              onDismiss={() => setSuccessMessage(null)}
               className={styles.alert}
               style={{ marginBottom: 16 }}
             />
           ) : null}
 
+          {/* User feedback: error state */}
           {errorMessage ? (
-            <Alert
+            <TimedAlertMessage
               type="error"
-              showIcon
               title={errorMessage}
+              onDismiss={() => setErrorMessage(null)}
               className={styles.alert}
               style={{ marginBottom: 16 }}
             />

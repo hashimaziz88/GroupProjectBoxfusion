@@ -6,6 +6,7 @@ import { Alert, Button, Checkbox, Form, Input, Typography } from "antd";
 import AuthFooterLink from "@/components/auth/AuthFooterLink";
 import AuthHeader from "@/components/auth/AuthHeader";
 import AuthLayout from "@/components/auth/AuthLayout";
+import TimedAlertMessage from "@/components/feedback/TimedAlertMessage";
 import AppSpinner from "@/components/spinner/AppSpinner";
 import { useAuthActions, useAuthState } from "@/providers/authProvider";
 import { selectBestAuthenticatedRoute } from "@/utils/auth/roles";
@@ -25,7 +26,7 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { styles } = useStyles();
-  const { changeTenant, login } = useAuthActions();
+  const { changeTenant, clearErrorMessage, login } = useAuthActions();
   const {
     currentTenant,
     errorMessage,
@@ -40,6 +41,10 @@ export default function LoginPage() {
   const [tenantName, setTenantName] = useState(currentTenant?.tenancyName ?? "");
   const [hasEditedTenantName, setHasEditedTenantName] = useState(false);
   const [tenantFeedback, setTenantFeedback] = useState<TenantFeedbackState>(null);
+  const [isTenantChanging, setIsTenantChanging] = useState(false);
+  const [showRegisteredMessage, setShowRegisteredMessage] = useState(
+    searchParams.get("registered") === "1",
+  );
 
   useEffect(() => {
     if (!isReady || !isAuthenticated) {
@@ -61,7 +66,6 @@ export default function LoginPage() {
   const resolvedTenantName = hasEditedTenantName
     ? tenantName
     : currentTenant?.tenancyName ?? tenantName;
-  const showRegisteredMessage = searchParams.get("registered") === "1";
   const localApiConfigurationWarning = useMemo(() => {
     if (typeof window === "undefined") {
       return null;
@@ -95,40 +99,45 @@ export default function LoginPage() {
   }, []);
 
   const handleTenantChange = async () => {
-    const result = await changeTenant(resolvedTenantName.trim() || null);
+    setIsTenantChanging(true);
+    try {
+      const result = await changeTenant(resolvedTenantName.trim() || null);
 
-    if (result.state === "available") {
-      setTenantName(result.tenancyName ?? "");
-      setHasEditedTenantName(false);
-      setTenantFeedback({
-        type: "success",
-        message: `Tenant changed to ${result.tenancyName}.`,
-      });
-      return;
-    }
+      if (result.state === "available") {
+        setTenantName(result.tenancyName ?? "");
+        setHasEditedTenantName(false);
+        setTenantFeedback({
+          type: "success",
+          message: `Tenant changed to ${result.tenancyName}.`,
+        });
+        return;
+      }
 
-    if (result.state === "host") {
-      setTenantName("");
-      setHasEditedTenantName(false);
-      setTenantFeedback({
-        type: "success",
-        message: "Tenant context cleared. You are now in the host context.",
-      });
-      return;
-    }
+      if (result.state === "host") {
+        setTenantName("");
+        setHasEditedTenantName(false);
+        setTenantFeedback({
+          type: "success",
+          message: "Tenant context cleared. You are now in the host context.",
+        });
+        return;
+      }
 
-    if (result.state === "inactive") {
+      if (result.state === "inactive") {
+        setTenantFeedback({
+          type: "warning",
+          message: `Tenant ${result.tenancyName} is not active.`,
+        });
+        return;
+      }
+
       setTenantFeedback({
         type: "warning",
-        message: `Tenant ${result.tenancyName} is not active.`,
+        message: `There is no tenant defined with the name ${result.tenancyName}.`,
       });
-      return;
+    } finally {
+      setIsTenantChanging(false);
     }
-
-    setTenantFeedback({
-      type: "warning",
-      message: `There is no tenant defined with the name ${result.tenancyName}.`,
-    });
   };
 
   const handleSubmit = async (values: ILoginFormValues) => {
@@ -151,19 +160,19 @@ export default function LoginPage() {
       />
 
       {showRegisteredMessage ? (
-        <Alert
+        <TimedAlertMessage
           type="success"
-          showIcon
           title="Registration completed. You can sign in now."
+          onDismiss={() => setShowRegisteredMessage(false)}
           className={styles.alert}
         />
       ) : null}
 
       {tenantFeedback ? (
-        <Alert
+        <TimedAlertMessage
           type={tenantFeedback.type}
-          showIcon
           title={tenantFeedback.message}
+          onDismiss={() => setTenantFeedback(null)}
           className={styles.alert}
         />
       ) : null}
@@ -178,10 +187,10 @@ export default function LoginPage() {
       ) : null}
 
       {isError && errorMessage ? (
-        <Alert
+        <TimedAlertMessage
           type="error"
-          showIcon
           title={errorMessage}
+          onDismiss={clearErrorMessage}
           className={styles.alert}
         />
       ) : null}
@@ -213,6 +222,7 @@ export default function LoginPage() {
             <div className={styles.formActions}>
               <Button
                 onClick={() => void handleTenantChange()}
+                loading={isTenantChanging}
                 className={styles.secondaryButton}
               >
                 Change tenant
@@ -222,13 +232,15 @@ export default function LoginPage() {
                 onClick={() => {
                   setTenantName("");
                   setHasEditedTenantName(false);
+                  setIsTenantChanging(true);
                   void changeTenant(null).then(() => {
                     setTenantFeedback({
                       type: "success",
                       message: "Tenant context cleared. You are now in the host context.",
                     });
-                  });
+                  }).finally(() => setIsTenantChanging(false));
                 }}
+                loading={isTenantChanging}
                 className={styles.secondaryButton}
               >
                 Continue as host
@@ -287,13 +299,7 @@ export default function LoginPage() {
           label="Register"
           href="/register"
         />
-      ) : (
-        <div className={styles.footerLinkRow}>
-          <Text className={styles.footerText}>
-            Registration is available only when a tenant is selected.
-          </Text>
-        </div>
-      )}
+      ) : null}
     </AuthLayout>
   );
 }

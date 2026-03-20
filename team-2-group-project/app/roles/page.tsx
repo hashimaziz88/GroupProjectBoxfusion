@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import {
-  Alert,
   Button,
   Card,
   Checkbox,
@@ -16,7 +15,9 @@ import {
   Typography,
 } from "antd";
 import AppShell from "@/components/auth/AppShell";
+import TimedAlertMessage from "@/components/feedback/TimedAlertMessage";
 import { withAuth } from "@/hoc/withAuth";
+import { useAuthState } from "@/providers/authProvider";
 import { useAdminState, useAdminActions } from "@/providers/adminProvider";
 import {
   createRole,
@@ -32,15 +33,19 @@ import {
   IRoleListItem,
 } from "@/interfaces/auth/adminService";
 import { PERMISSIONS } from "@/constants/auth/roles";
+import { resolveAbpErrorMessage } from "@/utils/abp";
+import { canManageRolesCrud } from "@/utils/auth/roles";
 
 const { Paragraph, Title } = Typography;
 
 const RolesPageContent = () => {
   const { styles } = useStyles();
+  const { permissions, user } = useAuthState();
   const { roles, isLoadingRoles, allPermissions, errorMessage, actionMessage } =
     useAdminState();
-  const { fetchRoles, fetchAllPermissions, setActionMessage } =
+  const { fetchRoles, fetchAllPermissions, setActionMessage, clearMessages } =
     useAdminActions();
+  const canManageRoles = canManageRolesCrud(user?.roles, permissions);
 
   const [createForm] = Form.useForm();
   const [editForm] = Form.useForm();
@@ -49,6 +54,9 @@ const RolesPageContent = () => {
   const [editingRole, setEditingRole] = useState<IRoleListItem | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingEdit, setIsLoadingEdit] = useState(false);
+  const [processingDeleteId, setProcessingDeleteId] = useState<number | null>(null);
+  const [processingEditId, setProcessingEditId] = useState<number | null>(null);
+  const [isRefreshingList, setIsRefreshingList] = useState(false);
 
   useEffect(() => {
     void fetchRoles();
@@ -61,6 +69,7 @@ const RolesPageContent = () => {
   }));
 
   const handleCreate = async (values: ICreateRoleDto) => {
+    if (!canManageRoles) return;
     setIsSubmitting(true);
     try {
       await createRole(values);
@@ -71,7 +80,7 @@ const RolesPageContent = () => {
     } catch (error: unknown) {
       setActionMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Failed to create role.",
+        text: resolveAbpErrorMessage(error, "Failed to create role."),
       });
     } finally {
       setIsSubmitting(false);
@@ -79,7 +88,7 @@ const RolesPageContent = () => {
   };
 
   const handleEdit = async (values: Omit<IRoleDto, "id">) => {
-    if (!editingRole) return;
+    if (!editingRole || !canManageRoles) return;
     setIsSubmitting(true);
     try {
       await updateRole({ ...values, id: editingRole.id });
@@ -89,7 +98,7 @@ const RolesPageContent = () => {
     } catch (error: unknown) {
       setActionMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Failed to update role.",
+        text: resolveAbpErrorMessage(error, "Failed to update role."),
       });
     } finally {
       setIsSubmitting(false);
@@ -97,6 +106,8 @@ const RolesPageContent = () => {
   };
 
   const handleDelete = async (id: number) => {
+    if (!canManageRoles) return;
+    setProcessingDeleteId(id);
     try {
       await deleteRole(id);
       setActionMessage({ type: "success", text: "Role deleted." });
@@ -104,13 +115,17 @@ const RolesPageContent = () => {
     } catch (error: unknown) {
       setActionMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Failed to delete role.",
+        text: resolveAbpErrorMessage(error, "Failed to delete role."),
       });
+    } finally {
+      setProcessingDeleteId(null);
     }
   };
 
   const openEdit = async (role: IRoleListItem) => {
+    if (!canManageRoles) return;
     setEditingRole(role);
+    setProcessingEditId(role.id);
     setIsLoadingEdit(true);
     setIsEditOpen(true);
     try {
@@ -130,6 +145,7 @@ const RolesPageContent = () => {
       });
     } finally {
       setIsLoadingEdit(false);
+      setProcessingEditId(null);
     }
   };
 
@@ -139,20 +155,19 @@ const RolesPageContent = () => {
       subtitle="Define roles and assign permissions to control what users can access within a tenant."
     >
       {errorMessage ? (
-        <Alert
+        <TimedAlertMessage
           type="error"
-          showIcon
           title={errorMessage}
+          onDismiss={clearMessages}
           className={styles.alert}
         />
       ) : null}
       {actionMessage ? (
-        <Alert
+        <TimedAlertMessage
           type={actionMessage.type}
-          showIcon
           title={actionMessage.text}
           className={styles.alert}
-          closable={{ onClose: () => setActionMessage(null) }}
+          onDismiss={clearMessages}
         />
       ) : null}
 
@@ -161,15 +176,17 @@ const RolesPageContent = () => {
           <Title level={4} className={styles.sectionTitle}>
             Role catalogue
           </Title>
-          <Button
-            type="primary"
-            onClick={() => {
-              createForm.resetFields();
-              setIsCreateOpen(true);
-            }}
-          >
-            Create role
-          </Button>
+          {canManageRoles ? (
+            <Button
+              type="primary"
+              onClick={() => {
+                createForm.resetFields();
+                setIsCreateOpen(true);
+              }}
+            >
+              Create role
+            </Button>
+          ) : null}
         </div>
         <Paragraph className={styles.sectionLead}>
           The backend provides static roles such as `Host.Admin` and
@@ -178,7 +195,7 @@ const RolesPageContent = () => {
         </Paragraph>
         <Table<IRoleListItem>
           rowKey="id"
-          loading={isLoadingRoles}
+          loading={isLoadingRoles || isRefreshingList}
           dataSource={roles}
           className={styles.table}
           columns={[
@@ -233,28 +250,32 @@ const RolesPageContent = () => {
               title: "Actions",
               key: "actions",
               render: (_, record) => (
-                <Space size="small" wrap>
-                  <Button size="small" onClick={() => void openEdit(record)}>
-                    Edit
-                  </Button>
-                  <Popconfirm
-                    title="Delete role"
-                    description={
-                      record.isStatic
-                        ? "Static roles cannot be deleted."
-                        : "This action cannot be undone."
-                    }
-                    onConfirm={() =>
-                      record.isStatic ? undefined : void handleDelete(record.id)
-                    }
-                    okText="Delete"
-                    okButtonProps={{ danger: true, disabled: record.isStatic }}
-                  >
-                    <Button size="small" danger disabled={record.isStatic}>
-                      Delete
+                canManageRoles ? (
+                  <Space size="small" wrap>
+                    <Button size="small" onClick={() => void openEdit(record)} loading={processingEditId === record.id && isLoadingEdit}>
+                      Edit
                     </Button>
-                  </Popconfirm>
-                </Space>
+                    <Popconfirm
+                      title="Delete role"
+                      description={
+                        record.isStatic
+                          ? "Static roles cannot be deleted."
+                          : "This action cannot be undone."
+                      }
+                      onConfirm={() =>
+                        record.isStatic ? undefined : void handleDelete(record.id)
+                      }
+                      okText="Delete"
+                      okButtonProps={{ danger: true, disabled: record.isStatic, loading: processingDeleteId === record.id }}
+                    >
+                      <Button size="small" danger disabled={record.isStatic}>
+                        Delete
+                      </Button>
+                    </Popconfirm>
+                  </Space>
+                ) : (
+                  <span className={styles.mutedText}>View only</span>
+                )
               ),
             },
           ]}
@@ -264,7 +285,7 @@ const RolesPageContent = () => {
 
       <Modal
         title="Create role"
-        open={isCreateOpen}
+        open={canManageRoles && isCreateOpen}
         onCancel={() => setIsCreateOpen(false)}
         onOk={() => createForm.submit()}
         okText="Create"
@@ -297,7 +318,7 @@ const RolesPageContent = () => {
 
       <Modal
         title="Edit role"
-        open={isEditOpen}
+        open={canManageRoles && isEditOpen}
         onCancel={() => setIsEditOpen(false)}
         onOk={() => editForm.submit()}
         okText="Save"

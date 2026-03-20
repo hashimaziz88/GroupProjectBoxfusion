@@ -17,6 +17,7 @@ import {
   IMonitoredServerListItem,
 } from "@/interfaces/datasentinel/monitoring";
 import { useAuthState } from "@/providers/authProvider";
+import { resolveAbpErrorMessage } from "@/utils/abp";
 import { hasPermission } from "@/utils/auth/roles";
 import {
   bootstrapMonitoringDemo,
@@ -42,9 +43,7 @@ import {
 import { MonitoringInfrastructureReducer } from "./reducer";
 
 const resolveErrorMessage = (error: unknown) =>
-  error instanceof Error
-    ? error.message
-    : "The monitoring infrastructure request failed.";
+  resolveAbpErrorMessage(error, "The monitoring infrastructure request failed.");
 
 const monitoredDatabasesFromServers = (servers: IMonitoredServerListItem[]) =>
   servers.flatMap((server) =>
@@ -333,6 +332,20 @@ export const MonitoringInfrastructureProvider: React.FC<{
     mutation: () => Promise<void>,
     successText: string,
     ) => {
+    if (!canManageInfrastructure) {
+      dispatch(
+        setMonitoringInfrastructureMessages({
+          actionMessage: {
+            type: "error",
+            text: "You do not have permission to modify monitored infrastructure.",
+          },
+          errorMessage: state.errorMessage,
+          bootstrapResult: state.bootstrapResult,
+        }),
+      );
+      return false;
+    }
+
     try {
       await mutation();
       dispatch(
@@ -387,6 +400,20 @@ export const MonitoringInfrastructureProvider: React.FC<{
     );
 
   const bootstrapDemoAction = async (input: IBootstrapMonitoringDemoInput) => {
+    if (!canManageInfrastructure) {
+      dispatch(
+        setMonitoringInfrastructureMessages({
+          actionMessage: {
+            type: "error",
+            text: "You do not have permission to bootstrap monitored infrastructure.",
+          },
+          errorMessage: state.errorMessage,
+          bootstrapResult: state.bootstrapResult,
+        }),
+      );
+      return false;
+    }
+
     try {
       const result = await bootstrapMonitoringDemo(input);
       dispatch(
