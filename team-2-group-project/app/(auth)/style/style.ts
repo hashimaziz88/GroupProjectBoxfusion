@@ -139,10 +139,18 @@ export const useStyles = createStyles(({ token }) => ({
       .ant-input-affix-wrapper,
       .ant-input-password,
       .ant-select-selector {
+        height: 38px;
         min-height: 38px;
         border-radius: 18px;
         background: #eef3fb !important;
         border-color: #d5deec !important;
+      }
+
+      .ant-input.ant-input-outlined {
+        padding-inline: 14px;
+        box-shadow: none !important;
+        overflow: hidden;
+        background-clip: padding-box;
       }
 
       .ant-input-affix-wrapper,
@@ -160,11 +168,23 @@ export const useStyles = createStyles(({ token }) => ({
         color: #0f172a;
       }
 
+      .ant-input-password input.ant-input,
+      .ant-input-affix-wrapper > input.ant-input {
+        height: auto !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        line-height: 1.4;
+      }
+
       .ant-input-affix-wrapper,
       .ant-input-password,
       .ant-input-affix-wrapper.ant-input-outlined,
       .ant-input-password.ant-input-outlined {
         padding-inline: 14px;
+        display: flex;
+        align-items: center;
         box-shadow: none !important;
         background: #eef3fb !important;
         border-color: #d5deec !important;
@@ -218,7 +238,8 @@ export const useStyles = createStyles(({ token }) => ({
         -webkit-box-shadow: 0 0 0 1000px #eef3fb inset !important;
         box-shadow: 0 0 0 1000px #eef3fb inset !important;
         caret-color: #0f172a;
-        border-radius: inherit;
+        border-radius: 18px !important;
+        -webkit-background-clip: padding-box;
       }
 
       .ant-btn {
