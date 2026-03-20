@@ -18,14 +18,16 @@ import {
 } from "antd";
 import AppShell from "@/components/auth/AppShell";
 import { withAuth } from "@/hoc/withAuth";
+import { useAuthState } from "@/providers/authProvider";
 import { useAdminState, useAdminActions } from "@/providers/adminProvider";
 import {
   createUser,
-  updateUser,
   deleteUser,
   activateUser,
   deActivateUser,
+  getUser,
   resetPassword,
+  updateUser,
 } from "@/utils/auth/adminService";
 import { formatDateTime, toArray } from "@/utils/helpers";
 import { useStyles } from "@/app/style/style";
@@ -36,36 +38,57 @@ import {
   IUserListItem,
 } from "@/interfaces/auth/adminService";
 import { PERMISSIONS } from "@/constants/auth/roles";
+import {
+  canActivateUsers,
+  canManageUsersCrud,
+} from "@/utils/auth/roles";
 
 const { Paragraph, Title } = Typography;
 
 const UsersPageContent = () => {
   const { styles } = useStyles();
-  const { users, isLoadingUsers, roles, errorMessage, actionMessage } =
+  const { permissions, user } = useAuthState();
+  const {
+    users,
+    isLoadingUsers,
+    assignableRoles,
+    errorMessage,
+    actionMessage,
+  } =
     useAdminState();
-  const { fetchUsers, fetchRoles, setActionMessage } = useAdminActions();
+  const { fetchUsers, fetchAssignableRoles, setActionMessage } =
+    useAdminActions();
+  const canManageUsers = canManageUsersCrud(user?.roles, permissions);
+  const canToggleUserActivation = canActivateUsers(permissions);
 
   const [createForm] = Form.useForm();
   const [editForm] = Form.useForm();
+  const [assignRolesForm] = Form.useForm();
   const [resetForm] = Form.useForm();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isAssignRolesOpen, setIsAssignRolesOpen] = useState(false);
   const [isResetOpen, setIsResetOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<IUserListItem | null>(null);
+  const [assigningRolesUser, setAssigningRolesUser] = useState<IUserDto | null>(
+    null,
+  );
   const [resetUserId, setResetUserId] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingRoleAssignment, setIsLoadingRoleAssignment] = useState(false);
 
   useEffect(() => {
     void fetchUsers();
-    void fetchRoles();
-  }, [fetchUsers, fetchRoles]);
+    void fetchAssignableRoles();
+  }, [fetchAssignableRoles, fetchUsers]);
 
-  const roleOptions = roles.map((r) => ({
-    value: r.name,
-    label: r.displayName,
+  const roleOptions = assignableRoles.map((r) => ({
+    value: r.name ?? "",
+    label: r.displayName ?? r.name ?? "",
   }));
 
   const handleCreate = async (values: ICreateUserDto) => {
+    if (!canManageUsers) return;
     setIsSubmitting(true);
     try {
       await createUser(values);
@@ -84,7 +107,7 @@ const UsersPageContent = () => {
   };
 
   const handleEdit = async (values: Omit<IUserDto, "id">) => {
-    if (!editingUser) return;
+    if (!editingUser || !canManageUsers) return;
     setIsSubmitting(true);
     try {
       await updateUser({ ...values, id: editingUser.id });
@@ -102,6 +125,7 @@ const UsersPageContent = () => {
   };
 
   const handleDelete = async (id: number) => {
+    if (!canManageUsers) return;
     try {
       await deleteUser(id);
       setActionMessage({ type: "success", text: "User deleted." });
@@ -115,6 +139,7 @@ const UsersPageContent = () => {
   };
 
   const handleToggleActive = async (user: IUserListItem) => {
+    if (!canToggleUserActivation) return;
     try {
       if (user.isActive) {
         await deActivateUser(user.id);
@@ -144,7 +169,7 @@ const UsersPageContent = () => {
   const handleResetPassword = async (
     values: Omit<IResetPasswordDto, "userId">,
   ) => {
-    if (!resetUserId) return;
+    if (!resetUserId || !canManageUsers) return;
     setIsSubmitting(true);
     try {
       await resetPassword({ ...values, userId: resetUserId });
@@ -165,7 +190,36 @@ const UsersPageContent = () => {
     }
   };
 
+  const handleAssignRoles = async (values: { roleNames?: string[] | null }) => {
+    if (!assigningRolesUser || !canManageUsers) return;
+
+    setIsSubmitting(true);
+    try {
+      await updateUser({
+        ...assigningRolesUser,
+        roleNames: values.roleNames ?? [],
+      });
+      setActionMessage({
+        type: "success",
+        text: "User roles updated successfully.",
+      });
+      setIsAssignRolesOpen(false);
+      assignRolesForm.resetFields();
+      setAssigningRolesUser(null);
+      void fetchUsers();
+    } catch (error: unknown) {
+      setActionMessage({
+        type: "error",
+        text:
+          error instanceof Error ? error.message : "Failed to update user roles.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const openEdit = (user: IUserListItem) => {
+    if (!canManageUsers) return;
     setEditingUser(user);
     editForm.setFieldsValue({
       userName: user.userName,
@@ -178,7 +232,43 @@ const UsersPageContent = () => {
     setIsEditOpen(true);
   };
 
+  const openAssignRoles = async (user: IUserListItem) => {
+    if (!canManageUsers) return;
+
+    setIsLoadingRoleAssignment(true);
+    setIsAssignRolesOpen(true);
+
+    try {
+      const userDetail = await getUser(user.id);
+      setAssigningRolesUser(userDetail);
+      assignRolesForm.setFieldsValue({
+        roleNames: toArray(userDetail.roleNames),
+      });
+    } catch {
+      const fallbackUser: IUserDto = {
+        id: user.id,
+        userName: user.userName,
+        name: user.name,
+        surname: user.surname,
+        emailAddress: user.emailAddress,
+        isActive: user.isActive,
+        fullName: user.fullName,
+        lastLoginTime: user.lastLoginTime,
+        creationTime: user.creationTime,
+        roleNames: toArray(user.roleNames),
+      };
+
+      setAssigningRolesUser(fallbackUser);
+      assignRolesForm.setFieldsValue({
+        roleNames: toArray(user.roleNames),
+      });
+    } finally {
+      setIsLoadingRoleAssignment(false);
+    }
+  };
+
   const openReset = (userId: number) => {
+    if (!canManageUsers) return;
     setResetUserId(userId);
     resetForm.resetFields();
     setIsResetOpen(true);
@@ -225,15 +315,17 @@ const UsersPageContent = () => {
           <Title level={4} className={styles.sectionTitle}>
             Tenant users
           </Title>
-          <Button
-            type="primary"
-            onClick={() => {
-              createForm.resetFields();
-              setIsCreateOpen(true);
-            }}
-          >
-            Create user
-          </Button>
+          {canManageUsers ? (
+            <Button
+              type="primary"
+              onClick={() => {
+                createForm.resetFields();
+                setIsCreateOpen(true);
+              }}
+            >
+              Create user
+            </Button>
+          ) : null}
         </div>
         <Paragraph className={styles.sectionLead}>
           This page is available only when `{PERMISSIONS.users}` is granted.
@@ -294,31 +386,51 @@ const UsersPageContent = () => {
               title: "Actions",
               key: "actions",
               render: (_, record) => (
-                <Space size="small" wrap>
-                  <Button size="small" onClick={() => openEdit(record)}>
-                    Edit
-                  </Button>
-                  <Button
-                    size="small"
-                    onClick={() => void handleToggleActive(record)}
-                  >
-                    {record.isActive ? "Deactivate" : "Activate"}
-                  </Button>
-                  <Button size="small" onClick={() => openReset(record.id)}>
-                    Reset password
-                  </Button>
-                  <Popconfirm
-                    title="Delete user"
-                    description="This action cannot be undone."
-                    onConfirm={() => void handleDelete(record.id)}
-                    okText="Delete"
-                    okButtonProps={{ danger: true }}
-                  >
-                    <Button size="small" danger>
-                      Delete
-                    </Button>
-                  </Popconfirm>
-                </Space>
+                canManageUsers || canToggleUserActivation ? (
+                  <Space size="small" wrap>
+                    {canManageUsers ? (
+                      <Button size="small" onClick={() => openEdit(record)}>
+                        Edit
+                      </Button>
+                    ) : null}
+                    {canManageUsers ? (
+                      <Button
+                        size="small"
+                        onClick={() => void openAssignRoles(record)}
+                      >
+                        Assign roles
+                      </Button>
+                    ) : null}
+                    {canToggleUserActivation ? (
+                      <Button
+                        size="small"
+                        onClick={() => void handleToggleActive(record)}
+                      >
+                        {record.isActive ? "Deactivate" : "Activate"}
+                      </Button>
+                    ) : null}
+                    {canManageUsers ? (
+                      <Button size="small" onClick={() => openReset(record.id)}>
+                        Reset password
+                      </Button>
+                    ) : null}
+                    {canManageUsers ? (
+                      <Popconfirm
+                        title="Delete user"
+                        description="This action cannot be undone."
+                        onConfirm={() => void handleDelete(record.id)}
+                        okText="Delete"
+                        okButtonProps={{ danger: true }}
+                      >
+                        <Button size="small" danger>
+                          Delete
+                        </Button>
+                      </Popconfirm>
+                    ) : null}
+                  </Space>
+                ) : (
+                  <span className={styles.mutedText}>View only</span>
+                )
               ),
             },
           ]}
@@ -328,7 +440,7 @@ const UsersPageContent = () => {
 
       <Modal
         title="Create user"
-        open={isCreateOpen}
+        open={canManageUsers && isCreateOpen}
         onCancel={() => setIsCreateOpen(false)}
         onOk={() => createForm.submit()}
         okText="Create"
@@ -387,7 +499,7 @@ const UsersPageContent = () => {
 
       <Modal
         title="Edit user"
-        open={isEditOpen}
+        open={canManageUsers && isEditOpen}
         onCancel={() => setIsEditOpen(false)}
         onOk={() => editForm.submit()}
         okText="Save"
@@ -419,13 +531,6 @@ const UsersPageContent = () => {
           >
             <Input />
           </Form.Item>
-          <Form.Item name="roleNames" label="Roles">
-            <Select
-              mode="multiple"
-              options={roleOptions}
-              placeholder="Select roles"
-            />
-          </Form.Item>
           <Form.Item name="isActive" valuePropName="checked">
             <Checkbox>Active</Checkbox>
           </Form.Item>
@@ -433,8 +538,40 @@ const UsersPageContent = () => {
       </Modal>
 
       <Modal
+        title={
+          assigningRolesUser
+            ? `Assign roles: ${assigningRolesUser.userName}`
+            : "Assign roles"
+        }
+        open={canManageUsers && isAssignRolesOpen}
+        onCancel={() => {
+          setIsAssignRolesOpen(false);
+          setAssigningRolesUser(null);
+        }}
+        onOk={() => assignRolesForm.submit()}
+        okText="Save roles"
+        confirmLoading={isSubmitting || isLoadingRoleAssignment}
+        destroyOnHidden
+      >
+        <Form
+          form={assignRolesForm}
+          layout="vertical"
+          onFinish={handleAssignRoles}
+        >
+          <Form.Item name="roleNames" label="Assigned roles">
+            <Select
+              mode="multiple"
+              options={roleOptions}
+              placeholder="Select roles"
+              loading={isLoadingRoleAssignment}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
         title="Reset password"
-        open={isResetOpen}
+        open={canManageUsers && isResetOpen}
         onCancel={() => setIsResetOpen(false)}
         onOk={() => resetForm.submit()}
         okText="Reset"

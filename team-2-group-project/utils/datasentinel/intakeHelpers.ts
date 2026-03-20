@@ -49,6 +49,31 @@ export const extractAuditLogs = (payload: unknown): IAbpAuditLogIngestionItem[] 
   );
 };
 
+export const normalizeAuditLogsForTenant = (
+  auditLogs: IAbpAuditLogIngestionItem[],
+  tenantId: number,
+) => {
+  let normalizedCount = 0;
+
+  const normalizedAuditLogs = auditLogs.map((auditLog) => {
+    if (auditLog.tenantId === tenantId) {
+      return auditLog;
+    }
+
+    normalizedCount += 1;
+
+    return {
+      ...auditLog,
+      tenantId,
+    };
+  });
+
+  return {
+    normalizedAuditLogs,
+    normalizedCount,
+  };
+};
+
 export const applyReferenceDefaults = (
   events: IActivityEventIngestionItem[],
   serverId?: string,

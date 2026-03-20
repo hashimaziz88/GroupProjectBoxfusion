@@ -17,6 +17,7 @@ import {
 } from "antd";
 import AppShell from "@/components/auth/AppShell";
 import { withAuth } from "@/hoc/withAuth";
+import { useAuthState } from "@/providers/authProvider";
 import { useAdminState, useAdminActions } from "@/providers/adminProvider";
 import {
   createTenant,
@@ -31,14 +32,17 @@ import {
   ITenantListItem,
 } from "@/interfaces/auth/adminService";
 import { PERMISSIONS } from "@/constants/auth/roles";
+import { canManageTenantsCrud } from "@/utils/auth/roles";
 
 const { Paragraph, Title } = Typography;
 
 const TenantsPageContent = () => {
   const { styles } = useStyles();
+  const { permissions, user } = useAuthState();
   const { tenants, isLoadingTenants, errorMessage, actionMessage } =
     useAdminState();
   const { fetchTenants, setActionMessage } = useAdminActions();
+  const canManageTenants = canManageTenantsCrud(user?.roles, permissions);
 
   const [createForm] = Form.useForm();
   const [editForm] = Form.useForm();
@@ -55,6 +59,7 @@ const TenantsPageContent = () => {
   }, [fetchTenants]);
 
   const handleCreate = async (values: ICreateTenantDto) => {
+    if (!canManageTenants) return;
     setIsSubmitting(true);
     try {
       await createTenant({ ...values, connectionString: null });
@@ -77,7 +82,7 @@ const TenantsPageContent = () => {
   };
 
   const handleEdit = async (values: Omit<ITenantDto, "id">) => {
-    if (!editingTenant) return;
+    if (!editingTenant || !canManageTenants) return;
     setIsSubmitting(true);
     try {
       await updateTenant({ ...values, id: editingTenant.id });
@@ -99,6 +104,7 @@ const TenantsPageContent = () => {
   };
 
   const handleDelete = async (id: number) => {
+    if (!canManageTenants) return;
     try {
       await deleteTenant(id);
       setActionMessage({ type: "success", text: "Tenant deleted." });
@@ -113,6 +119,7 @@ const TenantsPageContent = () => {
   };
 
   const openEdit = async (tenant: ITenantListItem) => {
+    if (!canManageTenants) return;
     setEditingTenant(tenant);
     setIsLoadingEdit(true);
     setIsEditOpen(true);
@@ -175,15 +182,17 @@ const TenantsPageContent = () => {
           <Title level={4} className={styles.sectionTitle}>
             Tenant directory
           </Title>
-          <Button
-            type="primary"
-            onClick={() => {
-              createForm.resetFields();
-              setIsCreateOpen(true);
-            }}
-          >
-            Create tenant
-          </Button>
+          {canManageTenants ? (
+            <Button
+              type="primary"
+              onClick={() => {
+                createForm.resetFields();
+                setIsCreateOpen(true);
+              }}
+            >
+              Create tenant
+            </Button>
+          ) : null}
         </div>
         <Paragraph className={styles.sectionLead}>
           This route is available only when `{PERMISSIONS.tenants}` is granted,
@@ -224,22 +233,26 @@ const TenantsPageContent = () => {
               title: "Actions",
               key: "actions",
               render: (_, record) => (
-                <Space size="small" wrap>
-                  <Button size="small" onClick={() => void openEdit(record)}>
-                    Edit
-                  </Button>
-                  <Popconfirm
-                    title="Delete tenant"
-                    description="This will permanently remove the tenant and all associated data."
-                    onConfirm={() => void handleDelete(record.id)}
-                    okText="Delete"
-                    okButtonProps={{ danger: true }}
-                  >
-                    <Button size="small" danger>
-                      Delete
+                canManageTenants ? (
+                  <Space size="small" wrap>
+                    <Button size="small" onClick={() => void openEdit(record)}>
+                      Edit
                     </Button>
-                  </Popconfirm>
-                </Space>
+                    <Popconfirm
+                      title="Delete tenant"
+                      description="This will permanently remove the tenant and all associated data."
+                      onConfirm={() => void handleDelete(record.id)}
+                      okText="Delete"
+                      okButtonProps={{ danger: true }}
+                    >
+                      <Button size="small" danger>
+                        Delete
+                      </Button>
+                    </Popconfirm>
+                  </Space>
+                ) : (
+                  <span className={styles.mutedText}>View only</span>
+                )
               ),
             },
           ]}
@@ -249,7 +262,7 @@ const TenantsPageContent = () => {
 
       <Modal
         title="Create tenant"
-        open={isCreateOpen}
+        open={canManageTenants && isCreateOpen}
         onCancel={() => setIsCreateOpen(false)}
         onOk={() => createForm.submit()}
         okText="Create"
@@ -298,7 +311,7 @@ const TenantsPageContent = () => {
 
       <Modal
         title="Edit tenant"
-        open={isEditOpen}
+        open={canManageTenants && isEditOpen}
         onCancel={() => setIsEditOpen(false)}
         onOk={() => editForm.submit()}
         okText="Save"
@@ -329,4 +342,7 @@ const TenantsPageContent = () => {
   );
 };
 
-export default withAuth(TenantsPageContent, PERMISSIONS.tenants);
+export default withAuth(TenantsPageContent, {
+  requiredPermission: PERMISSIONS.tenants,
+  requireHostContext: true,
+});

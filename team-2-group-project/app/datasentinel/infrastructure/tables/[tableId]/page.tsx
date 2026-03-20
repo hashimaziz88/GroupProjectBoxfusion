@@ -37,5 +37,11 @@ const TableDetailPageRoute = () => (
 
 export default withAuth(
   TableDetailPageRoute,
-  PERMISSIONS.dataSentinelInfrastructureView,
+  {
+    requiredPermissionsAny: [
+      PERMISSIONS.dataSentinelInfrastructureView,
+      PERMISSIONS.dataSentinelInfrastructureManage,
+    ],
+    requireTenantContext: true,
+  },
 );

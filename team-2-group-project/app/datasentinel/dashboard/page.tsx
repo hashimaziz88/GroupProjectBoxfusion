@@ -109,4 +109,7 @@ const DashboardPage = () => (
   </DashboardProvider>
 );
 
-export default withAuth(DashboardPage, PERMISSIONS.dataSentinelDashboard);
+export default withAuth(DashboardPage, {
+  requiredPermission: PERMISSIONS.dataSentinelDashboard,
+  requireTenantContext: true,
+});

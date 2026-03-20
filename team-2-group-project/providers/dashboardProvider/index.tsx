@@ -54,10 +54,10 @@ const resolveDashboardErrorMessage = (error: unknown) => {
 export const DashboardProvider: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
-  const { currentTenant, permissions } = useAuthState();
+  const { currentTenant, permissions, user } = useAuthState();
   const [state, dispatch] = useReducer(DashboardReducer, INITIAL_STATE);
   const hasTenantContext = Boolean(currentTenant?.tenantId);
-  const canAccessActivity = canAccessDataSentinelActivity(permissions);
+  const canAccessActivity = canAccessDataSentinelActivity(permissions, user?.roles);
   const canAccessAlerts = canAccessDataSentinelAlerts(permissions);
   const canAccessInfrastructure = canAccessDataSentinelInfrastructure(permissions);
 

@@ -29,5 +29,11 @@ const MonitoringServersPageRoute = () => (
 
 export default withAuth(
   MonitoringServersPageRoute,
-  PERMISSIONS.dataSentinelInfrastructureView,
+  {
+    requiredPermissionsAny: [
+      PERMISSIONS.dataSentinelInfrastructureView,
+      PERMISSIONS.dataSentinelInfrastructureManage,
+    ],
+    requireTenantContext: true,
+  },
 );

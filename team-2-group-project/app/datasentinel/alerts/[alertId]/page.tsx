@@ -63,5 +63,12 @@ const SecurityAlertDetailPage = () => (
 
 export default withAuth(
   SecurityAlertDetailPage,
-  PERMISSIONS.dataSentinelAlertsView,
+  {
+    requiredPermissionsAny: [
+      PERMISSIONS.dataSentinelAlertsView,
+      PERMISSIONS.dataSentinelAlertsReview,
+      PERMISSIONS.dataSentinelAlertsManage,
+    ],
+    requireTenantContext: true,
+  },
 );
