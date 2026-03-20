@@ -49,11 +49,11 @@ const triggerPdfDownload = (bytes: ArrayBuffer, fileName: string) => {
 export const ReportExportProvider: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
-  const { currentTenant, permissions } = useAuthState();
+  const { currentTenant, permissions, user } = useAuthState();
   const [state, dispatch] = useReducer(ReportExportReducer, INITIAL_STATE);
   const hasTenantContext = Boolean(currentTenant?.tenantId);
   const canAccessAlerts = canAccessDataSentinelAlerts(permissions);
-  const canAccessActivity = canAccessDataSentinelActivity(permissions);
+  const canAccessActivity = canAccessDataSentinelActivity(permissions, user?.roles);
 
   useEffect(() => {
     if (!hasTenantContext) {

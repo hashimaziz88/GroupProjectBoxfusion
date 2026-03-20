@@ -1,5 +1,5 @@
-import { STATIC_ROLES } from "@/constants/auth/roles";
 import { PERMISSIONS } from "@/constants/auth/roles";
+import { DATA_SENTINEL_ROLE_ALIASES, STATIC_ROLES } from "@/constants/auth/roles";
 import { IRouteSelectorUser } from "@/interfaces/auth/roles";
 
 const normalizeValues = (values?: string[] | null) =>
@@ -20,6 +20,11 @@ export const isHostAdmin = (roles?: string[] | null) =>
 
 export const isTenantAdmin = (roles?: string[] | null) =>
   hasRole(roles, STATIC_ROLES.tenantAdmin);
+
+export const isSecurityAnalyst = (roles?: string[] | null) =>
+  DATA_SENTINEL_ROLE_ALIASES.securityAnalyst.some((roleName) =>
+    hasRole(roles, roleName),
+  );
 
 export const isAdminOrManager = (roles?: string[] | null) =>
   isHostAdmin(roles) || isTenantAdmin(roles);
@@ -51,7 +56,10 @@ export const canAccessDataSentinelInfrastructure = (
 
 export const canAccessDataSentinelActivity = (
   permissions?: string[] | null,
-) => hasPermission(permissions, PERMISSIONS.dataSentinelActivity);
+  roles?: string[] | null,
+) =>
+  !isSecurityAnalyst(roles) &&
+  hasPermission(permissions, PERMISSIONS.dataSentinelActivity);
 
 export const canAccessDataSentinelAlerts = (
   permissions?: string[] | null,
@@ -82,7 +90,10 @@ export const canManageDataSentinelRules = (
 
 export const canAccessDataSentinelReportsExport = (
   permissions?: string[] | null,
-) => hasPermission(permissions, PERMISSIONS.dataSentinelReportsExport);
+  roles?: string[] | null,
+) =>
+  !isSecurityAnalyst(roles) &&
+  hasPermission(permissions, PERMISSIONS.dataSentinelReportsExport);
 
 export const canAccessDataSentinelAdmin = (
   permissions?: string[] | null,
@@ -124,7 +135,7 @@ export const selectBestAuthenticatedRoute = (
     return "/datasentinel/intake";
   }
 
-  if (hasTenantContext && canAccessDataSentinelActivity(user?.permissions)) {
+  if (hasTenantContext && canAccessDataSentinelActivity(user?.permissions, user?.roles)) {
     return "/datasentinel/activity";
   }
 
@@ -132,7 +143,10 @@ export const selectBestAuthenticatedRoute = (
     return "/datasentinel/alerts";
   }
 
-  if (hasTenantContext && canAccessDataSentinelReportsExport(user?.permissions)) {
+  if (
+    hasTenantContext &&
+    canAccessDataSentinelReportsExport(user?.permissions, user?.roles)
+  ) {
     return "/datasentinel/reports";
   }
 

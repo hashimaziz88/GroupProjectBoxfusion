@@ -6,11 +6,16 @@ import { useRouter } from "next/navigation";
 import AccessDeniedState from "@/components/auth/AccessDeniedState";
 import AppSpinner from "@/components/spinner/AppSpinner";
 import { useAuthState } from "@/providers/authProvider";
-import { hasPermission, selectBestAuthenticatedRoute } from "@/utils/auth/roles";
+import {
+  hasPermission,
+  hasRole,
+  selectBestAuthenticatedRoute,
+} from "@/utils/auth/roles";
 
 interface IWithAuthOptions {
   requiredPermission?: string;
   requiredPermissionsAny?: string[];
+  disallowedRoles?: string[];
   requireTenantContext?: boolean;
   requireHostContext?: boolean;
   unauthorizedBehavior?: "redirect" | "inline";
@@ -53,8 +58,14 @@ export const withAuth = <P extends object>(
       !options.requiredPermissionsAny!.some((permission) =>
         hasPermission(permissions, permission),
       );
+    const hasDisallowedRole =
+      Boolean(options.disallowedRoles?.length) &&
+      options.disallowedRoles!.some((roleName) => hasRole(user?.roles, roleName));
     const isUnauthorized =
-      violatesTenantContext || lacksPermission || lacksAnyRequiredPermission;
+      violatesTenantContext ||
+      lacksPermission ||
+      lacksAnyRequiredPermission ||
+      hasDisallowedRole;
 
     useEffect(() => {
       if (!isReady) {

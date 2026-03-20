@@ -22,3 +22,7 @@ export const STATIC_ROLES = {
   hostAdmin: "Host.Admin",
   tenantAdmin: "Tenants.Admin",
 } as const;
+
+export const DATA_SENTINEL_ROLE_ALIASES = {
+  securityAnalyst: ["DataSentinel.SecurityAnalyst", "Analyst"],
+} as const;
