@@ -64,6 +64,7 @@ const ReportIncidentPicker = () => {
         rowKey="id"
         dataSource={alerts.slice(0, 8)}
         className={styles.table}
+        scroll={{ x: "max-content" }}
         pagination={false}
         locale={{
           emptyText: (

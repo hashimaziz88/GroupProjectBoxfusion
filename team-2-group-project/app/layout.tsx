@@ -14,8 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DataSentinel — Database Activity Monitoring",
-  description: "Real-time database activity monitoring and security intelligence platform.",
+  title: "DataSentinel - Database Activity Monitoring",
+  description:
+    "Real-time database activity monitoring and security intelligence platform.",
 };
 
 export default function RootLayout({

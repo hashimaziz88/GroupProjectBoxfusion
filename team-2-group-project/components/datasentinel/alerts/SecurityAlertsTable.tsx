@@ -116,7 +116,7 @@ const SecurityAlertsTable = () => {
         loading={isLoading}
         dataSource={alerts}
         className={styles.table}
-        scroll={{ x: 1280 }}
+        scroll={{ x: "max-content" }}
         rowSelection={
           canReviewAlerts
             ? {

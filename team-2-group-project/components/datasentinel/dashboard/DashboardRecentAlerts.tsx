@@ -92,6 +92,7 @@ const DashboardRecentAlerts = () => {
           dataSource={recentAlerts}
           pagination={false}
           className={styles.table}
+          scroll={{ x: "max-content" }}
         />
       )}
     </Card>

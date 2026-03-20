@@ -129,9 +129,15 @@ export const useStyles = createStyles(() => ({
   `,
 
   table: css`
+    width: 100%;
+
+    .ant-table-content,
+    .ant-table-body {
+      overflow: auto !important;
+    }
+
     .ant-table-container {
       border-radius: 18px !important;
-      overflow: hidden;
     }
   `,
 

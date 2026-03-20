@@ -334,6 +334,7 @@ const UsersPageContent = () => {
           loading={isLoadingUsers || isRefreshingList}
           dataSource={users}
           className={styles.table}
+          scroll={{ x: "max-content" }}
           columns={[
             {
               title: "User",

@@ -196,6 +196,7 @@ const TenantsPageContent = () => {
           loading={isLoadingTenants}
           dataSource={tenants}
           className={styles.table}
+          scroll={{ x: "max-content" }}
           columns={[
             {
               title: "Tenant",
