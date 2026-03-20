@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Alert, Button, Card, Form, Input, Typography } from "antd";
+import { Button, Card, Form, Input, Typography } from "antd";
 import AppShell from "@/components/auth/AppShell";
+import TimedAlertMessage from "@/components/feedback/TimedAlertMessage";
 import { withAuth } from "@/hoc/withAuth";
+import { resolveAbpErrorMessage } from "@/utils/abp";
 import { changePassword } from "@/utils/auth/adminService";
 import { useStyles } from "@/app/style/style";
 
@@ -42,11 +44,7 @@ const UpdatePasswordPageContent = () => {
         setErrorMessage("The password update was not accepted by the server.");
       })
       .catch((error: unknown) => {
-        setErrorMessage(
-          error instanceof Error
-            ? error.message
-            : "Failed to update the password.",
-        );
+        setErrorMessage(resolveAbpErrorMessage(error, "Failed to update the password."));
       })
       .finally(() => {
         setIsSubmitting(false);
@@ -58,20 +56,22 @@ const UpdatePasswordPageContent = () => {
       title="Update Password"
       subtitle="Update your account password. You will need your current password to set a new one."
     >
+      {/* User feedback: success state */}
       {successMessage ? (
-        <Alert
+        <TimedAlertMessage
           type="success"
-          showIcon
           title={successMessage}
+          onDismiss={() => setSuccessMessage(null)}
           className={styles.alert}
         />
       ) : null}
 
+      {/* User feedback: error state */}
       {errorMessage ? (
-        <Alert
+        <TimedAlertMessage
           type="error"
-          showIcon
           title={errorMessage}
+          onDismiss={() => setErrorMessage(null)}
           className={styles.alert}
         />
       ) : null}

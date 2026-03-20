@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import { Alert, Button } from "antd";
 import AppShell from "@/components/auth/AppShell";
+import TimedAlertMessage from "@/components/feedback/TimedAlertMessage";
 import { useStyles } from "@/components/datasentinel/infrastructure/style/style";
 import {
   useMonitoringInfrastructureActions,
@@ -54,20 +55,18 @@ const InfrastructureWorkspace = ({
         </div>
       ) : null}
       {errorMessage ? (
-        <Alert
+        <TimedAlertMessage
           type="error"
-          showIcon
           title={errorMessage}
-          closable={{ onClose: clearMessages }}
+          onDismiss={clearMessages}
           className={styles.alert}
         />
       ) : null}
       {actionMessage ? (
-        <Alert
+        <TimedAlertMessage
           type={actionMessage.type}
-          showIcon
           title={actionMessage.text}
-          closable={{ onClose: clearMessages }}
+          onDismiss={clearMessages}
           className={styles.alert}
         />
       ) : null}

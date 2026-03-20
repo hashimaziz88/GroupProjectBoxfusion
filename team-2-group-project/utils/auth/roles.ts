@@ -1,5 +1,5 @@
-import { STATIC_ROLES } from "@/constants/auth/roles";
 import { PERMISSIONS } from "@/constants/auth/roles";
+import { DATA_SENTINEL_ROLE_ALIASES, STATIC_ROLES } from "@/constants/auth/roles";
 import { IRouteSelectorUser } from "@/interfaces/auth/roles";
 
 const normalizeValues = (values?: string[] | null) =>
@@ -21,11 +21,19 @@ export const isHostAdmin = (roles?: string[] | null) =>
 export const isTenantAdmin = (roles?: string[] | null) =>
   hasRole(roles, STATIC_ROLES.tenantAdmin);
 
+export const isSecurityAnalyst = (roles?: string[] | null) =>
+  DATA_SENTINEL_ROLE_ALIASES.securityAnalyst.some((roleName) =>
+    hasRole(roles, roleName),
+  );
+
 export const isAdminOrManager = (roles?: string[] | null) =>
   isHostAdmin(roles) || isTenantAdmin(roles);
 
 export const canAccessUsers = (permissions?: string[] | null) =>
   hasPermission(permissions, PERMISSIONS.users);
+
+export const canActivateUsers = (permissions?: string[] | null) =>
+  hasPermission(permissions, PERMISSIONS.usersActivation);
 
 export const canAccessRoles = (permissions?: string[] | null) =>
   hasPermission(permissions, PERMISSIONS.roles);
@@ -48,15 +56,67 @@ export const canAccessDataSentinelInfrastructure = (
 
 export const canAccessDataSentinelActivity = (
   permissions?: string[] | null,
-) => hasPermission(permissions, PERMISSIONS.dataSentinelActivity);
+  roles?: string[] | null,
+) =>
+  !isSecurityAnalyst(roles) &&
+  hasPermission(permissions, PERMISSIONS.dataSentinelActivity);
 
 export const canAccessDataSentinelAlerts = (
   permissions?: string[] | null,
-) => hasPermission(permissions, PERMISSIONS.dataSentinelAlertsView);
+) =>
+  hasPermission(permissions, PERMISSIONS.dataSentinelAlertsView) ||
+  hasPermission(permissions, PERMISSIONS.dataSentinelAlertsReview) ||
+  hasPermission(permissions, PERMISSIONS.dataSentinelAlertsManage);
+
+export const canReviewDataSentinelAlerts = (
+  permissions?: string[] | null,
+) =>
+  hasPermission(permissions, PERMISSIONS.dataSentinelAlertsReview) ||
+  hasPermission(permissions, PERMISSIONS.dataSentinelAlertsManage);
+
+export const canManageDataSentinelAlerts = (
+  permissions?: string[] | null,
+) => hasPermission(permissions, PERMISSIONS.dataSentinelAlertsManage);
+
+export const canAccessDataSentinelRules = (
+  permissions?: string[] | null,
+) =>
+  hasPermission(permissions, PERMISSIONS.dataSentinelRulesView) ||
+  hasPermission(permissions, PERMISSIONS.dataSentinelRulesManage);
+
+export const canManageDataSentinelRules = (
+  permissions?: string[] | null,
+) => hasPermission(permissions, PERMISSIONS.dataSentinelRulesManage);
 
 export const canAccessDataSentinelReportsExport = (
   permissions?: string[] | null,
-) => hasPermission(permissions, PERMISSIONS.dataSentinelReportsExport);
+  roles?: string[] | null,
+) =>
+  !isSecurityAnalyst(roles) &&
+  hasPermission(permissions, PERMISSIONS.dataSentinelReportsExport);
+
+export const canAccessDataSentinelAdmin = (
+  permissions?: string[] | null,
+) => hasPermission(permissions, PERMISSIONS.dataSentinelAdmin);
+
+export const canAccessDataSentinelAiInsights = (
+  permissions?: string[] | null,
+) => hasPermission(permissions, PERMISSIONS.dataSentinelAiInsights);
+
+export const canManageUsersCrud = (
+  _roles?: string[] | null,
+  permissions?: string[] | null,
+) => canAccessUsers(permissions);
+
+export const canManageRolesCrud = (
+  _roles?: string[] | null,
+  permissions?: string[] | null,
+) => canAccessRoles(permissions);
+
+export const canManageTenantsCrud = (
+  _roles?: string[] | null,
+  permissions?: string[] | null,
+) => canAccessTenants(permissions);
 
 export const selectBestAuthenticatedRoute = (
   user?: IRouteSelectorUser | null,
@@ -75,7 +135,7 @@ export const selectBestAuthenticatedRoute = (
     return "/datasentinel/intake";
   }
 
-  if (hasTenantContext && canAccessDataSentinelActivity(user?.permissions)) {
+  if (hasTenantContext && canAccessDataSentinelActivity(user?.permissions, user?.roles)) {
     return "/datasentinel/activity";
   }
 
@@ -83,7 +143,10 @@ export const selectBestAuthenticatedRoute = (
     return "/datasentinel/alerts";
   }
 
-  if (hasTenantContext && canAccessDataSentinelReportsExport(user?.permissions)) {
+  if (
+    hasTenantContext &&
+    canAccessDataSentinelReportsExport(user?.permissions, user?.roles)
+  ) {
     return "/datasentinel/reports";
   }
 

@@ -8,6 +8,7 @@ import { IIntakeFormSharedProps } from "@/interfaces/datasentinel/intakeComponen
 import { ingestAbpAuditLogs } from "@/utils/datasentinel/intakeService";
 import {
   extractAuditLogs,
+  normalizeAuditLogsForTenant,
   parseJsonPayload,
   resolveDatabaseOptions,
   resolveErrorMessage,
@@ -16,6 +17,7 @@ import {
 const { Paragraph } = Typography;
 
 const AbpAuditLogUploadForm = ({
+  currentTenantId,
   allDatabases,
   isLoadingReferences,
   monitoredServers,
@@ -45,15 +47,23 @@ const AbpAuditLogUploadForm = ({
         try {
           const parsed = parseJsonPayload(values.payload);
           const abpAuditLogs = extractAuditLogs(parsed);
+          const { normalizedAuditLogs, normalizedCount } =
+            normalizeAuditLogsForTenant(abpAuditLogs, currentTenantId);
 
           const result = await ingestAbpAuditLogs({
             serverId: values.serverId,
             databaseId: values.databaseId,
-            abpAuditLogs,
+            abpAuditLogs: normalizedAuditLogs,
           });
 
           onResult("ABP audit log upload", result);
-          onMessage({ type: "success", text: "ABP audit logs submitted successfully." });
+          onMessage({
+            type: "success",
+            text:
+              normalizedCount > 0
+                ? `ABP audit logs submitted successfully. TenantId was aligned to the active tenant for ${normalizedCount} item(s).`
+                : "ABP audit logs submitted successfully.",
+          });
         } catch (error: unknown) {
           onMessage({ type: "error", text: resolveErrorMessage(error) });
         } finally {
@@ -63,27 +73,37 @@ const AbpAuditLogUploadForm = ({
     >
       <div className={styles.splitGrid}>
         <div className={styles.stackedCards}>
-          <Form.Item name="serverId" label="Monitored server">
+          <Form.Item
+            name="serverId"
+            label="Monitored server"
+            rules={[{ required: true, message: "Choose a monitored server." }]}
+          >
             <Select
-              allowClear
               loading={isLoadingReferences}
               className={styles.fullWidthControl}
+              placeholder="Select a monitored server"
+              onChange={() => form.setFieldValue("databaseId", undefined)}
               options={monitoredServers.map((server) => ({
                 value: server.id,
                 label: `${server.name} (${server.hostName})`,
               }))}
             />
           </Form.Item>
-          <Form.Item name="databaseId" label="Monitored database">
+          <Form.Item
+            name="databaseId"
+            label="Monitored database"
+            rules={[{ required: true, message: "Choose a monitored database." }]}
+          >
             <Select
-              allowClear
               loading={isLoadingReferences}
+              disabled={!auditServerId}
               className={styles.fullWidthControl}
+              placeholder="Select a monitored database"
               options={resolveDatabaseOptions(allDatabases, auditServerId)}
             />
           </Form.Item>
           <Paragraph className={styles.sectionLead}>
-            Uploaded audit logs are normalized into activity events and linked to the selected monitored references when provided.
+            Uploaded audit logs are normalized into activity events and always linked to the monitored server and database selected here.
           </Paragraph>
           <Upload beforeUpload={handleUpload} showUploadList={false}>
             <Button>Load JSON file</Button>

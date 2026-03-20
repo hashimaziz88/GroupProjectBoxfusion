@@ -114,6 +114,7 @@ export const NAVIGATION_ITEMS: INavigationItem[] = [
 const canAccessNavigationItem = (
   item: INavigationItem,
   permissions?: string[] | null,
+  roles?: string[] | null,
   hasTenantContext = false,
 ) => {
   if (!item.permission) {
@@ -157,7 +158,7 @@ const canAccessNavigationItem = (
   }
 
   if (item.permission === PERMISSIONS.dataSentinelActivity) {
-    return canAccessDataSentinelActivity(permissions);
+    return canAccessDataSentinelActivity(permissions, roles);
   }
 
   if (item.permission === PERMISSIONS.dataSentinelAlertsView) {
@@ -165,7 +166,7 @@ const canAccessNavigationItem = (
   }
 
   if (item.permission === PERMISSIONS.dataSentinelReportsExport) {
-    return canAccessDataSentinelReportsExport(permissions);
+    return canAccessDataSentinelReportsExport(permissions, roles);
   }
 
   return false;
@@ -174,10 +175,11 @@ const canAccessNavigationItem = (
 const filterNavigationItems = (
   items: INavigationItem[],
   permissions?: string[] | null,
+  roles?: string[] | null,
   hasTenantContext = false,
 ): INavigationItem[] =>
   items.flatMap((item) => {
-    if (!canAccessNavigationItem(item, permissions, hasTenantContext)) {
+    if (!canAccessNavigationItem(item, permissions, roles, hasTenantContext)) {
       return [];
     }
 
@@ -188,6 +190,7 @@ const filterNavigationItems = (
     const visibleChildren = filterNavigationItems(
       item.children,
       permissions,
+      roles,
       hasTenantContext,
     );
 
@@ -198,5 +201,6 @@ const filterNavigationItems = (
 
 export const getVisibleNavigationItems = (
   permissions?: string[] | null,
+  roles?: string[] | null,
   hasTenantContext = false,
-) => filterNavigationItems(NAVIGATION_ITEMS, permissions, hasTenantContext);
+) => filterNavigationItems(NAVIGATION_ITEMS, permissions, roles, hasTenantContext);

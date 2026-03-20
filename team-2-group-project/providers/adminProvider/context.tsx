@@ -3,6 +3,7 @@
 import { createContext } from "react";
 import {
   IFlatPermissionDto,
+  IRoleListDto,
   IRoleListItem,
   ITenantListItem,
   IUserListItem,
@@ -15,6 +16,7 @@ export interface IAdminStateContext {
   totalUsersCount: number;
   // Roles
   roles: IRoleListItem[];
+  assignableRoles: IRoleListDto[];
   isLoadingRoles: boolean;
   allPermissions: IFlatPermissionDto[];
   // Tenants
@@ -29,9 +31,11 @@ export interface IAdminStateContext {
 export interface IAdminActionContext {
   fetchUsers: () => Promise<void>;
   fetchRoles: () => Promise<void>;
+  fetchAssignableRoles: () => Promise<void>;
   fetchTenants: () => Promise<void>;
   fetchAllPermissions: () => Promise<void>;
   setActionMessage: (msg: { type: "success" | "error"; text: string } | null) => void;
+  clearMessages: () => void;
 }
 
 export const INITIAL_STATE: IAdminStateContext = {
@@ -39,6 +43,7 @@ export const INITIAL_STATE: IAdminStateContext = {
   isLoadingUsers: false,
   totalUsersCount: 0,
   roles: [],
+  assignableRoles: [],
   isLoadingRoles: false,
   allPermissions: [],
   tenants: [],

@@ -2,6 +2,7 @@
 
 import React, { useContext, useEffect, useEffectEvent, useReducer } from "react";
 import { useRouter } from "next/navigation";
+import { resolveAbpErrorMessage } from "@/utils/abp";
 import {
   authenticate,
   clearAccessToken,
@@ -25,6 +26,7 @@ import {
   isMultiTenancyEnabled,
 } from "@/utils/auth/sessionService";
 import {
+  clearErrorMessage as clearErrorMessageAction,
   getMeError,
   getMePending,
   getMeSuccess,
@@ -132,7 +134,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         clearAccessToken();
         dispatch(
           getMeError(
-            error instanceof Error ? error.message : "Failed to load session.",
+            resolveAbpErrorMessage(error, "Failed to load session."),
           ),
         );
       });
@@ -202,7 +204,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       .catch((error: unknown) => {
         dispatch(
           loginError(
-            error instanceof Error ? error.message : "Login request failed.",
+            resolveAbpErrorMessage(error, "Login request failed."),
           ),
         );
       });
@@ -247,9 +249,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       .catch((error: unknown) => {
         dispatch(
           registerError(
-            error instanceof Error
-              ? error.message
-              : "Registration request failed.",
+            resolveAbpErrorMessage(error, "Registration request failed."),
           ),
         );
       });
@@ -267,7 +267,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       .catch((error: unknown) => {
         dispatch(
           logoutError(
-            error instanceof Error ? error.message : "Logout request failed.",
+            resolveAbpErrorMessage(error, "Logout request failed."),
           ),
         );
       });
@@ -329,10 +329,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     void initializeOnMount();
   }, []);
 
+  const clearErrorMessage = () => {
+    dispatch(clearErrorMessageAction());
+  };
+
   return (
     <AuthStateContext.Provider value={state}>
       <AuthActionContext.Provider
-        value={{ initialize, login, register, logout, getMe, changeTenant }}
+        value={{
+          initialize,
+          login,
+          register,
+          logout,
+          getMe,
+          changeTenant,
+          clearErrorMessage,
+        }}
       >
         {children}
       </AuthActionContext.Provider>

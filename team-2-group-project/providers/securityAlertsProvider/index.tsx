@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useCallback, useContext, useEffect, useReducer } from "react";
-import axios from "axios";
 import { PERMISSIONS } from "@/constants/auth/roles";
 import {
   IBulkUpdateAlertStatusInput,
@@ -12,6 +11,7 @@ import {
   IUpdateAlertStatusInput,
 } from "@/interfaces/datasentinel/alerts";
 import { useAuthState } from "@/providers/authProvider";
+import { resolveAbpErrorMessage } from "@/utils/abp";
 import { hasPermission } from "@/utils/auth/roles";
 import {
   bulkUpdateSecurityAlertStatus,
@@ -56,23 +56,8 @@ const toUtcIsoString = (value?: string) => {
   return Number.isNaN(parsedDate.getTime()) ? undefined : parsedDate.toISOString();
 };
 
-const resolveErrorMessage = (error: unknown) => {
-  if (axios.isAxiosError(error)) {
-    const responseData = error.response?.data as
-      | { error?: { details?: string; message?: string } }
-      | undefined;
-
-    return (
-      responseData?.error?.details ||
-      responseData?.error?.message ||
-      error.message
-    );
-  }
-
-  return error instanceof Error
-    ? error.message
-    : "Failed to load security alerts.";
-};
+const resolveErrorMessage = (error: unknown) =>
+  resolveAbpErrorMessage(error, "Failed to load security alerts.");
 
 const triggerBrowserDownload = (bytes: ArrayBuffer, fileName: string) => {
   const blob = new Blob([bytes], { type: "application/pdf" });
@@ -354,6 +339,18 @@ export const SecurityAlertsProvider: React.FC<{
   const updateStatus = async (
     input: Omit<IUpdateAlertStatusInput, "alertId">,
   ) => {
+    if (!canReviewAlerts) {
+      dispatch(
+        setSecurityAlertsState({
+          actionMessage: {
+            type: "error",
+            text: "You do not have permission to review security alerts.",
+          },
+        }),
+      );
+      return false;
+    }
+
     if (!state.selectedAlertId) {
       return false;
     }
@@ -397,6 +394,18 @@ export const SecurityAlertsProvider: React.FC<{
   const createNoteAction = async (
     input: Omit<ICreateIncidentNoteInput, "alertId">,
   ) => {
+    if (!canReviewAlerts) {
+      dispatch(
+        setSecurityAlertsState({
+          actionMessage: {
+            type: "error",
+            text: "You do not have permission to add incident notes.",
+          },
+        }),
+      );
+      return false;
+    }
+
     if (!state.selectedAlertId) {
       return false;
     }
@@ -438,6 +447,18 @@ export const SecurityAlertsProvider: React.FC<{
   };
 
   const bulkUpdateStatus = async (input: IBulkUpdateAlertStatusInput) => {
+    if (!canReviewAlerts) {
+      dispatch(
+        setSecurityAlertsState({
+          actionMessage: {
+            type: "error",
+            text: "You do not have permission to bulk review alerts.",
+          },
+        }),
+      );
+      return false;
+    }
+
     if (input.alertIds.length === 0) {
       dispatch(
         setSecurityAlertsState({
@@ -490,6 +511,18 @@ export const SecurityAlertsProvider: React.FC<{
   };
 
   const exportReport = async () => {
+    if (!canExportReports) {
+      dispatch(
+        setSecurityAlertsState({
+          actionMessage: {
+            type: "error",
+            text: "You do not have permission to export incident reports.",
+          },
+        }),
+      );
+      return;
+    }
+
     if (!state.selectedAlertId || !state.selectedAlert) {
       return;
     }

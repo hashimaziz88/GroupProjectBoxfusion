@@ -5,9 +5,11 @@ import {
   Button,
   Card,
   Checkbox,
+  Divider,
   Empty,
   Form,
   Input,
+  List,
   Select,
   Skeleton,
   Space,
@@ -15,7 +17,15 @@ import {
   Timeline,
   Typography,
 } from "antd";
-import { DownloadOutlined, ExclamationCircleOutlined, RobotOutlined } from "@ant-design/icons";
+import {
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  DownloadOutlined,
+  ExclamationCircleOutlined,
+  FileSearchOutlined,
+  MessageOutlined,
+  RobotOutlined,
+} from "@ant-design/icons";
 import { ALERT_REVIEW_STATUS_OPTIONS } from "@/constants/datasentinel/alerts";
 import {
   useSecurityAlertsActions,
@@ -123,6 +133,17 @@ const resolveNoteAuthor = (
   return "";
 };
 
+const resolveStatusTone = (status: number) => {
+  const label = resolveAlertStatusLabel(status).toLowerCase();
+
+  if (label.includes("new")) return "processing";
+  if (label.includes("review")) return "warning";
+  if (label.includes("resolve")) return "success";
+  if (label.includes("dismiss")) return "default";
+
+  return "processing";
+};
+
 const SecurityAlertDetailView = () => {
   const { styles } = useStyles();
   const {
@@ -167,228 +188,372 @@ const SecurityAlertDetailView = () => {
       {!isDetailLoading && selectedAlert ? (
         <>
           <div className={styles.detailHero}>
-            <Space wrap>
-              <Tag color={resolveAlertSeverityColor(selectedAlert.severity)}>
-                {resolveAlertSeverityLabel(selectedAlert.severity)}
-              </Tag>
-              <Tag color={resolveAlertStatusColor(selectedAlert.status)}>
-                {resolveAlertStatusLabel(selectedAlert.status)}
-              </Tag>
-              <Tag className={styles.riskBadge} color="blue">
-                Risk score {selectedAlert.riskScore}
-              </Tag>
-            </Space>
+            <div className={styles.heroHeadingRow}>
+              <div className={styles.heroHeadingBlock}>
+                <Space wrap>
+                  <Tag
+                    className={styles.heroSeverityTag}
+                    color={resolveAlertSeverityColor(selectedAlert.severity)}
+                  >
+                    {resolveAlertSeverityLabel(selectedAlert.severity)}
+                  </Tag>
+                  <Tag
+                    className={styles.heroStatusTag}
+                    color={resolveAlertStatusColor(selectedAlert.status)}
+                  >
+                    {resolveAlertStatusLabel(selectedAlert.status)}
+                  </Tag>
+                  <Tag className={styles.riskBadge} color="blue">
+                    Risk score {selectedAlert.riskScore}
+                  </Tag>
+                </Space>
 
-            <div>
-              <Title level={4} className={styles.sectionTitle}>
-                {selectedAlert.title}
-              </Title>
-              <Text type="secondary">{selectedAlert.alertId}</Text>
-            </div>
-          </div>
-
-          <AlertAiPanel
-            isLoading={isAiLoading}
-            error={aiError}
-            analysis={aiAnalysis}
-            severityLabel={resolveAlertSeverityLabel(selectedAlert.severity)}
-            onRetry={retryAiAnalysis}
-          />
-
-          <div className={styles.detailSection}>
-            <Title level={5} className={styles.sectionTitle}>
-              Summary
-            </Title>
-            <Paragraph>{selectedAlert.summary}</Paragraph>
-          </div>
-
-          <div className={styles.detailSection}>
-            <Title level={5} className={styles.sectionTitle}>
-              Event context
-            </Title>
-            <div className={styles.detailGrid}>
-              <div className={styles.detailMetric}>
-                <span className={styles.metricLabel}>Triggered</span>
-                <strong>{formatDateTime(selectedAlert.triggeredAt)}</strong>
+                <div>
+                  <Title level={3} className={styles.heroTitle}>
+                    {selectedAlert.title}
+                  </Title>
+                  <div className={styles.heroMetaRow}>
+                    <Text type="secondary">{selectedAlert.alertId}</Text>
+                    <span className={styles.heroMetaDot} />
+                    <Text type="secondary">
+                      Triggered {formatDateTime(selectedAlert.triggeredAt)}
+                    </Text>
+                  </div>
+                </div>
               </div>
-              <div className={styles.detailMetric}>
-                <span className={styles.metricLabel}>Actor</span>
+
+              <div className={styles.heroActionRail}>
+                {canReviewAlerts ? (
+                  <Tag className={styles.workflowPill} color={resolveStatusTone(selectedAlert.status)}>
+                    Review workflow enabled
+                  </Tag>
+                ) : (
+                  <Tag className={styles.workflowPill}>Read-only access</Tag>
+                )}
+                {canExportReports ? (
+                  <Button
+                    type="primary"
+                    icon={<DownloadOutlined />}
+                    onClick={handleExportReport}
+                    loading={isExportingReport}
+                  >
+                    Export incident report
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+
+            <div className={styles.heroStatGrid}>
+              <div className={styles.heroStatCard}>
+                <span className={styles.metricLabel}>Primary actor</span>
                 <strong>{selectedAlert.primaryActorUser || "Unknown actor"}</strong>
+                <span className={styles.cellHint}>
+                  {selectedAlert.primaryActorIp || "IP not captured"}
+                </span>
               </div>
-              <div className={styles.detailMetric}>
-                <span className={styles.metricLabel}>Actor IP</span>
-                <strong>{selectedAlert.primaryActorIp || "IP not captured"}</strong>
-              </div>
-              <div className={styles.detailMetric}>
-                <span className={styles.metricLabel}>Server</span>
-                <strong>{selectedAlert.serverName || "Server not linked"}</strong>
-              </div>
-              <div className={styles.detailMetric}>
-                <span className={styles.metricLabel}>Database</span>
+              <div className={styles.heroStatCard}>
+                <span className={styles.metricLabel}>Affected scope</span>
                 <strong>{selectedAlert.databaseName || "Database not linked"}</strong>
+                <span className={styles.cellHint}>
+                  {selectedAlert.tableName || selectedAlert.serverName || "No table or server linked"}
+                </span>
               </div>
-              <div className={styles.detailMetric}>
-                <span className={styles.metricLabel}>Table</span>
-                <strong>{selectedAlert.tableName || "Table not linked"}</strong>
-              </div>
-              <div className={styles.detailMetric}>
-                <span className={styles.metricLabel}>Event window start</span>
-                <strong>{formatDateTime(selectedAlert.eventTimeStart)}</strong>
-              </div>
-              <div className={styles.detailMetric}>
-                <span className={styles.metricLabel}>Event window end</span>
-                <strong>{formatDateTime(selectedAlert.eventTimeEnd)}</strong>
-              </div>
-              <div className={styles.detailMetric}>
-                <span className={styles.metricLabel}>Related events</span>
-                <strong>{selectedAlert.relatedEventCount}</strong>
+              <div className={styles.heroStatCard}>
+                <span className={styles.metricLabel}>Investigation trail</span>
+                <strong>{selectedAlert.relatedEventCount} related events</strong>
+                <span className={styles.cellHint}>
+                  {history.length} status updates and {notes.length} notes recorded
+                </span>
               </div>
             </div>
           </div>
 
-
-          <div className={styles.detailSection}>
-            <Title level={5} className={styles.sectionTitle}>
-              Status history
-            </Title>
-            {history.length > 0 ? (
-              <Timeline
-                items={history.map((item) => ({
-                  color: resolveAlertStatusColor(item.toStatus),
-                  content: (
-                    <>
-                      <strong>
-                        {resolveAlertStatusLabel(item.fromStatus)} to{" "}
-                        {resolveAlertStatusLabel(item.toStatus)}
-                      </strong>
-                      <div className={styles.cellHint}>
-                        {item.creatorUserDisplayName || "System"} |{" "}
-                        {formatDateTime(item.creationTime)}
-                      </div>
-                      {item.comment ? <div>{item.comment}</div> : null}
-                    </>
-                  ),
-                }))}
+          <div className={styles.detailWorkspaceGrid}>
+            <div className={styles.detailMainColumn}>
+              <AlertAiPanel
+                isLoading={isAiLoading}
+                error={aiError}
+                analysis={aiAnalysis}
+                severityLabel={resolveAlertSeverityLabel(selectedAlert.severity)}
+                onRetry={retryAiAnalysis}
               />
-            ) : (
-              <Paragraph type="secondary">
-                No status changes have been recorded yet.
-              </Paragraph>
-            )}
-          </div>
 
-          <div className={styles.detailSection}>
-            <Title level={5} className={styles.sectionTitle}>
-              Incident notes
-            </Title>
-            {notes.length > 0 ? (
-              <div className={styles.noteList}>
-                {notes.map((note) => {
-                  const author = resolveNoteAuthor(
-                    note.creatorUserDisplayName,
-                    note.creatorUserId,
-                  );
-                  return (
-                    <div key={note.id} className={styles.noteCard}>
-                      <div className={styles.noteMeta}>
-                        {formatDateTime(note.creationTime)}
-                        {author}
-                        {note.isInternal ? " | Internal" : ""}
-                      </div>
-                      <div>{note.body}</div>
+              <div className={styles.detailSection}>
+                <Title level={5} className={styles.sectionTitle}>
+                  Incident summary
+                </Title>
+                <Paragraph className={styles.summaryLead}>{selectedAlert.summary}</Paragraph>
+                {selectedAlert.recommendedActions.length > 0 ? (
+                  <>
+                    <Divider className={styles.sectionDivider} />
+                    <div className={styles.recommendationHeader}>
+                      <FileSearchOutlined />
+                      <Text strong>Suggested investigation actions</Text>
                     </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <Paragraph type="secondary">
-                No incident notes have been added yet.
-              </Paragraph>
-            )}
-          </div>
-
-          {canReviewAlerts ? (
-            <>
-              <div className={styles.detailSection}>
-                <Title level={5} className={styles.sectionTitle}>
-                  Update status
-                </Title>
-                <Form
-                  form={statusForm}
-                  layout="vertical"
-                  onFinish={async (values) => {
-                    const updated = await updateStatus(values);
-                    if (updated) {
-                      statusForm.resetFields();
-                    }
-                  }}
-                >
-                  <Form.Item
-                    name="newStatus"
-                    label="New status"
-                    rules={[{ required: true, message: "Choose a status." }]}
-                  >
-                    <Select
-                      options={ALERT_REVIEW_STATUS_OPTIONS.map((option) => ({
-                        value: option.value,
-                        label: option.label,
-                      }))}
+                    <List
+                      dataSource={selectedAlert.recommendedActions}
+                      split={false}
+                      renderItem={(item) => (
+                        <List.Item className={styles.recommendationItem}>
+                          <CheckCircleOutlined className={styles.recommendationIcon} />
+                          <span>{item}</span>
+                        </List.Item>
+                      )}
                     />
-                  </Form.Item>
-                  <Form.Item name="comment" label="Comment">
-                    <Input.TextArea rows={3} placeholder="Add investigation context..." />
-                  </Form.Item>
-                  <Button type="primary" htmlType="submit" loading={isUpdatingStatus}>
-                    Update status
-                  </Button>
-                </Form>
+                  </>
+                ) : null}
               </div>
 
               <div className={styles.detailSection}>
                 <Title level={5} className={styles.sectionTitle}>
-                  Add note
+                  Event context
                 </Title>
-                <Form
-                  form={noteForm}
-                  layout="vertical"
-                  initialValues={{ isInternal: false }}
-                  onFinish={async (values) => {
-                    const created = await createNote(values);
-                    if (created) {
-                      noteForm.resetFields();
-                      noteForm.setFieldValue("isInternal", false);
-                    }
-                  }}
-                >
-                  <Form.Item
-                    name="body"
-                    label="Note"
-                    rules={[{ required: true, message: "Enter a note." }]}
-                  >
-                    <Input.TextArea rows={4} placeholder="Capture what you found..." />
-                  </Form.Item>
-                  <Form.Item name="isInternal" valuePropName="checked">
-                    <Checkbox>Internal note</Checkbox>
-                  </Form.Item>
-                  <Button htmlType="submit" loading={isCreatingNote}>
-                    Add note
-                  </Button>
-                </Form>
+                <div className={styles.detailGrid}>
+                  <div className={styles.detailMetric}>
+                    <span className={styles.metricLabel}>Triggered</span>
+                    <strong>{formatDateTime(selectedAlert.triggeredAt)}</strong>
+                  </div>
+                  <div className={styles.detailMetric}>
+                    <span className={styles.metricLabel}>Current status</span>
+                    <strong>{resolveAlertStatusLabel(selectedAlert.status)}</strong>
+                  </div>
+                  <div className={styles.detailMetric}>
+                    <span className={styles.metricLabel}>Actor</span>
+                    <strong>{selectedAlert.primaryActorUser || "Unknown actor"}</strong>
+                  </div>
+                  <div className={styles.detailMetric}>
+                    <span className={styles.metricLabel}>Actor IP</span>
+                    <strong>{selectedAlert.primaryActorIp || "IP not captured"}</strong>
+                  </div>
+                  <div className={styles.detailMetric}>
+                    <span className={styles.metricLabel}>Server</span>
+                    <strong>{selectedAlert.serverName || "Server not linked"}</strong>
+                  </div>
+                  <div className={styles.detailMetric}>
+                    <span className={styles.metricLabel}>Database</span>
+                    <strong>{selectedAlert.databaseName || "Database not linked"}</strong>
+                  </div>
+                  <div className={styles.detailMetric}>
+                    <span className={styles.metricLabel}>Table</span>
+                    <strong>{selectedAlert.tableName || "Table not linked"}</strong>
+                  </div>
+                  <div className={styles.detailMetric}>
+                    <span className={styles.metricLabel}>Alert window</span>
+                    <strong>
+                      {formatDateTime(selectedAlert.eventTimeStart)} to{" "}
+                      {formatDateTime(selectedAlert.eventTimeEnd)}
+                    </strong>
+                  </div>
+                  <div className={styles.detailMetric}>
+                    <span className={styles.metricLabel}>Related events</span>
+                    <strong>{selectedAlert.relatedEventCount}</strong>
+                  </div>
+                </div>
               </div>
-            </>
-          ) : null}
 
-          {canExportReports ? (
-            <div className={styles.drawerActions}>
-              <Button
-                icon={<DownloadOutlined />}
-                onClick={handleExportReport}
-                loading={isExportingReport}
-              >
-                Export incident report
-              </Button>
+              <div className={styles.detailSection}>
+                <Title level={5} className={styles.sectionTitle}>
+                  Status history
+                </Title>
+                {history.length > 0 ? (
+                  <Timeline
+                    items={history.map((item) => ({
+                      color: resolveAlertStatusColor(item.toStatus),
+                      children: (
+                        <div className={styles.timelineCard}>
+                          <strong>
+                            {resolveAlertStatusLabel(item.fromStatus)} to{" "}
+                            {resolveAlertStatusLabel(item.toStatus)}
+                          </strong>
+                          <div className={styles.cellHint}>
+                            {item.creatorUserDisplayName || "System"} |{" "}
+                            {formatDateTime(item.creationTime)}
+                          </div>
+                          {item.comment ? (
+                            <Paragraph className={styles.timelineComment}>
+                              {item.comment}
+                            </Paragraph>
+                          ) : null}
+                        </div>
+                      ),
+                    }))}
+                  />
+                ) : (
+                  <Paragraph type="secondary">
+                    No status changes have been recorded yet.
+                  </Paragraph>
+                )}
+              </div>
+
+              <div className={styles.detailSection}>
+                <div className={styles.sectionHeaderRow}>
+                  <Title level={5} className={styles.sectionTitle}>
+                    Incident notes
+                  </Title>
+                  <Tag className={styles.countTag}>{notes.length} notes</Tag>
+                </div>
+                {notes.length > 0 ? (
+                  <div className={styles.noteList}>
+                    {notes.map((note) => {
+                      const author = resolveNoteAuthor(
+                        note.creatorUserDisplayName,
+                        note.creatorUserId,
+                      );
+                      return (
+                        <div key={note.id} className={styles.noteCard}>
+                          <div className={styles.noteCardHeader}>
+                            <div className={styles.noteMeta}>
+                              {formatDateTime(note.creationTime)}
+                              {author}
+                            </div>
+                            {note.isInternal ? (
+                              <Tag className={styles.internalNoteTag}>Internal</Tag>
+                            ) : (
+                              <Tag className={styles.sharedNoteTag}>Shared</Tag>
+                            )}
+                          </div>
+                          <div>{note.body}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <Paragraph type="secondary">
+                    No incident notes have been added yet.
+                  </Paragraph>
+                )}
+              </div>
             </div>
-          ) : null}
+
+            <div className={styles.detailSideColumn}>
+              <div className={styles.actionPanel}>
+                <div className={styles.actionPanelHeader}>
+                  <ClockCircleOutlined />
+                  <div>
+                    <Title level={5} className={styles.sectionTitle}>
+                      Review workflow
+                    </Title>
+                    <Paragraph className={styles.sectionLead}>
+                      Manage alert disposition and keep the investigation trail up to date.
+                    </Paragraph>
+                  </div>
+                </div>
+
+                {canReviewAlerts ? (
+                  <>
+                    <Form
+                      form={statusForm}
+                      layout="vertical"
+                      onFinish={async (values) => {
+                        const updated = await updateStatus(values);
+                        if (updated) {
+                          statusForm.resetFields();
+                        }
+                      }}
+                    >
+                      <Form.Item
+                        name="newStatus"
+                        label="Change status"
+                        rules={[{ required: true, message: "Choose a status." }]}
+                      >
+                        <Select
+                          placeholder="Select the next workflow state"
+                          options={ALERT_REVIEW_STATUS_OPTIONS.map((option) => ({
+                            value: option.value,
+                            label: option.label,
+                          }))}
+                        />
+                      </Form.Item>
+                      <Form.Item name="comment" label="Review note">
+                        <Input.TextArea
+                          rows={3}
+                          placeholder="Explain why the status is changing..."
+                        />
+                      </Form.Item>
+                      <Button
+                        type="primary"
+                        htmlType="submit"
+                        loading={isUpdatingStatus}
+                        block
+                      >
+                        Save status update
+                      </Button>
+                    </Form>
+
+                    <Divider className={styles.sectionDivider} />
+
+                    <Form
+                      form={noteForm}
+                      layout="vertical"
+                      initialValues={{ isInternal: false }}
+                      onFinish={async (values) => {
+                        const created = await createNote(values);
+                        if (created) {
+                          noteForm.resetFields();
+                          noteForm.setFieldValue("isInternal", false);
+                        }
+                      }}
+                    >
+                      <Form.Item
+                        name="body"
+                        label="Add incident note"
+                        rules={[{ required: true, message: "Enter a note." }]}
+                      >
+                        <Input.TextArea
+                          rows={4}
+                          placeholder="Capture evidence, ownership, or next steps..."
+                        />
+                      </Form.Item>
+                      <Form.Item name="isInternal" valuePropName="checked">
+                        <Checkbox>Keep this note internal</Checkbox>
+                      </Form.Item>
+                      <Button
+                        icon={<MessageOutlined />}
+                        htmlType="submit"
+                        loading={isCreatingNote}
+                        block
+                      >
+                        Add note
+                      </Button>
+                    </Form>
+                  </>
+                ) : (
+                  <Alert
+                    type="info"
+                    showIcon
+                    message="You can review this alert in read-only mode, but status changes and notes require review access."
+                  />
+                )}
+              </div>
+
+              <div className={styles.actionPanel}>
+                <div className={styles.actionPanelHeader}>
+                  <DownloadOutlined />
+                  <div>
+                    <Title level={5} className={styles.sectionTitle}>
+                      Reporting
+                    </Title>
+                    <Paragraph className={styles.sectionLead}>
+                      Export this incident package for audit records or demo walkthroughs.
+                    </Paragraph>
+                  </div>
+                </div>
+
+                <div className={styles.drawerActions}>
+                  <Button
+                    type={canExportReports ? "default" : "dashed"}
+                    icon={<DownloadOutlined />}
+                    onClick={handleExportReport}
+                    loading={isExportingReport}
+                    disabled={!canExportReports}
+                    block
+                  >
+                    Export incident report
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
         </>
       ) : null}
     </Card>
