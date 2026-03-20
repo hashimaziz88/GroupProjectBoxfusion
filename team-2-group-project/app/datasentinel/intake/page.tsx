@@ -3,6 +3,7 @@
 import { useEffect, useEffectEvent, useState } from "react";
 import { Alert } from "antd";
 import AppShell from "@/components/auth/AppShell";
+import TimedAlertMessage from "@/components/feedback/TimedAlertMessage";
 import IntakeResultPanel from "@/components/datasentinel/intake/IntakeResultPanel";
 import IntakeSummaryCards from "@/components/datasentinel/intake/IntakeSummaryCards";
 import IntakeWorkflowTabs from "@/components/datasentinel/intake/IntakeWorkflowTabs";
@@ -77,8 +78,11 @@ const ActivityIntakePageContent = () => {
     setLastResult({ label, result });
   };
 
+  const clearMessages = () => {
+    setErrorMessage(null);
+    setActionMessage(null);
+  };
 
-  // User feedback: info state (no tenant context)
   if (!hasTenantContext) {
     return (
       <AppShell title={PAGE_TITLE} subtitle={PAGE_SUBTITLE}>
@@ -100,23 +104,18 @@ const ActivityIntakePageContent = () => {
       )}
       {/* User feedback: error state */}
       {errorMessage ? (
-        <Alert type="error" showIcon title={errorMessage} className={styles.alert} />
-      ) : null}
-      {/* User feedback: success state */}
-      {actionMessage && actionMessage.type === "success" ? (
-        <Alert
-          type="success"
-          showIcon
-          title={actionMessage.text}
+        <TimedAlertMessage
+          type="error"
+          title={errorMessage}
+          onDismiss={clearMessages}
           className={styles.alert}
         />
       ) : null}
-      {/* User feedback: error state for action */}
-      {actionMessage && actionMessage.type === "error" ? (
-        <Alert
-          type="error"
-          showIcon
+      {actionMessage ? (
+        <TimedAlertMessage
+          type={actionMessage.type}
           title={actionMessage.text}
+          onDismiss={clearMessages}
           className={styles.alert}
         />
       ) : null}

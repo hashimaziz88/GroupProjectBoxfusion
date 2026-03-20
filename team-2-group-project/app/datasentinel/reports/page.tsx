@@ -2,6 +2,7 @@
 
 import { Alert, Skeleton, Space } from "antd";
 import AppShell from "@/components/auth/AppShell";
+import TimedAlertMessage from "@/components/feedback/TimedAlertMessage";
 import ReportExportControls from "@/components/datasentinel/reports/ReportExportControls";
 import ReportExportPackages from "@/components/datasentinel/reports/ReportExportPackages";
 import ReportExportSummary from "@/components/datasentinel/reports/ReportExportSummary";
@@ -46,38 +47,24 @@ const ReportExportPageContent = () => {
     <AppShell title={PAGE_TITLE} subtitle={PAGE_SUBTITLE}>
       {/* User feedback: error state */}
       {errorMessage ? (
-        <Alert
+        <TimedAlertMessage
           type="error"
-          showIcon
           title={errorMessage}
-          closable={{ onClose: clearMessages }}
+          onDismiss={clearMessages}
           className={styles.alert}
           style={{ marginBottom: 16 }}
         />
       ) : null}
-      {/* User feedback: success state */}
-      {actionMessage && actionMessage.type === "success" ? (
-        <Alert
-          type="success"
-          showIcon
+      {actionMessage ? (
+        <TimedAlertMessage
+          type={actionMessage.type}
           title={actionMessage.text}
-          closable={{ onClose: clearMessages }}
+          onDismiss={clearMessages}
           className={styles.alert}
           style={{ marginBottom: 16 }}
         />
       ) : null}
-      {/* User feedback: error state for action */}
-      {actionMessage && actionMessage.type === "error" ? (
-        <Alert
-          type="error"
-          showIcon
-          title={actionMessage.text}
-          closable={{ onClose: clearMessages }}
-          className={styles.alert}
-          style={{ marginBottom: 16 }}
-        />
-      ) : null}
-      <Space direction="vertical" size={18} style={{ width: "100%" }}>
+      <Space orientation="vertical" size={18} style={{ width: "100%" }}>
         <ReportExportControls />
         {/* User feedback: loading state */}
         {isLoading && !isRefreshing ? (

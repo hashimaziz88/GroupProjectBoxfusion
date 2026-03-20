@@ -35,6 +35,7 @@ export interface IAdminActionContext {
   fetchTenants: () => Promise<void>;
   fetchAllPermissions: () => Promise<void>;
   setActionMessage: (msg: { type: "success" | "error"; text: string } | null) => void;
+  clearMessages: () => void;
 }
 
 export const INITIAL_STATE: IAdminStateContext = {

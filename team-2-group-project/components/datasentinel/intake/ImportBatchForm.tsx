@@ -63,27 +63,37 @@ const ImportBatchForm = ({
     >
       <div className={styles.splitGrid}>
         <div className={styles.stackedCards}>
-          <Form.Item name="serverId" label="Default server">
+          <Form.Item
+            name="serverId"
+            label="Default server"
+            rules={[{ required: true, message: "Choose a monitored server." }]}
+          >
             <Select
-              allowClear
               loading={isLoadingReferences}
               className={styles.fullWidthControl}
+              placeholder="Select a monitored server"
+              onChange={() => form.setFieldValue("databaseId", undefined)}
               options={monitoredServers.map((server) => ({
                 value: server.id,
                 label: `${server.name} (${server.hostName})`,
               }))}
             />
           </Form.Item>
-          <Form.Item name="databaseId" label="Default database">
+          <Form.Item
+            name="databaseId"
+            label="Default database"
+            rules={[{ required: true, message: "Choose a monitored database." }]}
+          >
             <Select
-              allowClear
               loading={isLoadingReferences}
+              disabled={!importServerId}
               className={styles.fullWidthControl}
+              placeholder="Select a monitored database"
               options={resolveDatabaseOptions(allDatabases, importServerId)}
             />
           </Form.Item>
           <Paragraph className={styles.sectionLead}>
-            Import uses the same normalized activity event shape as the manual batch endpoint, routed through the dedicated import pipeline.
+            Import uses the same normalized activity event shape as the manual batch endpoint and requires a monitored server and database context.
           </Paragraph>
           <Upload beforeUpload={handleUpload} showUploadList={false}>
             <Button>Load JSON file</Button>
