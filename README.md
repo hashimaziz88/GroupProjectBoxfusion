@@ -57,8 +57,7 @@ https://www.figma.com/make/p4fdXjU9pyS5JwiOdBZkLd/Design-Data-Sentinels-Dashboar
 
 ### Domain Model
 
-![Domain Model](Domain-Model.png)
-
+![Domain Model](Domain_Model.png)
 ---
 
 ## Getting Started
