@@ -1,6 +1,7 @@
 "use client";
 
-import { Button, Card, Input, Select, Switch, Tabs, Typography, Tag, Space } from "antd";
+import { Button, Card, DatePicker, Input, Select, Switch, Tabs, Typography, Tag, Space } from "antd";
+import dayjs from "dayjs";
 import { useStyles } from "@/components/datasentinel/activity/style/style";
 import { EVENT_TYPE_OPTIONS, SEVERITY_OPTIONS } from "@/constants/datasentinel/activity";
 import {
@@ -18,6 +19,11 @@ const ActivityFilterPanel = () => {
     useActivityMonitoringState();
   const { applyFilters, refresh, resetFilters, setActiveTab, setFilterValue } =
     useActivityMonitoringActions();
+
+  const dateError =
+    !!filters.startDate &&
+    !!filters.endDate &&
+    new Date(filters.endDate) <= new Date(filters.startDate);
 
   return (
     <Card className={styles.pageCard}>
@@ -158,20 +164,30 @@ const ActivityFilterPanel = () => {
 
         <div className={styles.filterField}>
           <Text strong>From</Text>
-          <Input
-            type="datetime-local"
-            value={filters.startDate}
-            onChange={(event) => setFilterValue("startDate", event.target.value)}
+          <DatePicker
+            showTime
+            format="YYYY-MM-DD HH:mm"
+            style={{ width: "100%" }}
+            value={filters.startDate ? dayjs(filters.startDate) : null}
+            onChange={(date) => setFilterValue("startDate", date ? date.toISOString() : "")}
           />
         </div>
 
         <div className={styles.filterField}>
           <Text strong>To</Text>
-          <Input
-            type="datetime-local"
-            value={filters.endDate}
-            onChange={(event) => setFilterValue("endDate", event.target.value)}
+          <DatePicker
+            showTime
+            format="YYYY-MM-DD HH:mm"
+            style={{ width: "100%" }}
+            status={dateError ? "error" : undefined}
+            value={filters.endDate ? dayjs(filters.endDate) : null}
+            onChange={(date) => setFilterValue("endDate", date ? date.toISOString() : "")}
           />
+          {dateError && (
+            <Text type="danger" style={{ fontSize: 12 }}>
+              End date must be after start date
+            </Text>
+          )}
         </div>
 
         <div className={styles.filterField}>
@@ -268,7 +284,7 @@ const ActivityFilterPanel = () => {
       </div>
 
       <div className={styles.filterActionsRow}>
-        <Button type="primary" onClick={() => void applyFilters()}>
+        <Button type="primary" onClick={() => void applyFilters()} disabled={dateError}>
           Apply filters
         </Button>
         <Button

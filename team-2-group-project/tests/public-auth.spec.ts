@@ -49,8 +49,7 @@ test.describe("Public and auth routes", () => {
     await page.getByLabel(/^Password$/i).fill("Password123!");
     await page.getByRole("button", { name: /^Log in$/i }).click();
 
-    await expect(page).toHaveURL(/\/home$/);
-    await expect(page.getByRole("heading", { name: /^Home$/i })).toBeVisible();
+    await expect(page).toHaveURL(/\/profile$/);
   });
 
   test("login page hides tenant registration prompts in host context", async ({
@@ -92,16 +91,47 @@ test.describe("Public and auth routes", () => {
     await page.getByLabel(/^Password$/i).fill("Password123!");
     await page.getByRole("button", { name: /^Register$/i }).click();
 
-    await expect(page).toHaveURL(/\/home$/);
-    await expect(page.getByRole("heading", { name: /^Home$/i })).toBeVisible();
+    await expect(page).toHaveURL(/\/profile$/);
   });
 
   test("protected routes redirect anonymous users to login", async ({ page }) => {
     await setupMockApp(page, { session: "anonymous" });
 
-    await page.goto("/home");
+    await page.goto("/profile");
 
     await expect(page).toHaveURL(/\/login$/);
     await expect(page.getByRole("heading", { name: /^Log in$/i })).toBeVisible();
   });
+
+  test("authenticated tenant admin is redirected from login to dashboard", async ({
+    page,
+  }) => {
+    await setupMockApp(page, { session: "tenant-admin" });
+
+    await page.goto("/login");
+
+    await expect(page).toHaveURL(/\/datasentinel\/dashboard$/);
+  });
+
+  test("authenticated host admin is redirected from login to users page", async ({
+    page,
+  }) => {
+    await setupMockApp(page, { session: "host-admin" });
+
+    await page.goto("/login");
+
+    await expect(page).toHaveURL(/\/users$/);
+  });
+
+  test("profile page shows account details when authenticated", async ({
+    page,
+  }) => {
+    await setupMockApp(page, { session: "tenant-admin" });
+
+    await page.goto("/profile");
+
+    await expect(page).toHaveURL(/\/profile$/);
+    await expect(page.getByRole("heading", { name: /My Profile/i })).toBeVisible();
+  });
+
 });

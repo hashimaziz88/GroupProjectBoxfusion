@@ -91,7 +91,7 @@ const AppShell = ({ title, subtitle, children }: IAppShellProps) => {
     Boolean(currentTenant?.tenantId),
   );
   const menuSelection = resolveMenuSelection(visibleItems, pathname) ?? {
-    selectedKey: "home",
+    selectedKey: visibleItems[0]?.key ?? "profile",
     openKeys: [],
   };
   const [userOpenKeys, setUserOpenKeys] = useState<string[]>([]);

@@ -1,6 +1,7 @@
 "use client";
 
-import { Button, Card, Input, Select, Typography, Tag, Space } from "antd";
+import { Button, Card, DatePicker, Input, Select, Typography, Tag, Space } from "antd";
+import dayjs from "dayjs";
 import {
   ALERT_SEVERITY_OPTIONS,
   ALERT_STATUS_OPTIONS,
@@ -20,6 +21,11 @@ const SecurityAlertsFilterPanel = () => {
   const { filterOptions, filters, isRefreshing } = useSecurityAlertsState();
   const { applyFilters, refresh, resetFilters, setFilterValue } =
     useSecurityAlertsActions();
+
+  const dateError =
+    !!filters.startDate &&
+    !!filters.endDate &&
+    new Date(filters.endDate) <= new Date(filters.startDate);
 
   return (
     <Card className={styles.pageCard}>
@@ -84,20 +90,30 @@ const SecurityAlertsFilterPanel = () => {
 
         <div className={styles.filterField}>
           <Text strong>From</Text>
-          <Input
-            type="datetime-local"
-            value={filters.startDate}
-            onChange={(event) => setFilterValue("startDate", event.target.value)}
+          <DatePicker
+            showTime
+            format="YYYY-MM-DD HH:mm"
+            style={{ width: "100%" }}
+            value={filters.startDate ? dayjs(filters.startDate) : null}
+            onChange={(date) => setFilterValue("startDate", date ? date.toISOString() : "")}
           />
         </div>
 
         <div className={styles.filterField}>
           <Text strong>To</Text>
-          <Input
-            type="datetime-local"
-            value={filters.endDate}
-            onChange={(event) => setFilterValue("endDate", event.target.value)}
+          <DatePicker
+            showTime
+            format="YYYY-MM-DD HH:mm"
+            style={{ width: "100%" }}
+            status={dateError ? "error" : undefined}
+            value={filters.endDate ? dayjs(filters.endDate) : null}
+            onChange={(date) => setFilterValue("endDate", date ? date.toISOString() : "")}
           />
+          {dateError && (
+            <Text type="danger" style={{ fontSize: 12 }}>
+              End date must be after start date
+            </Text>
+          )}
         </div>
       </div>
 
@@ -188,7 +204,7 @@ const SecurityAlertsFilterPanel = () => {
       </div>
 
       <div className={styles.filterActionsRow}>
-        <Button type="primary" onClick={() => void applyFilters()}>
+        <Button type="primary" onClick={() => void applyFilters()} disabled={dateError}>
           Apply filters
         </Button>
         <Button
