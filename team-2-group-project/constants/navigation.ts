@@ -21,11 +21,6 @@ export interface INavigationItem {
 
 export const NAVIGATION_ITEMS: INavigationItem[] = [
   {
-    key: "home",
-    href: "/home",
-    label: "Home",
-  },
-  {
     key: "datasentinel-dashboard",
     href: "/datasentinel/dashboard",
     label: "Dashboard",

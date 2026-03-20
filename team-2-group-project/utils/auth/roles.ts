@@ -154,5 +154,5 @@ export const selectBestAuthenticatedRoute = (
     return "/users";
   }
 
-  return "/home";
+  return "/profile";
 };
