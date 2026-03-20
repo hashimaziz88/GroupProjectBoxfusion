@@ -11,7 +11,6 @@ import {
   Popconfirm,
   Select,
   Space,
-  Skeleton,
   Table,
   Tag,
   Typography,
@@ -82,6 +81,7 @@ const UsersPageContent = () => {
   const [processingDeleteId, setProcessingDeleteId] = useState<number | null>(null);
   const [processingToggleId, setProcessingToggleId] = useState<number | null>(null);
   const [assignLoadingUserId, setAssignLoadingUserId] = useState<number | null>(null);
+  const [isRefreshingList, setIsRefreshingList] = useState(false);
 
   useEffect(() => {
     void fetchUsers();
@@ -133,10 +133,11 @@ const UsersPageContent = () => {
   const handleDelete = async (id: number) => {
     if (!canManageUsers) return;
     setProcessingDeleteId(id);
+    setIsRefreshingList(true);
     try {
       await deleteUser(id);
       setActionMessage({ type: "success", text: "User deleted." });
-      void fetchUsers();
+      await fetchUsers();
     } catch (error: unknown) {
       setActionMessage({
         type: "error",
@@ -144,6 +145,7 @@ const UsersPageContent = () => {
       });
     } finally {
       setProcessingDeleteId(null);
+      setIsRefreshingList(false);
     }
   };
 
@@ -329,23 +331,14 @@ const UsersPageContent = () => {
         </Paragraph>
         <Table<IUserListItem>
           rowKey="id"
-          loading={isLoadingUsers}
+          loading={isLoadingUsers || isRefreshingList}
           dataSource={users}
           className={styles.table}
           columns={[
             {
               title: "User",
-              key: "user",
-              render: (_, record) => {
-                if (processingDeleteId === record.id) {
-                  return (
-                    <div style={{ background: "#fff1f0", padding: 8 }}>
-                      <Skeleton active title={false} paragraph={{ rows: 1 }} />
-                    </div>
-                  );
-                }
-
-                return (
+                key: "user",
+                render: (_, record) => (
                   <>
                     <strong>
                       {record.fullName || `${record.name} ${record.surname}`}
@@ -355,50 +348,31 @@ const UsersPageContent = () => {
                     </strong>
                     <div className={styles.cellHint}>{record.userName}</div>
                   </>
-                );
-              },
+                ),
             },
             {
               title: "Email",
               dataIndex: "emailAddress",
               key: "emailAddress",
-              render: (value: string, record: IUserListItem) =>
-                processingDeleteId === record.id ? (
-                  <div style={{ background: "#fff1f0", padding: 8 }}>
-                    <Skeleton active title={false} paragraph={{ rows: 1 }} />
-                  </div>
-                ) : (
-                  value
-                ),
+              render: (value: string) => value,
             },
             {
               title: "Status",
               dataIndex: "isActive",
               key: "isActive",
-              render: (isActive: boolean, record: IUserListItem) =>
-                processingDeleteId === record.id ? (
-                  <div style={{ background: "#fff1f0", padding: 8 }}>
-                    <Skeleton active title={false} paragraph={{ rows: 1 }} />
-                  </div>
-                ) : (
-                  <Tag color={isActive ? "green" : "red"}>
-                    {isActive ? "Active" : "Disabled"}
-                  </Tag>
-                ),
+              render: (isActive: boolean) => (
+                <Tag color={isActive ? "green" : "red"}>
+                  {isActive ? "Active" : "Disabled"}
+                </Tag>
+              ),
             },
             {
               title: "Roles",
               dataIndex: "roleNames",
               key: "roleNames",
-              render: (roleNames?: string[] | null, record?: IUserListItem) =>
-                record && processingDeleteId === record.id ? (
-                  <div style={{ background: "#fff1f0", padding: 8 }}>
-                    <Skeleton active title={false} paragraph={{ rows: 1 }} />
-                  </div>
-                ) : toArray(roleNames).length ? (
-                  toArray(roleNames).map((role) => (
-                    <Tag key={role}>{role}</Tag>
-                  ))
+              render: (roleNames?: string[] | null) =>
+                toArray(roleNames).length ? (
+                  toArray(roleNames).map((role) => <Tag key={role}>{role}</Tag>)
                 ) : (
                   <span className={styles.mutedText}>No roles</span>
                 ),
@@ -407,24 +381,13 @@ const UsersPageContent = () => {
               title: "Last login",
               dataIndex: "lastLoginTime",
               key: "lastLoginTime",
-              render: (value?: string | null, record?: IUserListItem) =>
-                record && processingDeleteId === record.id ? (
-                  <div style={{ background: "#fff1f0", padding: 8 }}>
-                    <Skeleton active title={false} paragraph={{ rows: 1 }} />
-                  </div>
-                ) : (
-                  formatDateTime(value)
-                ),
+              render: (value?: string | null) => formatDateTime(value),
             },
             {
               title: "Actions",
               key: "actions",
               render: (_, record) =>
-                processingDeleteId === record.id ? (
-                  <div style={{ background: "#fff1f0", padding: 8 }}>
-                    <Skeleton active title={false} paragraph={{ rows: 1 }} />
-                  </div>
-                ) : canManageUsers || canToggleUserActivation ? (
+                canManageUsers || canToggleUserActivation ? (
                   <Space size="small" wrap>
                     {canManageUsers ? (
                       <Button size="small" onClick={() => openEdit(record)}>
