@@ -57,7 +57,7 @@ https://www.figma.com/make/p4fdXjU9pyS5JwiOdBZkLd/Design-Data-Sentinels-Dashboar
 
 ### Domain Model
 
-![Domain Model](domain-model.png)
+![Domain Model](Domain-Model.png)
 
 ---
 
@@ -68,7 +68,7 @@ https://www.figma.com/make/p4fdXjU9pyS5JwiOdBZkLd/Design-Data-Sentinels-Dashboar
 ```bash
 git clone https://github.com/hashimaziz88/GroupProjectBoxfusion.git
 cd GroupProjectBoxfusion
-
+```
 
 ## Running the Application
 
@@ -94,6 +94,7 @@ Once configured, start the frontend:
 
 ```bash
 npm run dev
+```
 
 ## Repository structure
 
