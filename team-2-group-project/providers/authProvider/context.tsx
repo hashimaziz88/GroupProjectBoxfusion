@@ -61,6 +61,7 @@ export interface IAuthActionContext {
   logout: () => Promise<void>;
   getMe: () => Promise<void>;
   changeTenant: (tenancyName?: string | null) => Promise<ITenantChangeResult>;
+  clearErrorMessage: () => void;
 }
 
 export const INITIAL_STATE: IAuthStateContext = {

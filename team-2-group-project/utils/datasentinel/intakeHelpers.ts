@@ -2,9 +2,10 @@ import {
   IAbpAuditLogIngestionItem,
   IActivityEventIngestionItem,
 } from "@/interfaces/datasentinel/intake";
+import { resolveAbpErrorMessage } from "@/utils/abp";
 
 export const resolveErrorMessage = (error: unknown): string =>
-  error instanceof Error ? error.message : "The intake request failed.";
+  resolveAbpErrorMessage(error, "The intake request failed.");
 
 export const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
