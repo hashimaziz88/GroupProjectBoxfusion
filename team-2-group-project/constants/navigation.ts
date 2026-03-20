@@ -10,11 +10,29 @@ import {
   canAccessUsers,
 } from "@/utils/auth/roles";
 import { PERMISSIONS } from "./auth/roles";
+import React from "react";
+import {
+  AlertOutlined,
+  AppstoreOutlined,
+  AreaChartOutlined,
+  BarChartOutlined,
+  ClusterOutlined,
+  CloudServerOutlined,
+  DatabaseOutlined,
+  FileTextOutlined,
+  HomeOutlined,
+  InboxOutlined,
+  SafetyOutlined,
+  TableOutlined,
+  TeamOutlined,
+  UserOutlined,
+} from "@ant-design/icons";
 
 export interface INavigationItem {
   key: string;
   href?: string;
   label: string;
+  icon?: React.ReactNode;
   permission?: string;
   children?: INavigationItem[];
 }
@@ -24,40 +42,47 @@ export const NAVIGATION_ITEMS: INavigationItem[] = [
     key: "home",
     href: "/home",
     label: "Home",
+    icon: React.createElement(HomeOutlined),
   },
   {
     key: "datasentinel-dashboard",
     href: "/datasentinel/dashboard",
     label: "Dashboard",
+    icon: React.createElement(BarChartOutlined),
     permission: PERMISSIONS.dataSentinelDashboard,
   },
   {
     key: "datasentinel-infrastructure",
     label: "Infrastructure",
+    icon: React.createElement(ClusterOutlined),
     permission: PERMISSIONS.dataSentinelInfrastructureView,
     children: [
       {
         key: "datasentinel-infrastructure-overview",
         href: "/datasentinel/infrastructure",
         label: "Overview",
+        icon: React.createElement(AppstoreOutlined),
         permission: PERMISSIONS.dataSentinelInfrastructureView,
       },
       {
         key: "datasentinel-infrastructure-servers",
         href: "/datasentinel/infrastructure/servers",
         label: "Servers",
+        icon: React.createElement(CloudServerOutlined),
         permission: PERMISSIONS.dataSentinelInfrastructureView,
       },
       {
         key: "datasentinel-infrastructure-databases",
         href: "/datasentinel/infrastructure/databases",
         label: "Databases",
+        icon: React.createElement(DatabaseOutlined),
         permission: PERMISSIONS.dataSentinelInfrastructureView,
       },
       {
         key: "datasentinel-infrastructure-tables",
         href: "/datasentinel/infrastructure/tables",
         label: "Tables",
+        icon: React.createElement(TableOutlined),
         permission: PERMISSIONS.dataSentinelInfrastructureView,
       },
     ],
@@ -66,48 +91,56 @@ export const NAVIGATION_ITEMS: INavigationItem[] = [
     key: "datasentinel-intake",
     href: "/datasentinel/intake",
     label: "Intake",
+    icon: React.createElement(InboxOutlined),
     permission: PERMISSIONS.dataSentinelIntake,
   },
   {
     key: "datasentinel-activity",
     href: "/datasentinel/activity",
     label: "Activity",
+    icon: React.createElement(AreaChartOutlined),
     permission: PERMISSIONS.dataSentinelActivity,
   },
   {
     key: "datasentinel-alerts",
     href: "/datasentinel/alerts",
     label: "Alerts",
+    icon: React.createElement(AlertOutlined),
     permission: PERMISSIONS.dataSentinelAlertsView,
   },
   {
     key: "datasentinel-reports",
     href: "/datasentinel/reports",
     label: "Reports",
+    icon: React.createElement(FileTextOutlined),
     permission: PERMISSIONS.dataSentinelReportsExport,
   },
   {
     key: "roles",
     href: "/roles",
     label: "Roles",
+    icon: React.createElement(SafetyOutlined),
     permission: PERMISSIONS.roles,
   },
   {
     key: "tenants",
     href: "/tenants",
     label: "Tenants",
+    icon: React.createElement(ClusterOutlined),
     permission: PERMISSIONS.tenants,
   },
   {
     key: "users",
     href: "/users",
     label: "Users",
+    icon: React.createElement(TeamOutlined),
     permission: PERMISSIONS.users,
   },
   {
     key: "profile",
     href: "/profile",
     label: "Profile",
+    icon: React.createElement(UserOutlined),
   },
 ];
 

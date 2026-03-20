@@ -392,4 +392,8 @@ export const useStyles = createStyles(() => ({
       align-items: flex-start;
     }
   `,
+
+  alignSelfStart: css`
+    align-self: start;
+  `,
 }));

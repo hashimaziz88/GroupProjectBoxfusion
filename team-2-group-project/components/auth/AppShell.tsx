@@ -38,6 +38,7 @@ const buildMenuItems = (
       return {
         key: item.key,
         label: item.label,
+        icon: item.icon,
         children: buildMenuItems(item.children, onNavigate),
       };
     }
@@ -45,6 +46,7 @@ const buildMenuItems = (
     return {
       key: item.key,
       label: item.label,
+      icon: item.icon,
       onClick: item.href ? () => onNavigate(item.href!) : undefined,
     };
   });

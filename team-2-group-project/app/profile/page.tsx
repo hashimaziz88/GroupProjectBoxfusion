@@ -66,7 +66,7 @@ const ProfilePageContent = () => {
       subtitle="View your account details and update your password."
     >
       <div className={styles.splitGrid}>
-        <Card className={styles.pageCard}>
+        <Card className={`${styles.pageCard} ${styles.alignSelfStart}`}>
           <Title level={4} className={styles.sectionTitle}>
             Account details
           </Title>
