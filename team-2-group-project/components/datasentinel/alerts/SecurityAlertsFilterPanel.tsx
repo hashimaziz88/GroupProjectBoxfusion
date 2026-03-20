@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Card, Input, Select, Typography } from "antd";
+import { Button, Card, Input, Select, Typography, Tag, Space } from "antd";
 import {
   ALERT_SEVERITY_OPTIONS,
   ALERT_STATUS_OPTIONS,
@@ -9,6 +9,8 @@ import {
   useSecurityAlertsActions,
   useSecurityAlertsState,
 } from "@/providers/securityAlertsProvider";
+import { DEFAULT_FILTERS } from "@/providers/securityAlertsProvider/context";
+import { ISecurityAlertFilterDraft } from "@/interfaces/datasentinel/alerts";
 import { useStyles } from "./style/style";
 
 const { Paragraph, Text, Title } = Typography;
@@ -99,11 +101,104 @@ const SecurityAlertsFilterPanel = () => {
         </div>
       </div>
 
+      {/* Active filters: show removable chips when filters applied */}
+      <div className={styles.activeFiltersRow}>
+        <Space size="small" wrap>
+          {(() => {
+            const keys = Object.keys(filters) as Array<keyof ISecurityAlertFilterDraft>;
+            const tags = keys
+              .filter((k) => {
+                const v = filters[k];
+                return v !== null && v !== undefined && v !== "";
+              })
+              .map((key: keyof ISecurityAlertFilterDraft) => {
+                const value = filters[key] as unknown;
+                let displayValue: string;
+                if (Array.isArray(value)) {
+                  displayValue = (value as unknown[]).join(", ");
+                } else if (key === "severity") {
+                  displayValue = (
+                    ALERT_SEVERITY_OPTIONS.find((o) => o.value === value)?.label ?? String(value)
+                  );
+                } else if (key === "status") {
+                  displayValue = (
+                    ALERT_STATUS_OPTIONS.find((o) => o.value === value)?.label ?? String(value)
+                  );
+                } else if (key === "databaseId") {
+                  const db = filterOptions.databases.find((d) => String(d.id) === String(value));
+                  displayValue = db ? db.name : String(value);
+                } else if (key === "startDate" || key === "endDate") {
+                  try {
+                    displayValue = new Date(String(value)).toLocaleString();
+                  } catch {
+                    displayValue = String(value);
+                  }
+                } else {
+                  displayValue = String(value);
+                }
+
+                const keyLabelMap: Partial<Record<keyof ISecurityAlertFilterDraft, string>> = {
+                  keyword: "Search",
+                  severity: "Severity",
+                  status: "Status",
+                  databaseId: "Database",
+                  startDate: "From",
+                  endDate: "To",
+                };
+
+                const labelKey = keyLabelMap[key] ?? String(key);
+
+                return (
+                  <Tag
+                    key={String(key)}
+                    color="default"
+                    closable
+                    onClose={() => {
+                      setFilterValue(key, DEFAULT_FILTERS[key]);
+                      void applyFilters();
+                    }}
+                    style={{ marginBottom: 6 }}
+                  >
+                    {labelKey}: {displayValue}
+                  </Tag>
+                );
+              });
+
+            return (
+              <>
+                {tags}
+                {tags.length ? (
+                  <Button
+                    type="link"
+                    onClick={() => {
+                      resetFilters();
+                      void applyFilters();
+                    }}
+                    style={{ marginLeft: 8 }}
+                  >
+                    Clear all
+                  </Button>
+                ) : (
+                  <span className={styles.mutedText}>No filters applied</span>
+                )}
+              </>
+            );
+          })()}
+        </Space>
+      </div>
+
       <div className={styles.filterActionsRow}>
         <Button type="primary" onClick={() => void applyFilters()}>
           Apply filters
         </Button>
-        <Button onClick={() => void resetFilters()}>Reset</Button>
+        <Button
+          onClick={() => {
+            resetFilters();
+            void applyFilters();
+          }}
+        >
+          Reset
+        </Button>
         <Button onClick={() => void refresh()} loading={isRefreshing}>
           Refresh
         </Button>

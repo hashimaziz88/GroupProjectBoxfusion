@@ -56,7 +56,6 @@ const TenantsPageContent = () => {
   const [isLoadingEdit, setIsLoadingEdit] = useState(false);
   const [processingDeleteId, setProcessingDeleteId] = useState<number | null>(null);
   const [processingEditId, setProcessingEditId] = useState<number | null>(null);
-  const [isRefreshingList, setIsRefreshingList] = useState(false);
 
   useEffect(() => {
     void fetchTenants();
@@ -108,11 +107,10 @@ const TenantsPageContent = () => {
   const handleDelete = async (id: number) => {
     if (!canManageTenants) return;
     setProcessingDeleteId(id);
-    setIsRefreshingList(true);
     try {
       await deleteTenant(id);
       setActionMessage({ type: "success", text: "Tenant deleted." });
-      await fetchTenants();
+      void fetchTenants();
     } catch (error: unknown) {
       setActionMessage({
         type: "error",
@@ -120,7 +118,6 @@ const TenantsPageContent = () => {
       });
     } finally {
       setProcessingDeleteId(null);
-      setIsRefreshingList(false);
     }
   };
 
@@ -196,7 +193,7 @@ const TenantsPageContent = () => {
         </Paragraph>
         <Table<ITenantListItem>
           rowKey="id"
-          loading={isLoadingTenants || isRefreshingList}
+          loading={isLoadingTenants}
           dataSource={tenants}
           className={styles.table}
           columns={[

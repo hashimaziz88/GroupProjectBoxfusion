@@ -56,7 +56,6 @@ const RolesPageContent = () => {
   const [isLoadingEdit, setIsLoadingEdit] = useState(false);
   const [processingDeleteId, setProcessingDeleteId] = useState<number | null>(null);
   const [processingEditId, setProcessingEditId] = useState<number | null>(null);
-  const [isRefreshingList, setIsRefreshingList] = useState(false);
 
   useEffect(() => {
     void fetchRoles();
@@ -195,7 +194,7 @@ const RolesPageContent = () => {
         </Paragraph>
         <Table<IRoleListItem>
           rowKey="id"
-          loading={isLoadingRoles || isRefreshingList}
+          loading={isLoadingRoles}
           dataSource={roles}
           className={styles.table}
           columns={[
