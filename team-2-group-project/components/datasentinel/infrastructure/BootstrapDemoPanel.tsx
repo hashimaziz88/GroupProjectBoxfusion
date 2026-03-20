@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Alert, Button, Card, Checkbox, Form, Input, Tag, Typography } from "antd";
 import { useStyles } from "@/components/datasentinel/infrastructure/style/style";
 import {
@@ -15,6 +16,7 @@ const BootstrapDemoPanel = () => {
   const { bootstrapResult, canManageInfrastructure } = useMonitoringInfrastructureState();
   const { bootstrapDemo, clearMessages } = useMonitoringInfrastructureActions();
   const [bootstrapForm] = Form.useForm();
+  const [isBootstrapping, setIsBootstrapping] = useState(false);
 
   return (
     <Card className={styles.pageCard}>
@@ -38,7 +40,12 @@ const BootstrapDemoPanel = () => {
               }}
               onFinish={async (values) => {
                 clearMessages();
-                await bootstrapDemo(values);
+                setIsBootstrapping(true);
+                try {
+                  await bootstrapDemo(values);
+                } finally {
+                  setIsBootstrapping(false);
+                }
               }}
             >
               <Form.Item name="serverName" label="Server name">
@@ -53,7 +60,7 @@ const BootstrapDemoPanel = () => {
               <Form.Item name="includeTables" valuePropName="checked">
                 <Checkbox>Seed monitored tables as well</Checkbox>
               </Form.Item>
-              <Button type="primary" htmlType="submit">
+              <Button type="primary" htmlType="submit" loading={isBootstrapping}>
                 Bootstrap demo
               </Button>
             </Form>

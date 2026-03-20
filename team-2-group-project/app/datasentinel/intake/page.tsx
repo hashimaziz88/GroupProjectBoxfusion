@@ -22,6 +22,8 @@ const PAGE_TITLE = "Activity Intake";
 const PAGE_SUBTITLE =
   "Send activity event batches, import audit log exports, or seed simulated data into the DataSentinel monitoring pipeline.";
 
+
+// User feedback: loading, error, success, and info states handled here per project standard.
 const ActivityIntakePageContent = () => {
   const { styles } = useStyles();
   const { currentTenant } = useAuthState();
@@ -96,6 +98,11 @@ const ActivityIntakePageContent = () => {
 
   return (
     <AppShell title={PAGE_TITLE} subtitle={PAGE_SUBTITLE}>
+      {/* User feedback: loading state */}
+      {isLoadingReferences && (
+        <Alert type="info" showIcon title="Loading reference data..." className={styles.alert} />
+      )}
+      {/* User feedback: error state */}
       {errorMessage ? (
         <TimedAlertMessage
           type="error"
@@ -112,6 +119,7 @@ const ActivityIntakePageContent = () => {
           className={styles.alert}
         />
       ) : null}
+      {/* ...existing code... */}
       <IntakeSummaryCards
         monitoredServersCount={monitoredServers.length}
         databasesCount={allDatabases.length}

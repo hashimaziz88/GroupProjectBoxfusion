@@ -94,6 +94,7 @@ const ProfilePageContent = () => {
           </div>
         </Card>
 
+
         <Card className={styles.pageCard}>
           <Title level={4} className={styles.sectionTitle}>
             Change password
@@ -102,6 +103,7 @@ const ProfilePageContent = () => {
             The new password must be at least 8 characters and include uppercase, lowercase, and numeric characters.
           </Paragraph>
 
+          {/* User feedback: success state */}
           {successMessage ? (
             <Alert
               type="success"
@@ -112,6 +114,7 @@ const ProfilePageContent = () => {
             />
           ) : null}
 
+          {/* User feedback: error state */}
           {errorMessage ? (
             <Alert
               type="error"

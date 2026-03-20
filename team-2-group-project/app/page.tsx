@@ -1,3 +1,5 @@
+
+// No error or success feedback required: redirect/shell only
 "use client";
 
 import { useEffect } from "react";
@@ -23,5 +25,6 @@ export default function EntryPage() {
     router.replace("/landing");
   }, [isAuthenticated, isReady, router, user]);
 
+  // User feedback: loading state
   return <AppSpinner label="Loading DataSentinel..." />;
 }

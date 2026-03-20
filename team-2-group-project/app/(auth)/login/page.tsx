@@ -40,6 +40,7 @@ export default function LoginPage() {
   const [tenantName, setTenantName] = useState(currentTenant?.tenancyName ?? "");
   const [hasEditedTenantName, setHasEditedTenantName] = useState(false);
   const [tenantFeedback, setTenantFeedback] = useState<TenantFeedbackState>(null);
+  const [isTenantChanging, setIsTenantChanging] = useState(false);
 
   useEffect(() => {
     if (!isReady || !isAuthenticated) {
@@ -95,40 +96,45 @@ export default function LoginPage() {
   }, []);
 
   const handleTenantChange = async () => {
-    const result = await changeTenant(resolvedTenantName.trim() || null);
+    setIsTenantChanging(true);
+    try {
+      const result = await changeTenant(resolvedTenantName.trim() || null);
 
-    if (result.state === "available") {
-      setTenantName(result.tenancyName ?? "");
-      setHasEditedTenantName(false);
-      setTenantFeedback({
-        type: "success",
-        message: `Tenant changed to ${result.tenancyName}.`,
-      });
-      return;
-    }
+      if (result.state === "available") {
+        setTenantName(result.tenancyName ?? "");
+        setHasEditedTenantName(false);
+        setTenantFeedback({
+          type: "success",
+          message: `Tenant changed to ${result.tenancyName}.`,
+        });
+        return;
+      }
 
-    if (result.state === "host") {
-      setTenantName("");
-      setHasEditedTenantName(false);
-      setTenantFeedback({
-        type: "success",
-        message: "Tenant context cleared. You are now in the host context.",
-      });
-      return;
-    }
+      if (result.state === "host") {
+        setTenantName("");
+        setHasEditedTenantName(false);
+        setTenantFeedback({
+          type: "success",
+          message: "Tenant context cleared. You are now in the host context.",
+        });
+        return;
+      }
 
-    if (result.state === "inactive") {
+      if (result.state === "inactive") {
+        setTenantFeedback({
+          type: "warning",
+          message: `Tenant ${result.tenancyName} is not active.`,
+        });
+        return;
+      }
+
       setTenantFeedback({
         type: "warning",
-        message: `Tenant ${result.tenancyName} is not active.`,
+        message: `There is no tenant defined with the name ${result.tenancyName}.`,
       });
-      return;
+    } finally {
+      setIsTenantChanging(false);
     }
-
-    setTenantFeedback({
-      type: "warning",
-      message: `There is no tenant defined with the name ${result.tenancyName}.`,
-    });
   };
 
   const handleSubmit = async (values: ILoginFormValues) => {
@@ -213,6 +219,7 @@ export default function LoginPage() {
             <div className={styles.formActions}>
               <Button
                 onClick={() => void handleTenantChange()}
+                loading={isTenantChanging}
                 className={styles.secondaryButton}
               >
                 Change tenant
@@ -222,13 +229,15 @@ export default function LoginPage() {
                 onClick={() => {
                   setTenantName("");
                   setHasEditedTenantName(false);
+                  setIsTenantChanging(true);
                   void changeTenant(null).then(() => {
                     setTenantFeedback({
                       type: "success",
                       message: "Tenant context cleared. You are now in the host context.",
                     });
-                  });
+                  }).finally(() => setIsTenantChanging(false));
                 }}
+                loading={isTenantChanging}
                 className={styles.secondaryButton}
               >
                 Continue as host

@@ -20,12 +20,16 @@ const PAGE_TITLE = "Reports & Exports";
 const PAGE_SUBTITLE =
   "Generate alert, activity, and incident report files for the active tenant without duplicating the dashboard.";
 
+
+// User feedback: loading, error, success, and info states handled here per project standard.
 const ReportExportPageContent = () => {
   const { styles } = useStyles();
   const { clearMessages } = useReportExportActions();
   const { actionMessage, errorMessage, hasTenantContext, isLoading, isRefreshing } =
     useReportExportState();
 
+
+  // User feedback: info state (no tenant context)
   if (!hasTenantContext) {
     return (
       <AppShell title={PAGE_TITLE} subtitle={PAGE_SUBTITLE}>
@@ -41,6 +45,7 @@ const ReportExportPageContent = () => {
 
   return (
     <AppShell title={PAGE_TITLE} subtitle={PAGE_SUBTITLE}>
+      {/* User feedback: error state */}
       {errorMessage ? (
         <TimedAlertMessage
           type="error"
@@ -59,9 +64,9 @@ const ReportExportPageContent = () => {
           style={{ marginBottom: 16 }}
         />
       ) : null}
-
       <Space direction="vertical" size={18} style={{ width: "100%" }}>
         <ReportExportControls />
+        {/* User feedback: loading state */}
         {isLoading && !isRefreshing ? (
           <Skeleton active paragraph={{ rows: 14 }} />
         ) : (
