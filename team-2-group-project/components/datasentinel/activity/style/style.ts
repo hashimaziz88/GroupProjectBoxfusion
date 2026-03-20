@@ -102,6 +102,19 @@ export const useStyles = createStyles(() => ({
     margin-top: 18px;
   `,
 
+  activeFiltersRow: css`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    margin-bottom: 12px;
+  `,
+
+  mutedText: css`
+    color: #64748b;
+    font-size: 13px;
+  `,
+
   tableToolbar: css`
     display: flex;
     align-items: center;

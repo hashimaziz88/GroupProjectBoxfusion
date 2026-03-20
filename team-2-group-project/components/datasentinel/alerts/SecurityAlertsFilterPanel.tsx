@@ -9,6 +9,8 @@ import {
   useSecurityAlertsActions,
   useSecurityAlertsState,
 } from "@/providers/securityAlertsProvider";
+import { DEFAULT_FILTERS } from "@/providers/securityAlertsProvider/context";
+import { ISecurityAlertFilterDraft } from "@/interfaces/datasentinel/alerts";
 import { useStyles } from "./style/style";
 
 const { Paragraph, Text, Title } = Typography;
@@ -102,65 +104,86 @@ const SecurityAlertsFilterPanel = () => {
       {/* Active filters: show removable chips when filters applied */}
       <div className={styles.activeFiltersRow}>
         <Space size="small" wrap>
-          {Object.entries(filters)
-            .filter(([, v]) => v !== null && v !== undefined && v !== "")
-            .map(([key, value]) => {
-              // derive a human-friendly label for the filter value
-              let displayValue: string;
-              if (Array.isArray(value)) {
-                displayValue = value.join(", ");
-              } else if (key === "severity") {
-                displayValue = (
-                  ALERT_SEVERITY_OPTIONS.find((o) => o.value === value)?.label ?? String(value)
-                );
-              } else if (key === "status") {
-                displayValue = (
-                  ALERT_STATUS_OPTIONS.find((o) => o.value === value)?.label ?? String(value)
-                );
-              } else if (key === "databaseId") {
-                const db = filterOptions.databases.find((d) => String(d.id) === String(value));
-                displayValue = db ? db.name : String(value);
-              } else if (key === "startDate" || key === "endDate") {
-                try {
-                  displayValue = new Date(String(value)).toLocaleString();
-                } catch {
+          {(() => {
+            const keys = Object.keys(filters) as Array<keyof ISecurityAlertFilterDraft>;
+            const tags = keys
+              .filter((k) => {
+                const v = filters[k];
+                return v !== null && v !== undefined && v !== "";
+              })
+              .map((key: keyof ISecurityAlertFilterDraft) => {
+                const value = filters[key] as unknown;
+                let displayValue: string;
+                if (Array.isArray(value)) {
+                  displayValue = (value as unknown[]).join(", ");
+                } else if (key === "severity") {
+                  displayValue = (
+                    ALERT_SEVERITY_OPTIONS.find((o) => o.value === value)?.label ?? String(value)
+                  );
+                } else if (key === "status") {
+                  displayValue = (
+                    ALERT_STATUS_OPTIONS.find((o) => o.value === value)?.label ?? String(value)
+                  );
+                } else if (key === "databaseId") {
+                  const db = filterOptions.databases.find((d) => String(d.id) === String(value));
+                  displayValue = db ? db.name : String(value);
+                } else if (key === "startDate" || key === "endDate") {
+                  try {
+                    displayValue = new Date(String(value)).toLocaleString();
+                  } catch {
+                    displayValue = String(value);
+                  }
+                } else {
                   displayValue = String(value);
                 }
-              } else {
-                displayValue = String(value);
-              }
 
-              const keyLabelMap: Record<string, string> = {
-                keyword: "Search",
-                severity: "Severity",
-                status: "Status",
-                databaseId: "Database",
-                startDate: "From",
-                endDate: "To",
-              };
+                const keyLabelMap: Partial<Record<keyof ISecurityAlertFilterDraft, string>> = {
+                  keyword: "Search",
+                  severity: "Severity",
+                  status: "Status",
+                  databaseId: "Database",
+                  startDate: "From",
+                  endDate: "To",
+                };
 
-              const labelKey = keyLabelMap[key] ?? key;
+                const labelKey = keyLabelMap[key] ?? String(key);
 
-              return (
-                <Tag
-                  key={key}
-                  color="default"
-                  closable
-                  onClose={() => setFilterValue(key as any, null)}
-                  style={{ marginBottom: 6 }}
-                >
-                  {labelKey}: {displayValue}
-                </Tag>
-              );
-            })}
+                return (
+                  <Tag
+                    key={String(key)}
+                    color="default"
+                    closable
+                    onClose={() => {
+                      setFilterValue(key, DEFAULT_FILTERS[key]);
+                      void applyFilters();
+                    }}
+                    style={{ marginBottom: 6 }}
+                  >
+                    {labelKey}: {displayValue}
+                  </Tag>
+                );
+              });
 
-          {Object.values(filters).some((v) => v !== null && v !== undefined && v !== "") ? (
-            <Button type="link" onClick={() => resetFilters()} style={{ marginLeft: 8 }}>
-              Clear all
-            </Button>
-          ) : (
-            <span className={styles.mutedText}>No filters applied</span>
-          )}
+            return (
+              <>
+                {tags}
+                {tags.length ? (
+                  <Button
+                    type="link"
+                    onClick={() => {
+                      resetFilters();
+                      void applyFilters();
+                    }}
+                    style={{ marginLeft: 8 }}
+                  >
+                    Clear all
+                  </Button>
+                ) : (
+                  <span className={styles.mutedText}>No filters applied</span>
+                )}
+              </>
+            );
+          })()}
         </Space>
       </div>
 
@@ -168,7 +191,14 @@ const SecurityAlertsFilterPanel = () => {
         <Button type="primary" onClick={() => void applyFilters()}>
           Apply filters
         </Button>
-        <Button onClick={() => void resetFilters()}>Reset</Button>
+        <Button
+          onClick={() => {
+            resetFilters();
+            void applyFilters();
+          }}
+        >
+          Reset
+        </Button>
         <Button onClick={() => void refresh()} loading={isRefreshing}>
           Refresh
         </Button>

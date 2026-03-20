@@ -1,12 +1,14 @@
 "use client";
 
-import { Button, Card, Input, Select, Switch, Tabs, Typography } from "antd";
+import { Button, Card, Input, Select, Switch, Tabs, Typography, Tag, Space } from "antd";
 import { useStyles } from "@/components/datasentinel/activity/style/style";
 import { EVENT_TYPE_OPTIONS, SEVERITY_OPTIONS } from "@/constants/datasentinel/activity";
 import {
   useActivityMonitoringActions,
   useActivityMonitoringState,
 } from "@/providers/activityMonitoringProvider";
+import { DEFAULT_FILTERS } from "@/providers/activityMonitoringProvider/context";
+import { IActivityFilterDraft } from "@/interfaces/datasentinel/activity";
 
 const { Text, Title, Paragraph } = Typography;
 
@@ -181,11 +183,104 @@ const ActivityFilterPanel = () => {
         </div>
       </div>
 
+      {/* Active filters: show removable chips when filters applied */}
+      <div className={styles.activeFiltersRow}>
+        <Space size="small" wrap>
+          {(Object.keys(filters) as Array<keyof IActivityFilterDraft>)
+            .filter((k) => {
+              const v = filters[k];
+              return v !== null && v !== undefined && v !== "";
+            })
+            .map((key) => {
+              const value = filters[key] as unknown;
+              let displayValue: string;
+              if (Array.isArray(value)) {
+                displayValue = (value as unknown[]).join(", ");
+              } else if (key === "eventType") {
+                displayValue = EVENT_TYPE_OPTIONS.find((o) => o.value === value)?.label ?? String(value);
+              } else if (key === "severity") {
+                displayValue = SEVERITY_OPTIONS.find((o) => o.value === value)?.label ?? String(value);
+              } else if (key === "serverId") {
+                const s = filterOptions.servers.find((d) => String(d.id) === String(value));
+                displayValue = s ? s.name : String(value);
+              } else if (key === "databaseId") {
+                const d = filterOptions.databases.find((d) => String(d.id) === String(value));
+                displayValue = d ? d.name : String(value);
+              } else if (key === "startDate" || key === "endDate") {
+                try {
+                  displayValue = new Date(String(value)).toLocaleString();
+                } catch {
+                  displayValue = String(value);
+                }
+              } else if (typeof value === "boolean") {
+                displayValue = (value as boolean) ? "Yes" : "No";
+              } else {
+                displayValue = String(value);
+              }
+
+              const keyLabelMap: Partial<Record<keyof IActivityFilterDraft, string>> = {
+                keyword: "Search",
+                serverId: "Server",
+                databaseId: "Database",
+                actorUser: "User",
+                actorIp: "IP",
+                operation: "Operation",
+                eventType: "Event type",
+                severity: "Severity",
+                status: "Status",
+                startDate: "From",
+                endDate: "To",
+                sortDescending: "Newest first",
+              };
+
+              const labelKey = keyLabelMap[key] ?? String(key);
+
+              return (
+                <Tag
+                  key={String(key)}
+                  color="default"
+                  closable
+                  onClose={() => setFilterValue(key, DEFAULT_FILTERS[key])}
+                  style={{ marginBottom: 6 }}
+                >
+                  {labelKey}: {displayValue}
+                </Tag>
+              );
+            })}
+
+          {Object.values(filters).some((v) => v !== null && v !== undefined && v !== "") ? (
+            <Button
+              type="link"
+              onClick={() => {
+                resetFilters();
+                // ensure newest-first toggle is turned off as part of a full clear
+                setFilterValue("sortDescending", false);
+                void applyFilters();
+              }}
+              style={{ marginLeft: 8 }}
+            >
+              Clear all
+            </Button>
+          ) : (
+            <span className={styles.mutedText}>No filters applied</span>
+          )}
+        </Space>
+      </div>
+
       <div className={styles.filterActionsRow}>
         <Button type="primary" onClick={() => void applyFilters()}>
           Apply filters
         </Button>
-        <Button onClick={() => void resetFilters()}>Reset</Button>
+        <Button
+          onClick={() => {
+            resetFilters();
+            // ensure newest-first toggle is turned off
+            setFilterValue("sortDescending", false);
+            void applyFilters();
+          }}
+        >
+          Reset
+        </Button>
         <Button onClick={() => void refresh()} loading={isRefreshing}>
           Refresh
         </Button>
