@@ -53,6 +53,8 @@ const TenantsPageContent = () => {
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingEdit, setIsLoadingEdit] = useState(false);
+  const [processingDeleteId, setProcessingDeleteId] = useState<number | null>(null);
+  const [processingEditId, setProcessingEditId] = useState<number | null>(null);
 
   useEffect(() => {
     void fetchTenants();
@@ -105,6 +107,7 @@ const TenantsPageContent = () => {
 
   const handleDelete = async (id: number) => {
     if (!canManageTenants) return;
+    setProcessingDeleteId(id);
     try {
       await deleteTenant(id);
       setActionMessage({ type: "success", text: "Tenant deleted." });
@@ -115,12 +118,15 @@ const TenantsPageContent = () => {
         text:
           error instanceof Error ? error.message : "Failed to delete tenant.",
       });
+    } finally {
+      setProcessingDeleteId(null);
     }
   };
 
   const openEdit = async (tenant: ITenantListItem) => {
     if (!canManageTenants) return;
     setEditingTenant(tenant);
+    setProcessingEditId(tenant.id);
     setIsLoadingEdit(true);
     setIsEditOpen(true);
     try {
@@ -138,6 +144,7 @@ const TenantsPageContent = () => {
       });
     } finally {
       setIsLoadingEdit(false);
+      setProcessingEditId(null);
     }
   };
 
@@ -235,7 +242,7 @@ const TenantsPageContent = () => {
               render: (_, record) => (
                 canManageTenants ? (
                   <Space size="small" wrap>
-                    <Button size="small" onClick={() => void openEdit(record)}>
+                    <Button size="small" onClick={() => void openEdit(record)} loading={processingEditId === record.id && isLoadingEdit}>
                       Edit
                     </Button>
                     <Popconfirm
@@ -243,7 +250,7 @@ const TenantsPageContent = () => {
                       description="This will permanently remove the tenant and all associated data."
                       onConfirm={() => void handleDelete(record.id)}
                       okText="Delete"
-                      okButtonProps={{ danger: true }}
+                      okButtonProps={{ danger: true, loading: processingDeleteId === record.id }}
                     >
                       <Button size="small" danger>
                         Delete

@@ -76,6 +76,9 @@ const UsersPageContent = () => {
   const [resetUserId, setResetUserId] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingRoleAssignment, setIsLoadingRoleAssignment] = useState(false);
+  const [processingDeleteId, setProcessingDeleteId] = useState<number | null>(null);
+  const [processingToggleId, setProcessingToggleId] = useState<number | null>(null);
+  const [assignLoadingUserId, setAssignLoadingUserId] = useState<number | null>(null);
 
   useEffect(() => {
     void fetchUsers();
@@ -126,6 +129,7 @@ const UsersPageContent = () => {
 
   const handleDelete = async (id: number) => {
     if (!canManageUsers) return;
+    setProcessingDeleteId(id);
     try {
       await deleteUser(id);
       setActionMessage({ type: "success", text: "User deleted." });
@@ -135,11 +139,14 @@ const UsersPageContent = () => {
         type: "error",
         text: error instanceof Error ? error.message : "Failed to delete user.",
       });
+    } finally {
+      setProcessingDeleteId(null);
     }
   };
 
   const handleToggleActive = async (user: IUserListItem) => {
     if (!canToggleUserActivation) return;
+    setProcessingToggleId(user.id);
     try {
       if (user.isActive) {
         await deActivateUser(user.id);
@@ -163,6 +170,8 @@ const UsersPageContent = () => {
             ? error.message
             : "Failed to change user status.",
       });
+    } finally {
+      setProcessingToggleId(null);
     }
   };
 
@@ -235,6 +244,7 @@ const UsersPageContent = () => {
   const openAssignRoles = async (user: IUserListItem) => {
     if (!canManageUsers) return;
 
+    setAssignLoadingUserId(user.id);
     setIsLoadingRoleAssignment(true);
     setIsAssignRolesOpen(true);
 
@@ -264,6 +274,7 @@ const UsersPageContent = () => {
       });
     } finally {
       setIsLoadingRoleAssignment(false);
+      setAssignLoadingUserId(null);
     }
   };
 
@@ -397,6 +408,7 @@ const UsersPageContent = () => {
                       <Button
                         size="small"
                         onClick={() => void openAssignRoles(record)}
+                        loading={assignLoadingUserId === record.id && isLoadingRoleAssignment}
                       >
                         Assign roles
                       </Button>
@@ -405,6 +417,7 @@ const UsersPageContent = () => {
                       <Button
                         size="small"
                         onClick={() => void handleToggleActive(record)}
+                        loading={processingToggleId === record.id}
                       >
                         {record.isActive ? "Deactivate" : "Activate"}
                       </Button>
@@ -420,7 +433,7 @@ const UsersPageContent = () => {
                         description="This action cannot be undone."
                         onConfirm={() => void handleDelete(record.id)}
                         okText="Delete"
-                        okButtonProps={{ danger: true }}
+                        okButtonProps={{ danger: true, loading: processingDeleteId === record.id }}
                       >
                         <Button size="small" danger>
                           Delete
