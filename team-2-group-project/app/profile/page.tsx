@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Card, Form, Input, Tag, Typography } from "antd";
+import { Avatar, Button, Card, Descriptions, Form, Input, Tag, Typography } from "antd";
 import AppShell from "@/components/auth/AppShell";
 import TimedAlertMessage from "@/components/feedback/TimedAlertMessage";
 import { withAuth } from "@/hoc/withAuth";
@@ -26,6 +26,18 @@ const resolveRoleLabel = (roles?: string[] | null) => {
   if (isHostAdmin(roles)) return "Host administrator";
   if (isTenantAdmin(roles)) return "Tenant administrator";
   return "Tenant user";
+};
+
+const resolveRoleColor = (roles?: string[] | null) => {
+  if (isHostAdmin(roles)) return "volcano";
+  if (isTenantAdmin(roles)) return "blue";
+  return "cyan";
+};
+
+const getInitials = (name?: string | null, surname?: string | null) => {
+  const first = name?.charAt(0)?.toUpperCase() ?? "";
+  const last = surname?.charAt(0)?.toUpperCase() ?? "";
+  return (first + last) || "?";
 };
 
 const ProfilePageContent = () => {
@@ -67,29 +79,22 @@ const ProfilePageContent = () => {
     >
       <div className={styles.splitGrid}>
         <Card className={styles.pageCard}>
-          <Title level={4} className={styles.sectionTitle}>
-            Account details
-          </Title>
-          <Paragraph className={styles.sectionLead}>
-            Your current session and account information.
-          </Paragraph>
-          <div className={styles.tagRow}>
-            <Tag className={styles.infoTag}>
-              Username: {user?.userName ?? "—"}
-            </Tag>
-            <Tag className={styles.infoTag}>
-              Name: {user?.name} {user?.surname}
-            </Tag>
-            <Tag className={styles.infoTag}>
-              Email: {user?.emailAddress ?? "—"}
-            </Tag>
-            <Tag className={styles.infoTag}>
-              Tenant: {currentTenant?.tenancyName ?? "Host"}
-            </Tag>
-            <Tag className={styles.infoTag}>
-              Role: {resolveRoleLabel(user?.roles)}
+          <div className={styles.profileHeader}>
+            <Avatar size={72} className={styles.profileAvatar}>
+              {getInitials(user?.name, user?.surname)}
+            </Avatar>
+            <Title level={4} className={styles.profileName}>
+              {user?.name} {user?.surname}
+            </Title>
+            <Tag color={resolveRoleColor(user?.roles)}>
+              {resolveRoleLabel(user?.roles)}
             </Tag>
           </div>
+          <Descriptions column={1} size="small" className={styles.profileDescriptions}>
+            <Descriptions.Item label="Username">{user?.userName ?? "—"}</Descriptions.Item>
+            <Descriptions.Item label="Email">{user?.emailAddress ?? "—"}</Descriptions.Item>
+            <Descriptions.Item label="Tenant">{currentTenant?.tenancyName ?? "Host"}</Descriptions.Item>
+          </Descriptions>
         </Card>
 
 

@@ -406,4 +406,44 @@ export const useStyles = createStyles(() => ({
       align-items: flex-start;
     }
   `,
+
+  profileHeader: css`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  `,
+
+  profileAvatar: css`
+    &.ant-avatar {
+      background: linear-gradient(135deg, #1f6feb 0%, #3251a8 100%);
+      color: white;
+      font-weight: 700;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+  `,
+
+  profileName: css`
+    &.ant-typography {
+      margin: 0;
+      color: #0f172a;
+    }
+  `,
+
+  profileDescriptions: css`
+    .ant-descriptions-item-label {
+      color: #64748b;
+      font-weight: 600;
+      font-size: 13px;
+      min-width: 90px;
+    }
+    .ant-descriptions-item-content {
+      color: #0f172a;
+      font-size: 14px;
+    }
+  `,
 }));
