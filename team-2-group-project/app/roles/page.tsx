@@ -53,6 +53,8 @@ const RolesPageContent = () => {
   const [editingRole, setEditingRole] = useState<IRoleListItem | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingEdit, setIsLoadingEdit] = useState(false);
+  const [processingDeleteId, setProcessingDeleteId] = useState<number | null>(null);
+  const [processingEditId, setProcessingEditId] = useState<number | null>(null);
 
   useEffect(() => {
     void fetchRoles();
@@ -103,6 +105,7 @@ const RolesPageContent = () => {
 
   const handleDelete = async (id: number) => {
     if (!canManageRoles) return;
+    setProcessingDeleteId(id);
     try {
       await deleteRole(id);
       setActionMessage({ type: "success", text: "Role deleted." });
@@ -112,12 +115,15 @@ const RolesPageContent = () => {
         type: "error",
         text: error instanceof Error ? error.message : "Failed to delete role.",
       });
+    } finally {
+      setProcessingDeleteId(null);
     }
   };
 
   const openEdit = async (role: IRoleListItem) => {
     if (!canManageRoles) return;
     setEditingRole(role);
+    setProcessingEditId(role.id);
     setIsLoadingEdit(true);
     setIsEditOpen(true);
     try {
@@ -137,6 +143,7 @@ const RolesPageContent = () => {
       });
     } finally {
       setIsLoadingEdit(false);
+      setProcessingEditId(null);
     }
   };
 
@@ -244,7 +251,7 @@ const RolesPageContent = () => {
               render: (_, record) => (
                 canManageRoles ? (
                   <Space size="small" wrap>
-                    <Button size="small" onClick={() => void openEdit(record)}>
+                    <Button size="small" onClick={() => void openEdit(record)} loading={processingEditId === record.id && isLoadingEdit}>
                       Edit
                     </Button>
                     <Popconfirm
@@ -258,7 +265,7 @@ const RolesPageContent = () => {
                         record.isStatic ? undefined : void handleDelete(record.id)
                       }
                       okText="Delete"
-                      okButtonProps={{ danger: true, disabled: record.isStatic }}
+                      okButtonProps={{ danger: true, disabled: record.isStatic, loading: processingDeleteId === record.id }}
                     >
                       <Button size="small" danger disabled={record.isStatic}>
                         Delete

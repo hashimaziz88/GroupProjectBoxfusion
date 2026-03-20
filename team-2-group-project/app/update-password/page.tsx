@@ -58,6 +58,7 @@ const UpdatePasswordPageContent = () => {
       title="Update Password"
       subtitle="Update your account password. You will need your current password to set a new one."
     >
+      {/* User feedback: success state */}
       {successMessage ? (
         <Alert
           type="success"
@@ -67,6 +68,7 @@ const UpdatePasswordPageContent = () => {
         />
       ) : null}
 
+      {/* User feedback: error state */}
       {errorMessage ? (
         <Alert
           type="error"

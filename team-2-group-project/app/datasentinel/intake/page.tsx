@@ -21,6 +21,8 @@ const PAGE_TITLE = "Activity Intake";
 const PAGE_SUBTITLE =
   "Send activity event batches, import audit log exports, or seed simulated data into the DataSentinel monitoring pipeline.";
 
+
+// User feedback: loading, error, success, and info states handled here per project standard.
 const ActivityIntakePageContent = () => {
   const { styles } = useStyles();
   const { currentTenant } = useAuthState();
@@ -75,6 +77,8 @@ const ActivityIntakePageContent = () => {
     setLastResult({ label, result });
   };
 
+
+  // User feedback: info state (no tenant context)
   if (!hasTenantContext) {
     return (
       <AppShell title={PAGE_TITLE} subtitle={PAGE_SUBTITLE}>
@@ -90,17 +94,33 @@ const ActivityIntakePageContent = () => {
 
   return (
     <AppShell title={PAGE_TITLE} subtitle={PAGE_SUBTITLE}>
+      {/* User feedback: loading state */}
+      {isLoadingReferences && (
+        <Alert type="info" showIcon title="Loading reference data..." className={styles.alert} />
+      )}
+      {/* User feedback: error state */}
       {errorMessage ? (
         <Alert type="error" showIcon title={errorMessage} className={styles.alert} />
       ) : null}
-      {actionMessage ? (
+      {/* User feedback: success state */}
+      {actionMessage && actionMessage.type === "success" ? (
         <Alert
-          type={actionMessage.type}
+          type="success"
           showIcon
           title={actionMessage.text}
           className={styles.alert}
         />
       ) : null}
+      {/* User feedback: error state for action */}
+      {actionMessage && actionMessage.type === "error" ? (
+        <Alert
+          type="error"
+          showIcon
+          title={actionMessage.text}
+          className={styles.alert}
+        />
+      ) : null}
+      {/* ...existing code... */}
       <IntakeSummaryCards
         monitoredServersCount={monitoredServers.length}
         databasesCount={allDatabases.length}

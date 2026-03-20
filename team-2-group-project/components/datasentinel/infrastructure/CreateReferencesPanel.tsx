@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Alert, Button, Card, Checkbox, Form, Input, Select, Typography } from "antd";
 import { useStyles } from "@/components/datasentinel/infrastructure/style/style";
 import {
@@ -17,6 +18,9 @@ const CreateReferencesPanel = () => {
   const { clearMessages, createDatabase, createServer, createTable } =
     useMonitoringInfrastructureActions();
 
+  const [isCreatingServer, setIsCreatingServer] = useState(false);
+  const [isCreatingDatabase, setIsCreatingDatabase] = useState(false);
+  const [isCreatingTable, setIsCreatingTable] = useState(false);
   const [serverForm] = Form.useForm();
   const [databaseForm] = Form.useForm();
   const [tableForm] = Form.useForm();
@@ -42,11 +46,16 @@ const CreateReferencesPanel = () => {
               initialValues={{ isEnabled: true }}
               onFinish={async (values) => {
                 clearMessages();
-                const wasCreated = await createServer(values);
+                setIsCreatingServer(true);
+                try {
+                  const wasCreated = await createServer(values);
 
-                if (wasCreated) {
-                  serverForm.resetFields();
-                  serverForm.setFieldValue("isEnabled", true);
+                  if (wasCreated) {
+                    serverForm.resetFields();
+                    serverForm.setFieldValue("isEnabled", true);
+                  }
+                } finally {
+                  setIsCreatingServer(false);
                 }
               }}
             >
@@ -65,7 +74,7 @@ const CreateReferencesPanel = () => {
               <Form.Item name="isEnabled" valuePropName="checked">
                 <Checkbox>Enabled</Checkbox>
               </Form.Item>
-              <Button type="primary" htmlType="submit">
+              <Button type="primary" htmlType="submit" loading={isCreatingServer}>
                 Create server
               </Button>
             </Form>
@@ -81,11 +90,16 @@ const CreateReferencesPanel = () => {
               initialValues={{ isEnabled: true }}
               onFinish={async (values) => {
                 clearMessages();
-                const wasCreated = await createDatabase(values);
+                setIsCreatingDatabase(true);
+                try {
+                  const wasCreated = await createDatabase(values);
 
-                if (wasCreated) {
-                  databaseForm.resetFields();
-                  databaseForm.setFieldValue("isEnabled", true);
+                  if (wasCreated) {
+                    databaseForm.resetFields();
+                    databaseForm.setFieldValue("isEnabled", true);
+                  }
+                } finally {
+                  setIsCreatingDatabase(false);
                 }
               }}
             >
@@ -109,7 +123,7 @@ const CreateReferencesPanel = () => {
               <Form.Item name="isEnabled" valuePropName="checked">
                 <Checkbox>Enabled</Checkbox>
               </Form.Item>
-              <Button type="primary" htmlType="submit">
+              <Button type="primary" htmlType="submit" loading={isCreatingDatabase}>
                 Create database
               </Button>
             </Form>
@@ -125,11 +139,16 @@ const CreateReferencesPanel = () => {
               initialValues={{ isEnabled: true }}
               onFinish={async (values) => {
                 clearMessages();
-                const wasCreated = await createTable(values);
+                setIsCreatingTable(true);
+                try {
+                  const wasCreated = await createTable(values);
 
-                if (wasCreated) {
-                  tableForm.resetFields();
-                  tableForm.setFieldValue("isEnabled", true);
+                  if (wasCreated) {
+                    tableForm.resetFields();
+                    tableForm.setFieldValue("isEnabled", true);
+                  }
+                } finally {
+                  setIsCreatingTable(false);
                 }
               }}
             >
@@ -153,7 +172,7 @@ const CreateReferencesPanel = () => {
               <Form.Item name="isEnabled" valuePropName="checked">
                 <Checkbox>Enabled</Checkbox>
               </Form.Item>
-              <Button type="primary" htmlType="submit">
+              <Button type="primary" htmlType="submit" loading={isCreatingTable}>
                 Create table
               </Button>
             </Form>

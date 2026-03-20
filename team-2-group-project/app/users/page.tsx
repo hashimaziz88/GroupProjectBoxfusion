@@ -12,10 +12,12 @@ import {
   Popconfirm,
   Select,
   Space,
+  Skeleton,
   Table,
   Tag,
   Typography,
 } from "antd";
+import { LoadingOutlined } from "@ant-design/icons";
 import AppShell from "@/components/auth/AppShell";
 import { withAuth } from "@/hoc/withAuth";
 import { useAuthState } from "@/providers/authProvider";
@@ -76,6 +78,9 @@ const UsersPageContent = () => {
   const [resetUserId, setResetUserId] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingRoleAssignment, setIsLoadingRoleAssignment] = useState(false);
+  const [processingDeleteId, setProcessingDeleteId] = useState<number | null>(null);
+  const [processingToggleId, setProcessingToggleId] = useState<number | null>(null);
+  const [assignLoadingUserId, setAssignLoadingUserId] = useState<number | null>(null);
 
   useEffect(() => {
     void fetchUsers();
@@ -126,6 +131,7 @@ const UsersPageContent = () => {
 
   const handleDelete = async (id: number) => {
     if (!canManageUsers) return;
+    setProcessingDeleteId(id);
     try {
       await deleteUser(id);
       setActionMessage({ type: "success", text: "User deleted." });
@@ -135,11 +141,14 @@ const UsersPageContent = () => {
         type: "error",
         text: error instanceof Error ? error.message : "Failed to delete user.",
       });
+    } finally {
+      setProcessingDeleteId(null);
     }
   };
 
   const handleToggleActive = async (user: IUserListItem) => {
     if (!canToggleUserActivation) return;
+    setProcessingToggleId(user.id);
     try {
       if (user.isActive) {
         await deActivateUser(user.id);
@@ -163,6 +172,8 @@ const UsersPageContent = () => {
             ? error.message
             : "Failed to change user status.",
       });
+    } finally {
+      setProcessingToggleId(null);
     }
   };
 
@@ -235,6 +246,7 @@ const UsersPageContent = () => {
   const openAssignRoles = async (user: IUserListItem) => {
     if (!canManageUsers) return;
 
+    setAssignLoadingUserId(user.id);
     setIsLoadingRoleAssignment(true);
     setIsAssignRolesOpen(true);
 
@@ -264,6 +276,7 @@ const UsersPageContent = () => {
       });
     } finally {
       setIsLoadingRoleAssignment(false);
+      setAssignLoadingUserId(null);
     }
   };
 
@@ -279,6 +292,7 @@ const UsersPageContent = () => {
       title="Users"
       subtitle="Manage user accounts and access within the active tenant or host context."
     >
+      {/* User feedback: error state */}
       {errorMessage ? (
         <Alert
           type="error"
@@ -287,9 +301,20 @@ const UsersPageContent = () => {
           className={styles.alert}
         />
       ) : null}
-      {actionMessage ? (
+      {/* User feedback: success state */}
+      {actionMessage && actionMessage.type === "success" ? (
         <Alert
-          type={actionMessage.type}
+          type="success"
+          showIcon
+          title={actionMessage.text}
+          className={styles.alert}
+          closable={{ onClose: () => setActionMessage(null) }}
+        />
+      ) : null}
+      {/* User feedback: error state for action */}
+      {actionMessage && actionMessage.type === "error" ? (
+        <Alert
+          type="error"
           showIcon
           title={actionMessage.text}
           className={styles.alert}
@@ -298,6 +323,7 @@ const UsersPageContent = () => {
       ) : null}
 
       <Card className={styles.pageCard}>
+        {/* User feedback: loading state handled by Table's loading prop */}
         <div className={styles.cardToolbar}>
           <Title level={4} className={styles.sectionTitle}>
             Tenant users
@@ -326,36 +352,66 @@ const UsersPageContent = () => {
             {
               title: "User",
               key: "user",
-              render: (_, record) => (
-                <>
-                  <strong>
-                    {record.fullName || `${record.name} ${record.surname}`}
-                  </strong>
-                  <div className={styles.cellHint}>{record.userName}</div>
-                </>
-              ),
+              render: (_, record) => {
+                if (processingDeleteId === record.id) {
+                  return (
+                    <div style={{ background: "#fff1f0", padding: 8 }}>
+                      <Skeleton active title={false} paragraph={{ rows: 1 }} />
+                    </div>
+                  );
+                }
+
+                return (
+                  <>
+                    <strong>
+                      {record.fullName || `${record.name} ${record.surname}`}
+                      {(processingDeleteId === record.id || processingToggleId === record.id || assignLoadingUserId === record.id) ? (
+                        <LoadingOutlined spin style={{ marginLeft: 8, color: "#ff4d4f", fontSize: 12 }} />
+                      ) : null}
+                    </strong>
+                    <div className={styles.cellHint}>{record.userName}</div>
+                  </>
+                );
+              },
             },
             {
               title: "Email",
               dataIndex: "emailAddress",
               key: "emailAddress",
+              render: (value: string, record: IUserListItem) =>
+                processingDeleteId === record.id ? (
+                  <div style={{ background: "#fff1f0", padding: 8 }}>
+                    <Skeleton active title={false} paragraph={{ rows: 1 }} />
+                  </div>
+                ) : (
+                  value
+                ),
             },
             {
               title: "Status",
               dataIndex: "isActive",
               key: "isActive",
-              render: (isActive: boolean) => (
-                <Tag color={isActive ? "green" : "red"}>
-                  {isActive ? "Active" : "Disabled"}
-                </Tag>
-              ),
+              render: (isActive: boolean, record: IUserListItem) =>
+                processingDeleteId === record.id ? (
+                  <div style={{ background: "#fff1f0", padding: 8 }}>
+                    <Skeleton active title={false} paragraph={{ rows: 1 }} />
+                  </div>
+                ) : (
+                  <Tag color={isActive ? "green" : "red"}>
+                    {isActive ? "Active" : "Disabled"}
+                  </Tag>
+                ),
             },
             {
               title: "Roles",
               dataIndex: "roleNames",
               key: "roleNames",
-              render: (roleNames?: string[] | null) =>
-                toArray(roleNames).length ? (
+              render: (roleNames?: string[] | null, record?: IUserListItem) =>
+                record && processingDeleteId === record.id ? (
+                  <div style={{ background: "#fff1f0", padding: 8 }}>
+                    <Skeleton active title={false} paragraph={{ rows: 1 }} />
+                  </div>
+                ) : toArray(roleNames).length ? (
                   toArray(roleNames).map((role) => (
                     <Tag key={role}>{role}</Tag>
                   ))
@@ -367,13 +423,24 @@ const UsersPageContent = () => {
               title: "Last login",
               dataIndex: "lastLoginTime",
               key: "lastLoginTime",
-              render: (value?: string | null) => formatDateTime(value),
+              render: (value?: string | null, record?: IUserListItem) =>
+                record && processingDeleteId === record.id ? (
+                  <div style={{ background: "#fff1f0", padding: 8 }}>
+                    <Skeleton active title={false} paragraph={{ rows: 1 }} />
+                  </div>
+                ) : (
+                  formatDateTime(value)
+                ),
             },
             {
               title: "Actions",
               key: "actions",
-              render: (_, record) => (
-                canManageUsers || canToggleUserActivation ? (
+              render: (_, record) =>
+                processingDeleteId === record.id ? (
+                  <div style={{ background: "#fff1f0", padding: 8 }}>
+                    <Skeleton active title={false} paragraph={{ rows: 1 }} />
+                  </div>
+                ) : canManageUsers || canToggleUserActivation ? (
                   <Space size="small" wrap>
                     {canManageUsers ? (
                       <Button size="small" onClick={() => openEdit(record)}>
@@ -384,6 +451,7 @@ const UsersPageContent = () => {
                       <Button
                         size="small"
                         onClick={() => void openAssignRoles(record)}
+                        loading={assignLoadingUserId === record.id && isLoadingRoleAssignment}
                       >
                         Assign roles
                       </Button>
@@ -392,6 +460,7 @@ const UsersPageContent = () => {
                       <Button
                         size="small"
                         onClick={() => void handleToggleActive(record)}
+                        loading={processingToggleId === record.id}
                       >
                         {record.isActive ? "Deactivate" : "Activate"}
                       </Button>
@@ -407,7 +476,7 @@ const UsersPageContent = () => {
                         description="This action cannot be undone."
                         onConfirm={() => void handleDelete(record.id)}
                         okText="Delete"
-                        okButtonProps={{ danger: true }}
+                        okButtonProps={{ danger: true, loading: processingDeleteId === record.id }}
                       >
                         <Button size="small" danger>
                           Delete
@@ -417,8 +486,7 @@ const UsersPageContent = () => {
                   </Space>
                 ) : (
                   <span className={styles.mutedText}>View only</span>
-                )
-              ),
+                ),
             },
           ]}
           pagination={false}

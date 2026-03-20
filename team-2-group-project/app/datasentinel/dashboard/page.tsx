@@ -21,6 +21,8 @@ const PAGE_TITLE = "Security Dashboard";
 const PAGE_SUBTITLE =
   "Monitor tenant risk posture, spot alert and activity trends, and jump into the most suspicious actors and entities.";
 
+
+// User feedback: loading, error, success, and info states handled here per project standard.
 const DashboardPageContent = () => {
   const { styles } = useStyles();
   const { clearMessages } = useDashboardActions();
@@ -32,6 +34,8 @@ const DashboardPageContent = () => {
     isRefreshing,
   } = useDashboardState();
 
+
+  // User feedback: info state (no tenant context)
   if (!hasTenantContext) {
     return (
       <AppShell title={PAGE_TITLE} subtitle={PAGE_SUBTITLE}>
@@ -47,6 +51,7 @@ const DashboardPageContent = () => {
 
   return (
     <AppShell title={PAGE_TITLE} subtitle={PAGE_SUBTITLE}>
+      {/* User feedback: error state */}
       {errorMessage ? (
         <Alert
           type="error"
@@ -57,9 +62,10 @@ const DashboardPageContent = () => {
           style={{ marginBottom: 16 }}
         />
       ) : null}
-      {actionMessage ? (
+      {/* User feedback: success state */}
+      {actionMessage && actionMessage.type === "success" ? (
         <Alert
-          type={actionMessage.type}
+          type="success"
           showIcon
           title={actionMessage.text}
           closable={{ onClose: clearMessages }}
@@ -67,9 +73,20 @@ const DashboardPageContent = () => {
           style={{ marginBottom: 16 }}
         />
       ) : null}
-
+      {/* User feedback: error state for action */}
+      {actionMessage && actionMessage.type === "error" ? (
+        <Alert
+          type="error"
+          showIcon
+          title={actionMessage.text}
+          closable={{ onClose: clearMessages }}
+          className={styles.alert}
+          style={{ marginBottom: 16 }}
+        />
+      ) : null}
       <Space orientation="vertical" size={18} style={{ width: "100%" }}>
         <DashboardFilters />
+        {/* User feedback: loading state */}
         {isLoading && !isRefreshing ? (
           <Skeleton active paragraph={{ rows: 16 }} />
         ) : (
