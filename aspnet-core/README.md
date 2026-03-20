@@ -134,7 +134,7 @@ Notes:
 
 ## Visual Studio Workflow
 
-1. Open [`Team2GroupProject.sln`](C:\Users\Jason\Desktop\GroupProjectBoxfusion\aspnet-core\Team2GroupProject.sln).
+1. Open [`Team2GroupProject.sln`]
 2. Set `Team2GroupProject.Web.Host` as the startup project.
 3. Override your connection string locally before running.
 4. Run `Team2GroupProject.Migrator` once when the database is new or migrations changed.
@@ -212,7 +212,7 @@ SignalR support is also configured, with encrypted auth tokens accepted on the `
 
 ## Frontend Integration
 
-The frontend workspace is in [`team-2-group-project`](C:\Users\Jason\Desktop\GroupProjectBoxfusion\team-2-group-project).
+The frontend workspace is in [`team-2-group-project`]
 
 Backend defaults and expectations:
 
@@ -273,5 +273,5 @@ If the browser reports CORS errors:
 
 ## Related Docs
 
-- Project overview: [`README.md`](GroupProjectBoxfusion\README.md)
-- Frontend workspace guide: [`team-2-group-project/README.md`](GroupProjectBoxfusion\team-2-group-project\README.md)
+- Project overview: [`README.md`]
+- Frontend workspace guide: [`team-2-group-project/README.md`]

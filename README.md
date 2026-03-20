@@ -6,163 +6,99 @@ DataSentinel is a SQL security and anomaly monitoring platform built to help tea
 
 ## Why Choose DataSentinel?
 
-Security-focused monitoring: DataSentinel is centered on suspicious SQL activity, not just generic analytics.
+- **Security-focused monitoring**: Focused on suspicious SQL activity, not generic analytics  
+- **Anomaly detection**: Detects transaction spikes, repeated failures, out-of-hours activity, and privileged actions  
+- **Actionable investigation flow**: Review alerts, manage incidents, add notes, and export reports  
+- **AI-assisted insights**: Summaries, explanations, and triage guidance to speed up investigations  
 
-Anomaly detection: The platform surfaces unusual transaction spikes, repeated failures, out-of-hours activity, and risky privileged actions.
+---
 
-Actionable investigation flow: Analysts can review alerts, update incident status, add notes, and export reports.
-
-AI-assisted insights: The platform includes AI-supported summaries, triage guidance, and alert explanations to help teams investigate faster.
-
-# Documentation
-
-## Software Requirement Specification
-
-### Problem statement
-
-Modern organizations generate large volumes of SQL and audit activity, but suspicious behavior is often buried inside routine operational noise. Without focused visibility, teams may miss failed login spikes, unusual write bursts, risky privileged operations, and off-hours access until after damage has already occurred. DataSentinel was built to provide security-oriented observability for database activity so that suspicious patterns can be detected, reviewed, and investigated earlier.
-
-### Components and Functional Requirement
-
-**1. Authentication and authorization management**
-
-- users can access the platform through the existing authentication flow
-- protected routes enforce permission-based access
-- tenant-scoped access is supported for DataSentinel workspaces
-
-**2. Monitoring infrastructure management**
-
-- administrators can register monitored servers
-- administrators can register monitored databases
-- administrators can register monitored tables
-- demo monitoring infrastructure can be bootstrapped for the project
-
-**3. Activity intake and monitoring**
-
-- users can ingest simulated SQL activity data
-- users can import audit log style activity batches
-- users can browse monitored activity events
-- users can filter activity by server, database, user, IP, operation, severity, and date
-
-**4. Detection and security alerts**
-
-- the system flags suspicious events using rule-based detection
-- the system detects unusual read or write spikes
-- the system flags out-of-hours activity
-- the system detects repeated failure patterns
-- the system identifies risky privileged access patterns
-
-**5. Incident handling and reporting**
-
-- analysts can review alert queues
-- analysts can mark incidents through a status lifecycle
-- analysts can add investigation notes
-- users can export incident and summary reports
-
-**6. AI integration**
-
-- AI can summarize suspicious patterns
-- AI can explain why an alert was flagged
-- AI can prioritize alert triage
-- AI can suggest the next investigation step
-
-
-### Architecture overview
+## Architecture Overview
 
 DataSentinel uses a split frontend and backend architecture:
 
-- the frontend is a Next.js application in `team-2-group-project`
-- the backend is an ASP.NET Core application in `aspnet-core`
-- the backend stores monitoring infrastructure, activity events, alerts, incident notes, and user risk profiles
-- the frontend consumes backend APIs for dashboards, activity monitoring, alerts, reporting, and intake workflows
-- AI-assisted summaries are exposed through frontend API routes that call an external model provider when configured
+- **Frontend**: Next.js application (`team-2-group-project`)  
+- **Backend**: ABP application (`aspnet-core`)  
+- Backend manages monitoring data, alerts, incidents, and risk profiles  
+- Frontend consumes APIs for dashboards, monitoring, alerts, and reporting  
+- AI summaries are generated via frontend API routes using an external provider  
 
+---
 
-# Design
+## Features
 
-## Wireframes
+### Monitoring & Intake
+- Import audit-style SQL activity
+- Browse and filter events across multiple dimensions
+- Simulate monitoring data for demo scenarios
 
+### Detection & Alerts
+- Rule-based anomaly detection
+- Out-of-hours activity detection
+- Repeated failure detection
+- Privileged access monitoring
+
+### Incident Management
+- Alert queue and investigation workflow
+- Status lifecycle management
+- Analyst notes and reporting
+
+### AI Integration
+- Alert summarization
+- Explanation of flagged behavior
+- Suggested investigation steps
+
+---
+
+## Design
+
+### Wireframes
 https://www.figma.com/make/p4fdXjU9pyS5JwiOdBZkLd/Design-Data-Sentinels-Dashboard?p=f
 
-## Domain Model
+### Domain Model
 
-![Domain Model](Domain-Model.png)
+![Domain Model](domain-model.png)
 
-# Setup
+---
 
-## Setup steps
+## Getting Started
 
-1. Clone the repository.
-2. Open the backend solution in `aspnet-core`.
-3. Install frontend dependencies in `team-2-group-project` with `npm install`.
-4. Copy `team-2-group-project/.env.example` to `team-2-group-project/.env.local`.
-5. Set `NEXT_PUBLIC_API_LINK` to the backend host URL, typically `https://localhost:____`.
-6. Configure the server-side AI provider key in the frontend environment.
-7. Start the backend first.
-8. Start the frontend with `npm run dev`.
+### 1. Clone the repository
 
-# Running application
+```bash
+git clone https://github.com/hashimaziz88/GroupProjectBoxfusion.git
+cd GroupProjectBoxfusion
+
+
+## Running the Application
+
+DataSentinel consists of a backend (ASP.NET Core) and a frontend (Next.js). Both must be running for the system to function correctly.
+
+### 1. Start the Backend
+
+Follow the backend setup instructions in:
+
+`aspnet-core/README.md`
+
+Ensure the backend is running (typically on `https://localhost:____`).
+
+---
+
+### 2. Start the Frontend
+
+Follow the frontend setup instructions in:
+
+`team-2-group-project/README.md`
+
+Once configured, start the frontend:
+
+```bash
+npm run dev
 
 ## Repository structure
 
 - `team-2-group-project` - Next.js frontend
-- `aspnet-core` - ASP.NET Core backend
-
-## Frontend
-
-From `team-2-group-project`:
-
-```bash
-npm install
-```
-
-Copy `.env.example` to `.env.local` and set:
-
-# Base URL of the backend API
-
-# Option 1: Local backend (recommended)
-NEXT_PUBLIC_API_LINK=https://localhost:____
-
-# Option 2: Deployed backend
-# NEXT_PUBLIC_API_LINK=https://groupprojectboxfusion.onrender.com/
-
-# AI integration (used for alert summaries)
-# If not provided, AI features will be disabled
-NEXT_PUBLIC_AI_API_KEY=your-api-key-here
-
-If you do not have a key, you can get one from here:
-https://console.groq.com/keys
-
-Then run:
-
-```bash
-npm run dev
-```
-
-Production build:
-
-```bash
-npm run build
-npm start
-```
-
-## Backend
-
-### Visual Studio
-
-- open `aspnet-core/Team2GroupProject.sln`
-- set `Team2GroupProject.Web.Host` as the startup project
-- build and run the application
-
-### .NET CLI
-
-From `aspnet-core`:
-
-```bash
-dotnet restore Team2GroupProject.sln
-dotnet build Team2GroupProject.sln
-dotnet run --project src/Team2GroupProject.Web.Host/Team2GroupProject.Web.Host.csproj
-```
+- `aspnet-core` - ABP backend
 
 ## Assumptions
 
