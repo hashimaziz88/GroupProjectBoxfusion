@@ -56,4 +56,7 @@ const ActivityMonitoringPage = () => (
   </ActivityMonitoringProvider>
 );
 
-export default withAuth(ActivityMonitoringPage, PERMISSIONS.dataSentinelActivity);
+export default withAuth(ActivityMonitoringPage, {
+  requiredPermission: PERMISSIONS.dataSentinelActivity,
+  requireTenantContext: true,
+});

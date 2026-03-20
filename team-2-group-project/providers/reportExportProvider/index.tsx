@@ -224,91 +224,127 @@ export const ReportExportProvider: React.FC<{
   };
 
   const exportBundlePdf = async () =>
-    runExport("snapshot", () => {
-      return downloadReportBundlePdf({
-        tenancyName: currentTenant?.tenancyName ?? null,
-        windowDays: state.windowDays,
-        alerts: state.alerts,
-        activityEvents: state.activityEvents,
-      });
-    }, "Report bundle PDF exported.");
+    runExport(
+      "snapshot",
+      () => {
+        if (!hasTenantContext) {
+          throw new Error("Switch into a tenant before exporting report bundles.");
+        }
+
+        if (!canAccessAlerts && !canAccessActivity) {
+          throw new Error(
+            "You do not have permission to export the current report bundle.",
+          );
+        }
+
+        return downloadReportBundlePdf({
+          tenancyName: currentTenant?.tenancyName ?? null,
+          windowDays: state.windowDays,
+          alerts: state.alerts,
+          activityEvents: state.activityEvents,
+        });
+      },
+      "Report bundle PDF exported.",
+    );
 
   const exportAlertsCsv = async () =>
-    runExport("alerts", () => {
-      downloadCsvFile(
-        `datasentinel-alerts-${formatDateStamp()}.csv`,
-        [
-          "AlertId",
-          "Title",
-          "Severity",
-          "Status",
-          "RiskScore",
-          "TriggeredAt",
-          "Server",
-          "Database",
-          "Table",
-          "ActorUser",
-          "ActorIp",
-          "RelatedEventCount",
-        ],
-        state.alerts.map((alert) => [
-          alert.alertId,
-          alert.title,
-          alert.severity,
-          alert.status,
-          alert.riskScore,
-          alert.triggeredAt,
-          alert.serverName,
-          alert.databaseName,
-          alert.tableName,
-          alert.primaryActorUser,
-          alert.primaryActorIp,
-          alert.relatedEventCount,
-        ]),
-      );
-    }, "Alerts CSV exported.");
+    runExport(
+      "alerts",
+      () => {
+        if (!canAccessAlerts) {
+          throw new Error("You do not have permission to export alert registers.");
+        }
+
+        downloadCsvFile(
+          `datasentinel-alerts-${formatDateStamp()}.csv`,
+          [
+            "AlertId",
+            "Title",
+            "Severity",
+            "Status",
+            "RiskScore",
+            "TriggeredAt",
+            "Server",
+            "Database",
+            "Table",
+            "ActorUser",
+            "ActorIp",
+            "RelatedEventCount",
+          ],
+          state.alerts.map((alert) => [
+            alert.alertId,
+            alert.title,
+            alert.severity,
+            alert.status,
+            alert.riskScore,
+            alert.triggeredAt,
+            alert.serverName,
+            alert.databaseName,
+            alert.tableName,
+            alert.primaryActorUser,
+            alert.primaryActorIp,
+            alert.relatedEventCount,
+          ]),
+        );
+      },
+      "Alerts CSV exported.",
+    );
 
   const exportActivityCsv = async () =>
-    runExport("activity", () => {
-      downloadCsvFile(
-        `datasentinel-activity-${formatDateStamp()}.csv`,
-        [
-          "EventId",
-          "EventTime",
-          "EventType",
-          "Operation",
-          "Severity",
-          "Database",
-          "ObjectName",
-          "ActorUser",
-          "ActorIp",
-          "RowsAffected",
-          "DurationMs",
-          "IsSuccess",
-          "IsOutOfHours",
-          "FailureReason",
-        ],
-        state.activityEvents.map((event) => [
-          event.eventId,
-          event.eventTime,
-          event.eventType,
-          event.operation,
-          event.severity,
-          event.databaseName,
-          event.objectName,
-          event.actorUser,
-          event.actorIp,
-          event.rowsAffected,
-          event.durationMs,
-          event.isSuccess,
-          event.isOutOfHours,
-          event.failureReason,
-        ]),
-      );
-    }, "Activity CSV exported.");
+    runExport(
+      "activity",
+      () => {
+        if (!canAccessActivity) {
+          throw new Error(
+            "You do not have permission to export activity registers.",
+          );
+        }
+
+        downloadCsvFile(
+          `datasentinel-activity-${formatDateStamp()}.csv`,
+          [
+            "EventId",
+            "EventTime",
+            "EventType",
+            "Operation",
+            "Severity",
+            "Database",
+            "ObjectName",
+            "ActorUser",
+            "ActorIp",
+            "RowsAffected",
+            "DurationMs",
+            "IsSuccess",
+            "IsOutOfHours",
+            "FailureReason",
+          ],
+          state.activityEvents.map((event) => [
+            event.eventId,
+            event.eventTime,
+            event.eventType,
+            event.operation,
+            event.severity,
+            event.databaseName,
+            event.objectName,
+            event.actorUser,
+            event.actorIp,
+            event.rowsAffected,
+            event.durationMs,
+            event.isSuccess,
+            event.isOutOfHours,
+            event.failureReason,
+          ]),
+        );
+      },
+      "Activity CSV exported.",
+    );
 
   const exportIncidentPdf = async () =>
     runExport("incident", async () => {
+      if (!canAccessAlerts) {
+        throw new Error("You do not have permission to export incident reports.");
+      }
+
       if (!state.selectedAlertId) {
         throw new Error("Select an alert before exporting an incident report.");
       }

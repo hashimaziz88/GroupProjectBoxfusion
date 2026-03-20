@@ -27,6 +27,9 @@ export const isAdminOrManager = (roles?: string[] | null) =>
 export const canAccessUsers = (permissions?: string[] | null) =>
   hasPermission(permissions, PERMISSIONS.users);
 
+export const canActivateUsers = (permissions?: string[] | null) =>
+  hasPermission(permissions, PERMISSIONS.usersActivation);
+
 export const canAccessRoles = (permissions?: string[] | null) =>
   hasPermission(permissions, PERMISSIONS.roles);
 
@@ -52,11 +55,57 @@ export const canAccessDataSentinelActivity = (
 
 export const canAccessDataSentinelAlerts = (
   permissions?: string[] | null,
-) => hasPermission(permissions, PERMISSIONS.dataSentinelAlertsView);
+) =>
+  hasPermission(permissions, PERMISSIONS.dataSentinelAlertsView) ||
+  hasPermission(permissions, PERMISSIONS.dataSentinelAlertsReview) ||
+  hasPermission(permissions, PERMISSIONS.dataSentinelAlertsManage);
+
+export const canReviewDataSentinelAlerts = (
+  permissions?: string[] | null,
+) =>
+  hasPermission(permissions, PERMISSIONS.dataSentinelAlertsReview) ||
+  hasPermission(permissions, PERMISSIONS.dataSentinelAlertsManage);
+
+export const canManageDataSentinelAlerts = (
+  permissions?: string[] | null,
+) => hasPermission(permissions, PERMISSIONS.dataSentinelAlertsManage);
+
+export const canAccessDataSentinelRules = (
+  permissions?: string[] | null,
+) =>
+  hasPermission(permissions, PERMISSIONS.dataSentinelRulesView) ||
+  hasPermission(permissions, PERMISSIONS.dataSentinelRulesManage);
+
+export const canManageDataSentinelRules = (
+  permissions?: string[] | null,
+) => hasPermission(permissions, PERMISSIONS.dataSentinelRulesManage);
 
 export const canAccessDataSentinelReportsExport = (
   permissions?: string[] | null,
 ) => hasPermission(permissions, PERMISSIONS.dataSentinelReportsExport);
+
+export const canAccessDataSentinelAdmin = (
+  permissions?: string[] | null,
+) => hasPermission(permissions, PERMISSIONS.dataSentinelAdmin);
+
+export const canAccessDataSentinelAiInsights = (
+  permissions?: string[] | null,
+) => hasPermission(permissions, PERMISSIONS.dataSentinelAiInsights);
+
+export const canManageUsersCrud = (
+  _roles?: string[] | null,
+  permissions?: string[] | null,
+) => canAccessUsers(permissions);
+
+export const canManageRolesCrud = (
+  _roles?: string[] | null,
+  permissions?: string[] | null,
+) => canAccessRoles(permissions);
+
+export const canManageTenantsCrud = (
+  _roles?: string[] | null,
+  permissions?: string[] | null,
+) => canAccessTenants(permissions);
 
 export const selectBestAuthenticatedRoute = (
   user?: IRouteSelectorUser | null,

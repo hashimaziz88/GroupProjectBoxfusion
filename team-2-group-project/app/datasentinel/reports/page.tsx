@@ -87,5 +87,8 @@ const ReportExportPage = () => (
 
 export default withAuth(
   ReportExportPage,
-  PERMISSIONS.dataSentinelReportsExport,
+  {
+    requiredPermission: PERMISSIONS.dataSentinelReportsExport,
+    requireTenantContext: true,
+  },
 );

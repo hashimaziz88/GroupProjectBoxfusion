@@ -106,6 +106,7 @@ const ActivityIntakePageContent = () => {
         lastAcceptedCount={lastResult?.result.acceptedCount ?? 0}
       />
       <IntakeWorkflowTabs
+        currentTenantId={currentTenant!.tenantId}
         monitoredServers={monitoredServers}
         allDatabases={allDatabases}
         isLoadingReferences={isLoadingReferences}
@@ -117,4 +118,7 @@ const ActivityIntakePageContent = () => {
   );
 };
 
-export default withAuth(ActivityIntakePageContent, PERMISSIONS.dataSentinelIntake);
+export default withAuth(ActivityIntakePageContent, {
+  requiredPermission: PERMISSIONS.dataSentinelIntake,
+  requireTenantContext: true,
+});

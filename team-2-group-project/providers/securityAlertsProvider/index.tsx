@@ -354,6 +354,18 @@ export const SecurityAlertsProvider: React.FC<{
   const updateStatus = async (
     input: Omit<IUpdateAlertStatusInput, "alertId">,
   ) => {
+    if (!canReviewAlerts) {
+      dispatch(
+        setSecurityAlertsState({
+          actionMessage: {
+            type: "error",
+            text: "You do not have permission to review security alerts.",
+          },
+        }),
+      );
+      return false;
+    }
+
     if (!state.selectedAlertId) {
       return false;
     }
@@ -397,6 +409,18 @@ export const SecurityAlertsProvider: React.FC<{
   const createNoteAction = async (
     input: Omit<ICreateIncidentNoteInput, "alertId">,
   ) => {
+    if (!canReviewAlerts) {
+      dispatch(
+        setSecurityAlertsState({
+          actionMessage: {
+            type: "error",
+            text: "You do not have permission to add incident notes.",
+          },
+        }),
+      );
+      return false;
+    }
+
     if (!state.selectedAlertId) {
       return false;
     }
@@ -438,6 +462,18 @@ export const SecurityAlertsProvider: React.FC<{
   };
 
   const bulkUpdateStatus = async (input: IBulkUpdateAlertStatusInput) => {
+    if (!canReviewAlerts) {
+      dispatch(
+        setSecurityAlertsState({
+          actionMessage: {
+            type: "error",
+            text: "You do not have permission to bulk review alerts.",
+          },
+        }),
+      );
+      return false;
+    }
+
     if (input.alertIds.length === 0) {
       dispatch(
         setSecurityAlertsState({
@@ -490,6 +526,18 @@ export const SecurityAlertsProvider: React.FC<{
   };
 
   const exportReport = async () => {
+    if (!canExportReports) {
+      dispatch(
+        setSecurityAlertsState({
+          actionMessage: {
+            type: "error",
+            text: "You do not have permission to export incident reports.",
+          },
+        }),
+      );
+      return;
+    }
+
     if (!state.selectedAlertId || !state.selectedAlert) {
       return;
     }

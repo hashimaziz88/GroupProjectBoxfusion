@@ -6,6 +6,7 @@ import {
   getAllPermissions,
   getRoles,
   getTenants,
+  getUserRoles,
   getUsers,
 } from "@/utils/auth/adminService";
 import {
@@ -62,6 +63,26 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
+  const fetchAssignableRoles = useCallback(async () => {
+    dispatch(setAdminState({ isLoadingRoles: true, errorMessage: null }));
+
+    try {
+      const result = await getUserRoles();
+      dispatch(setAdminState({ assignableRoles: toArray(result.items) }));
+    } catch (error: unknown) {
+      dispatch(
+        setAdminState({
+          errorMessage:
+            error instanceof Error
+              ? error.message
+              : "Failed to load assignable roles.",
+        }),
+      );
+    } finally {
+      dispatch(setAdminState({ isLoadingRoles: false }));
+    }
+  }, []);
+
   const fetchAllPermissions = useCallback(async () => {
     try {
       const result = await getAllPermissions();
@@ -108,6 +129,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({
         isLoadingUsers: state.isLoadingUsers,
         totalUsersCount: state.totalUsersCount,
         roles: state.roles,
+        assignableRoles: state.assignableRoles,
         isLoadingRoles: state.isLoadingRoles,
         allPermissions: state.allPermissions,
         tenants: state.tenants,
@@ -121,6 +143,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({
         value={{
           fetchUsers,
           fetchRoles,
+          fetchAssignableRoles,
           fetchTenants,
           fetchAllPermissions,
           setActionMessage,

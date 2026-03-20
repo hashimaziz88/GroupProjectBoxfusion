@@ -17,6 +17,7 @@ import {
 } from "antd";
 import AppShell from "@/components/auth/AppShell";
 import { withAuth } from "@/hoc/withAuth";
+import { useAuthState } from "@/providers/authProvider";
 import { useAdminState, useAdminActions } from "@/providers/adminProvider";
 import {
   createRole,
@@ -32,15 +33,18 @@ import {
   IRoleListItem,
 } from "@/interfaces/auth/adminService";
 import { PERMISSIONS } from "@/constants/auth/roles";
+import { canManageRolesCrud } from "@/utils/auth/roles";
 
 const { Paragraph, Title } = Typography;
 
 const RolesPageContent = () => {
   const { styles } = useStyles();
+  const { permissions, user } = useAuthState();
   const { roles, isLoadingRoles, allPermissions, errorMessage, actionMessage } =
     useAdminState();
   const { fetchRoles, fetchAllPermissions, setActionMessage } =
     useAdminActions();
+  const canManageRoles = canManageRolesCrud(user?.roles, permissions);
 
   const [createForm] = Form.useForm();
   const [editForm] = Form.useForm();
@@ -61,6 +65,7 @@ const RolesPageContent = () => {
   }));
 
   const handleCreate = async (values: ICreateRoleDto) => {
+    if (!canManageRoles) return;
     setIsSubmitting(true);
     try {
       await createRole(values);
@@ -79,7 +84,7 @@ const RolesPageContent = () => {
   };
 
   const handleEdit = async (values: Omit<IRoleDto, "id">) => {
-    if (!editingRole) return;
+    if (!editingRole || !canManageRoles) return;
     setIsSubmitting(true);
     try {
       await updateRole({ ...values, id: editingRole.id });
@@ -97,6 +102,7 @@ const RolesPageContent = () => {
   };
 
   const handleDelete = async (id: number) => {
+    if (!canManageRoles) return;
     try {
       await deleteRole(id);
       setActionMessage({ type: "success", text: "Role deleted." });
@@ -110,6 +116,7 @@ const RolesPageContent = () => {
   };
 
   const openEdit = async (role: IRoleListItem) => {
+    if (!canManageRoles) return;
     setEditingRole(role);
     setIsLoadingEdit(true);
     setIsEditOpen(true);
@@ -161,15 +168,17 @@ const RolesPageContent = () => {
           <Title level={4} className={styles.sectionTitle}>
             Role catalogue
           </Title>
-          <Button
-            type="primary"
-            onClick={() => {
-              createForm.resetFields();
-              setIsCreateOpen(true);
-            }}
-          >
-            Create role
-          </Button>
+          {canManageRoles ? (
+            <Button
+              type="primary"
+              onClick={() => {
+                createForm.resetFields();
+                setIsCreateOpen(true);
+              }}
+            >
+              Create role
+            </Button>
+          ) : null}
         </div>
         <Paragraph className={styles.sectionLead}>
           The backend provides static roles such as `Host.Admin` and
@@ -233,28 +242,32 @@ const RolesPageContent = () => {
               title: "Actions",
               key: "actions",
               render: (_, record) => (
-                <Space size="small" wrap>
-                  <Button size="small" onClick={() => void openEdit(record)}>
-                    Edit
-                  </Button>
-                  <Popconfirm
-                    title="Delete role"
-                    description={
-                      record.isStatic
-                        ? "Static roles cannot be deleted."
-                        : "This action cannot be undone."
-                    }
-                    onConfirm={() =>
-                      record.isStatic ? undefined : void handleDelete(record.id)
-                    }
-                    okText="Delete"
-                    okButtonProps={{ danger: true, disabled: record.isStatic }}
-                  >
-                    <Button size="small" danger disabled={record.isStatic}>
-                      Delete
+                canManageRoles ? (
+                  <Space size="small" wrap>
+                    <Button size="small" onClick={() => void openEdit(record)}>
+                      Edit
                     </Button>
-                  </Popconfirm>
-                </Space>
+                    <Popconfirm
+                      title="Delete role"
+                      description={
+                        record.isStatic
+                          ? "Static roles cannot be deleted."
+                          : "This action cannot be undone."
+                      }
+                      onConfirm={() =>
+                        record.isStatic ? undefined : void handleDelete(record.id)
+                      }
+                      okText="Delete"
+                      okButtonProps={{ danger: true, disabled: record.isStatic }}
+                    >
+                      <Button size="small" danger disabled={record.isStatic}>
+                        Delete
+                      </Button>
+                    </Popconfirm>
+                  </Space>
+                ) : (
+                  <span className={styles.mutedText}>View only</span>
+                )
               ),
             },
           ]}
@@ -264,7 +277,7 @@ const RolesPageContent = () => {
 
       <Modal
         title="Create role"
-        open={isCreateOpen}
+        open={canManageRoles && isCreateOpen}
         onCancel={() => setIsCreateOpen(false)}
         onOk={() => createForm.submit()}
         okText="Create"
@@ -297,7 +310,7 @@ const RolesPageContent = () => {
 
       <Modal
         title="Edit role"
-        open={isEditOpen}
+        open={canManageRoles && isEditOpen}
         onCancel={() => setIsEditOpen(false)}
         onOk={() => editForm.submit()}
         okText="Save"
