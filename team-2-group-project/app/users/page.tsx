@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import {
-  Alert,
   Button,
   Card,
   Checkbox,
@@ -19,6 +18,7 @@ import {
 } from "antd";
 import { LoadingOutlined } from "@ant-design/icons";
 import AppShell from "@/components/auth/AppShell";
+import TimedAlertMessage from "@/components/feedback/TimedAlertMessage";
 import { withAuth } from "@/hoc/withAuth";
 import { useAuthState } from "@/providers/authProvider";
 import { useAdminState, useAdminActions } from "@/providers/adminProvider";
@@ -40,6 +40,7 @@ import {
   IUserListItem,
 } from "@/interfaces/auth/adminService";
 import { PERMISSIONS } from "@/constants/auth/roles";
+import { resolveAbpErrorMessage } from "@/utils/abp";
 import {
   canActivateUsers,
   canManageUsersCrud,
@@ -58,7 +59,7 @@ const UsersPageContent = () => {
     actionMessage,
   } =
     useAdminState();
-  const { fetchUsers, fetchAssignableRoles, setActionMessage } =
+  const { fetchUsers, fetchAssignableRoles, setActionMessage, clearMessages } =
     useAdminActions();
   const canManageUsers = canManageUsersCrud(user?.roles, permissions);
   const canToggleUserActivation = canActivateUsers(permissions);
@@ -104,7 +105,7 @@ const UsersPageContent = () => {
     } catch (error: unknown) {
       setActionMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Failed to create user.",
+        text: resolveAbpErrorMessage(error, "Failed to create user."),
       });
     } finally {
       setIsSubmitting(false);
@@ -122,7 +123,7 @@ const UsersPageContent = () => {
     } catch (error: unknown) {
       setActionMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Failed to update user.",
+        text: resolveAbpErrorMessage(error, "Failed to update user."),
       });
     } finally {
       setIsSubmitting(false);
@@ -139,7 +140,7 @@ const UsersPageContent = () => {
     } catch (error: unknown) {
       setActionMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Failed to delete user.",
+        text: resolveAbpErrorMessage(error, "Failed to delete user."),
       });
     } finally {
       setProcessingDeleteId(null);
@@ -167,10 +168,7 @@ const UsersPageContent = () => {
     } catch (error: unknown) {
       setActionMessage({
         type: "error",
-        text:
-          error instanceof Error
-            ? error.message
-            : "Failed to change user status.",
+        text: resolveAbpErrorMessage(error, "Failed to change user status."),
       });
     } finally {
       setProcessingToggleId(null);
@@ -193,8 +191,7 @@ const UsersPageContent = () => {
     } catch (error: unknown) {
       setActionMessage({
         type: "error",
-        text:
-          error instanceof Error ? error.message : "Failed to reset password.",
+        text: resolveAbpErrorMessage(error, "Failed to reset password."),
       });
     } finally {
       setIsSubmitting(false);
@@ -221,8 +218,7 @@ const UsersPageContent = () => {
     } catch (error: unknown) {
       setActionMessage({
         type: "error",
-        text:
-          error instanceof Error ? error.message : "Failed to update user roles.",
+        text: resolveAbpErrorMessage(error, "Failed to update user roles."),
       });
     } finally {
       setIsSubmitting(false);
@@ -294,31 +290,19 @@ const UsersPageContent = () => {
     >
       {/* User feedback: error state */}
       {errorMessage ? (
-        <Alert
+        <TimedAlertMessage
           type="error"
-          showIcon
           title={errorMessage}
+          onDismiss={clearMessages}
           className={styles.alert}
         />
       ) : null}
-      {/* User feedback: success state */}
-      {actionMessage && actionMessage.type === "success" ? (
-        <Alert
-          type="success"
-          showIcon
+      {actionMessage ? (
+        <TimedAlertMessage
+          type={actionMessage.type}
           title={actionMessage.text}
           className={styles.alert}
-          closable={{ onClose: () => setActionMessage(null) }}
-        />
-      ) : null}
-      {/* User feedback: error state for action */}
-      {actionMessage && actionMessage.type === "error" ? (
-        <Alert
-          type="error"
-          showIcon
-          title={actionMessage.text}
-          className={styles.alert}
-          closable={{ onClose: () => setActionMessage(null) }}
+          onDismiss={clearMessages}
         />
       ) : null}
 

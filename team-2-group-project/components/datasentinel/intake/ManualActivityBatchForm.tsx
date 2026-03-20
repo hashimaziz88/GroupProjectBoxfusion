@@ -63,27 +63,37 @@ const ManualActivityBatchForm = ({
     >
       <div className={styles.splitGrid}>
         <div className={styles.stackedCards}>
-          <Form.Item name="serverId" label="Default server">
+          <Form.Item
+            name="serverId"
+            label="Default server"
+            rules={[{ required: true, message: "Choose a monitored server." }]}
+          >
             <Select
-              allowClear
               loading={isLoadingReferences}
               className={styles.fullWidthControl}
+              placeholder="Select a monitored server"
+              onChange={() => form.setFieldValue("databaseId", undefined)}
               options={monitoredServers.map((server) => ({
                 value: server.id,
                 label: `${server.name} (${server.hostName})`,
               }))}
             />
           </Form.Item>
-          <Form.Item name="databaseId" label="Default database">
+          <Form.Item
+            name="databaseId"
+            label="Default database"
+            rules={[{ required: true, message: "Choose a monitored database." }]}
+          >
             <Select
-              allowClear
               loading={isLoadingReferences}
+              disabled={!manualServerId}
               className={styles.fullWidthControl}
+              placeholder="Select a monitored database"
               options={resolveDatabaseOptions(allDatabases, manualServerId)}
             />
           </Form.Item>
           <Paragraph className={styles.sectionLead}>
-            The defaults above are injected only when incoming manual items do not already carry `serverId` or `databaseId`.
+            Choose the monitored server and database that this batch belongs to before submitting the payload.
           </Paragraph>
           <Upload beforeUpload={handleUpload} showUploadList={false}>
             <Button>Load JSON file</Button>

@@ -2,6 +2,7 @@
 
 import React, { useCallback, useContext, useReducer } from "react";
 import { toArray } from "@/utils/helpers";
+import { resolveAbpErrorMessage } from "@/utils/abp";
 import {
   getAllPermissions,
   getRoles,
@@ -16,6 +17,9 @@ import {
 } from "./context";
 import { setAdminState } from "./actions";
 import { AdminReducer } from "./reducer";
+
+const resolveAdminErrorMessage = (error: unknown, fallback: string) =>
+  resolveAbpErrorMessage(error, fallback);
 
 export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -36,8 +40,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (error: unknown) {
       dispatch(
         setAdminState({
-          errorMessage:
-            error instanceof Error ? error.message : "Failed to load users.",
+          errorMessage: resolveAdminErrorMessage(error, "Failed to load users."),
         }),
       );
     } finally {
@@ -54,8 +57,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (error: unknown) {
       dispatch(
         setAdminState({
-          errorMessage:
-            error instanceof Error ? error.message : "Failed to load roles.",
+          errorMessage: resolveAdminErrorMessage(error, "Failed to load roles."),
         }),
       );
     } finally {
@@ -72,10 +74,10 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (error: unknown) {
       dispatch(
         setAdminState({
-          errorMessage:
-            error instanceof Error
-              ? error.message
-              : "Failed to load assignable roles.",
+          errorMessage: resolveAdminErrorMessage(
+            error,
+            "Failed to load assignable roles.",
+          ),
         }),
       );
     } finally {
@@ -106,8 +108,10 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (error: unknown) {
       dispatch(
         setAdminState({
-          errorMessage:
-            error instanceof Error ? error.message : "Failed to load tenants.",
+          errorMessage: resolveAdminErrorMessage(
+            error,
+            "Failed to load tenants.",
+          ),
         }),
       );
     } finally {
@@ -121,6 +125,10 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({
     },
     [],
   );
+
+  const clearMessages = useCallback(() => {
+    dispatch(setAdminState({ actionMessage: null, errorMessage: null }));
+  }, []);
 
   return (
     <AdminStateContext.Provider
@@ -147,6 +155,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({
           fetchTenants,
           fetchAllPermissions,
           setActionMessage,
+          clearMessages,
         }}
       >
         {children}

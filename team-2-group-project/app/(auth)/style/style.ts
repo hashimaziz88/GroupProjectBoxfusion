@@ -19,9 +19,15 @@ export const useStyles = createStyles(({ token }) => ({
     padding: 56px;
     display: flex;
     align-items: center;
+    background:
+      radial-gradient(circle at top left, rgba(8, 145, 178, 0.22) 0%, transparent 34%),
+      linear-gradient(180deg, #0c1a2e 0%, #10243c 100%);
+    border-right: 1px solid rgba(8, 145, 178, 0.16);
 
     @media (max-width: 980px) {
       padding: 48px 24px 12px;
+      border-right: none;
+      border-bottom: 1px solid rgba(8, 145, 178, 0.16);
     }
   `,
 
@@ -32,12 +38,39 @@ export const useStyles = createStyles(({ token }) => ({
     gap: 18px;
   `,
 
+  heroBrand: css`
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 8px;
+  `,
+
+  heroBrandLogo: css`
+    width: auto;
+    height: auto;
+    filter: brightness(0) invert(1);
+    opacity: 0.94;
+  `,
+
+  heroBrandContext: css`
+    display: inline-flex;
+    width: fit-content;
+    border-radius: 999px;
+    border: 1px solid rgba(125, 211, 232, 0.2);
+    background: rgba(8, 145, 178, 0.14);
+    color: #7dd3e8;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  `,
+
   eyebrow: css`
     display: inline-flex;
     width: fit-content;
     border-radius: 999px;
-    background: rgba(15, 23, 42, 0.08);
-    color: #0f172a;
+    background: rgba(125, 211, 232, 0.12);
+    color: #b9ecf7;
     padding: 8px 14px;
     font-size: 12px;
     font-weight: 700;
@@ -48,7 +81,7 @@ export const useStyles = createStyles(({ token }) => ({
   heroTitle: css`
     &.ant-typography {
       margin: 0;
-      color: #0f172a;
+      color: #f8fbfd;
       font-size: clamp(2.5rem, 5vw, 4.25rem);
       line-height: 0.98;
     }
@@ -57,7 +90,7 @@ export const useStyles = createStyles(({ token }) => ({
   heroText: css`
     &.ant-typography {
       margin: 0;
-      color: #475569;
+      color: rgba(220, 235, 244, 0.82);
       font-size: 16px;
       line-height: 1.7;
     }
@@ -83,6 +116,29 @@ export const useStyles = createStyles(({ token }) => ({
       background: rgba(255, 255, 255, 0.94);
       backdrop-filter: blur(12px);
     }
+  `,
+
+  formBrand: css`
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-bottom: 18px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  `,
+
+  formBrandLogo: css`
+    width: auto;
+    height: auto;
+    max-width: 150px;
+  `,
+
+  formBrandCaption: css`
+    color: #4a6a7c;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
   `,
 
   headerBlock: css`
