@@ -139,6 +139,7 @@ const TenantsPageContent = () => {
       title="Tenants"
       subtitle="Create and manage tenants from the host context. Each tenant operates in full isolation."
     >
+      {/* User feedback: error state */}
       {errorMessage ? (
         <Alert
           type="error"
@@ -147,9 +148,20 @@ const TenantsPageContent = () => {
           className={styles.alert}
         />
       ) : null}
-      {actionMessage ? (
+      {/* User feedback: success state */}
+      {actionMessage && actionMessage.type === "success" ? (
         <Alert
-          type={actionMessage.type}
+          type="success"
+          showIcon
+          title={actionMessage.text}
+          className={styles.alert}
+          closable={{ onClose: () => setActionMessage(null) }}
+        />
+      ) : null}
+      {/* User feedback: error state for action */}
+      {actionMessage && actionMessage.type === "error" ? (
+        <Alert
+          type="error"
           showIcon
           title={actionMessage.text}
           className={styles.alert}
@@ -158,6 +170,7 @@ const TenantsPageContent = () => {
       ) : null}
 
       <Card className={styles.pageCard}>
+        {/* User feedback: loading state handled by Table's loading prop */}
         <div className={styles.cardToolbar}>
           <Title level={4} className={styles.sectionTitle}>
             Tenant directory
