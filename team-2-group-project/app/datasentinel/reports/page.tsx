@@ -2,6 +2,7 @@
 
 import { Alert, Skeleton, Space } from "antd";
 import AppShell from "@/components/auth/AppShell";
+import TimedAlertMessage from "@/components/feedback/TimedAlertMessage";
 import ReportExportControls from "@/components/datasentinel/reports/ReportExportControls";
 import ReportExportPackages from "@/components/datasentinel/reports/ReportExportPackages";
 import ReportExportSummary from "@/components/datasentinel/reports/ReportExportSummary";
@@ -41,21 +42,19 @@ const ReportExportPageContent = () => {
   return (
     <AppShell title={PAGE_TITLE} subtitle={PAGE_SUBTITLE}>
       {errorMessage ? (
-        <Alert
+        <TimedAlertMessage
           type="error"
-          showIcon
           title={errorMessage}
-          closable={{ onClose: clearMessages }}
+          onDismiss={clearMessages}
           className={styles.alert}
           style={{ marginBottom: 16 }}
         />
       ) : null}
       {actionMessage ? (
-        <Alert
+        <TimedAlertMessage
           type={actionMessage.type}
-          showIcon
           title={actionMessage.text}
-          closable={{ onClose: clearMessages }}
+          onDismiss={clearMessages}
           className={styles.alert}
           style={{ marginBottom: 16 }}
         />

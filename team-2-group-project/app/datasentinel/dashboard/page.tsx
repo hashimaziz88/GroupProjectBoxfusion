@@ -2,6 +2,7 @@
 
 import { Alert, Skeleton, Space } from "antd";
 import AppShell from "@/components/auth/AppShell";
+import TimedAlertMessage from "@/components/feedback/TimedAlertMessage";
 import DashboardAiPanel from "@/components/datasentinel/dashboard/DashboardAiPanel";
 import DashboardCharts from "@/components/datasentinel/dashboard/DashboardCharts";
 import DashboardFilters from "@/components/datasentinel/dashboard/DashboardFilters";
@@ -48,21 +49,19 @@ const DashboardPageContent = () => {
   return (
     <AppShell title={PAGE_TITLE} subtitle={PAGE_SUBTITLE}>
       {errorMessage ? (
-        <Alert
+        <TimedAlertMessage
           type="error"
-          showIcon
           title={errorMessage}
-          closable={{ onClose: clearMessages }}
+          onDismiss={clearMessages}
           className={styles.alert}
           style={{ marginBottom: 16 }}
         />
       ) : null}
       {actionMessage ? (
-        <Alert
+        <TimedAlertMessage
           type={actionMessage.type}
-          showIcon
           title={actionMessage.text}
-          closable={{ onClose: clearMessages }}
+          onDismiss={clearMessages}
           className={styles.alert}
           style={{ marginBottom: 16 }}
         />

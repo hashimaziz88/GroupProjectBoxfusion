@@ -3,6 +3,7 @@
 import React, { useContext, useEffect, useReducer } from "react";
 import axios from "axios";
 import { useAuthState } from "@/providers/authProvider";
+import { resolveAbpErrorMessage } from "@/utils/abp";
 import {
   canAccessDataSentinelActivity,
   canAccessDataSentinelAlerts,
@@ -30,7 +31,7 @@ const resolveErrorMessage = (error: unknown) => {
     return "A report export dependency is not available on this backend yet.";
   }
 
-  return error instanceof Error ? error.message : "Failed to load report data.";
+  return resolveAbpErrorMessage(error, "Failed to load report data.");
 };
 
 const formatDateStamp = () =>

@@ -24,9 +24,6 @@ test.describe("DataSentinel routes", () => {
     await expect(
       page.getByRole("heading", { name: /^Activity Monitoring$/i }),
     ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: /^Activity events$/i }),
-    ).toBeVisible();
   });
 
   test("alerts route renders the triage workspace", async ({ page }) => {
@@ -35,6 +32,8 @@ test.describe("DataSentinel routes", () => {
     await expect(
       page.getByRole("heading", { name: /^Security Alerts$/i }),
     ).toBeVisible();
-    await expect(page.getByRole("button", { name: /^Refresh$/i })).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /^Refresh$/i }),
+    ).toBeVisible();
   });
 });

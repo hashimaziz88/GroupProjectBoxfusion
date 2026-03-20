@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import {
-  Alert,
   Button,
   Card,
   Checkbox,
@@ -16,6 +15,7 @@ import {
   Typography,
 } from "antd";
 import AppShell from "@/components/auth/AppShell";
+import TimedAlertMessage from "@/components/feedback/TimedAlertMessage";
 import { withAuth } from "@/hoc/withAuth";
 import { useAuthState } from "@/providers/authProvider";
 import { useAdminState, useAdminActions } from "@/providers/adminProvider";
@@ -33,6 +33,7 @@ import {
   IRoleListItem,
 } from "@/interfaces/auth/adminService";
 import { PERMISSIONS } from "@/constants/auth/roles";
+import { resolveAbpErrorMessage } from "@/utils/abp";
 import { canManageRolesCrud } from "@/utils/auth/roles";
 
 const { Paragraph, Title } = Typography;
@@ -42,7 +43,7 @@ const RolesPageContent = () => {
   const { permissions, user } = useAuthState();
   const { roles, isLoadingRoles, allPermissions, errorMessage, actionMessage } =
     useAdminState();
-  const { fetchRoles, fetchAllPermissions, setActionMessage } =
+  const { fetchRoles, fetchAllPermissions, setActionMessage, clearMessages } =
     useAdminActions();
   const canManageRoles = canManageRolesCrud(user?.roles, permissions);
 
@@ -76,7 +77,7 @@ const RolesPageContent = () => {
     } catch (error: unknown) {
       setActionMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Failed to create role.",
+        text: resolveAbpErrorMessage(error, "Failed to create role."),
       });
     } finally {
       setIsSubmitting(false);
@@ -94,7 +95,7 @@ const RolesPageContent = () => {
     } catch (error: unknown) {
       setActionMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Failed to update role.",
+        text: resolveAbpErrorMessage(error, "Failed to update role."),
       });
     } finally {
       setIsSubmitting(false);
@@ -110,7 +111,7 @@ const RolesPageContent = () => {
     } catch (error: unknown) {
       setActionMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Failed to delete role.",
+        text: resolveAbpErrorMessage(error, "Failed to delete role."),
       });
     }
   };
@@ -146,20 +147,19 @@ const RolesPageContent = () => {
       subtitle="Define roles and assign permissions to control what users can access within a tenant."
     >
       {errorMessage ? (
-        <Alert
+        <TimedAlertMessage
           type="error"
-          showIcon
           title={errorMessage}
+          onDismiss={clearMessages}
           className={styles.alert}
         />
       ) : null}
       {actionMessage ? (
-        <Alert
+        <TimedAlertMessage
           type={actionMessage.type}
-          showIcon
           title={actionMessage.text}
           className={styles.alert}
-          closable={{ onClose: () => setActionMessage(null) }}
+          onDismiss={clearMessages}
         />
       ) : null}
 

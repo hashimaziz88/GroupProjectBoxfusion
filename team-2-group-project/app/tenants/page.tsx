@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import {
-  Alert,
   Button,
   Card,
   Checkbox,
@@ -16,6 +15,7 @@ import {
   Typography,
 } from "antd";
 import AppShell from "@/components/auth/AppShell";
+import TimedAlertMessage from "@/components/feedback/TimedAlertMessage";
 import { withAuth } from "@/hoc/withAuth";
 import { useAuthState } from "@/providers/authProvider";
 import { useAdminState, useAdminActions } from "@/providers/adminProvider";
@@ -32,6 +32,7 @@ import {
   ITenantListItem,
 } from "@/interfaces/auth/adminService";
 import { PERMISSIONS } from "@/constants/auth/roles";
+import { resolveAbpErrorMessage } from "@/utils/abp";
 import { canManageTenantsCrud } from "@/utils/auth/roles";
 
 const { Paragraph, Title } = Typography;
@@ -41,7 +42,7 @@ const TenantsPageContent = () => {
   const { permissions, user } = useAuthState();
   const { tenants, isLoadingTenants, errorMessage, actionMessage } =
     useAdminState();
-  const { fetchTenants, setActionMessage } = useAdminActions();
+  const { fetchTenants, setActionMessage, clearMessages } = useAdminActions();
   const canManageTenants = canManageTenantsCrud(user?.roles, permissions);
 
   const [createForm] = Form.useForm();
@@ -73,8 +74,7 @@ const TenantsPageContent = () => {
     } catch (error: unknown) {
       setActionMessage({
         type: "error",
-        text:
-          error instanceof Error ? error.message : "Failed to create tenant.",
+        text: resolveAbpErrorMessage(error, "Failed to create tenant."),
       });
     } finally {
       setIsSubmitting(false);
@@ -95,8 +95,7 @@ const TenantsPageContent = () => {
     } catch (error: unknown) {
       setActionMessage({
         type: "error",
-        text:
-          error instanceof Error ? error.message : "Failed to update tenant.",
+        text: resolveAbpErrorMessage(error, "Failed to update tenant."),
       });
     } finally {
       setIsSubmitting(false);
@@ -112,8 +111,7 @@ const TenantsPageContent = () => {
     } catch (error: unknown) {
       setActionMessage({
         type: "error",
-        text:
-          error instanceof Error ? error.message : "Failed to delete tenant.",
+        text: resolveAbpErrorMessage(error, "Failed to delete tenant."),
       });
     }
   };
@@ -147,20 +145,19 @@ const TenantsPageContent = () => {
       subtitle="Create and manage tenants from the host context. Each tenant operates in full isolation."
     >
       {errorMessage ? (
-        <Alert
+        <TimedAlertMessage
           type="error"
-          showIcon
           title={errorMessage}
+          onDismiss={clearMessages}
           className={styles.alert}
         />
       ) : null}
       {actionMessage ? (
-        <Alert
+        <TimedAlertMessage
           type={actionMessage.type}
-          showIcon
           title={actionMessage.text}
           className={styles.alert}
-          closable={{ onClose: () => setActionMessage(null) }}
+          onDismiss={clearMessages}
         />
       ) : null}
 

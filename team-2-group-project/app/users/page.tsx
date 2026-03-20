@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import {
-  Alert,
   Button,
   Card,
   Checkbox,
@@ -17,6 +16,7 @@ import {
   Typography,
 } from "antd";
 import AppShell from "@/components/auth/AppShell";
+import TimedAlertMessage from "@/components/feedback/TimedAlertMessage";
 import { withAuth } from "@/hoc/withAuth";
 import { useAuthState } from "@/providers/authProvider";
 import { useAdminState, useAdminActions } from "@/providers/adminProvider";
@@ -38,6 +38,7 @@ import {
   IUserListItem,
 } from "@/interfaces/auth/adminService";
 import { PERMISSIONS } from "@/constants/auth/roles";
+import { resolveAbpErrorMessage } from "@/utils/abp";
 import {
   canActivateUsers,
   canManageUsersCrud,
@@ -56,7 +57,7 @@ const UsersPageContent = () => {
     actionMessage,
   } =
     useAdminState();
-  const { fetchUsers, fetchAssignableRoles, setActionMessage } =
+  const { fetchUsers, fetchAssignableRoles, setActionMessage, clearMessages } =
     useAdminActions();
   const canManageUsers = canManageUsersCrud(user?.roles, permissions);
   const canToggleUserActivation = canActivateUsers(permissions);
@@ -99,7 +100,7 @@ const UsersPageContent = () => {
     } catch (error: unknown) {
       setActionMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Failed to create user.",
+        text: resolveAbpErrorMessage(error, "Failed to create user."),
       });
     } finally {
       setIsSubmitting(false);
@@ -117,7 +118,7 @@ const UsersPageContent = () => {
     } catch (error: unknown) {
       setActionMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Failed to update user.",
+        text: resolveAbpErrorMessage(error, "Failed to update user."),
       });
     } finally {
       setIsSubmitting(false);
@@ -133,7 +134,7 @@ const UsersPageContent = () => {
     } catch (error: unknown) {
       setActionMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Failed to delete user.",
+        text: resolveAbpErrorMessage(error, "Failed to delete user."),
       });
     }
   };
@@ -158,10 +159,7 @@ const UsersPageContent = () => {
     } catch (error: unknown) {
       setActionMessage({
         type: "error",
-        text:
-          error instanceof Error
-            ? error.message
-            : "Failed to change user status.",
+        text: resolveAbpErrorMessage(error, "Failed to change user status."),
       });
     }
   };
@@ -182,8 +180,7 @@ const UsersPageContent = () => {
     } catch (error: unknown) {
       setActionMessage({
         type: "error",
-        text:
-          error instanceof Error ? error.message : "Failed to reset password.",
+        text: resolveAbpErrorMessage(error, "Failed to reset password."),
       });
     } finally {
       setIsSubmitting(false);
@@ -210,8 +207,7 @@ const UsersPageContent = () => {
     } catch (error: unknown) {
       setActionMessage({
         type: "error",
-        text:
-          error instanceof Error ? error.message : "Failed to update user roles.",
+        text: resolveAbpErrorMessage(error, "Failed to update user roles."),
       });
     } finally {
       setIsSubmitting(false);
@@ -280,20 +276,19 @@ const UsersPageContent = () => {
       subtitle="Manage user accounts and access within the active tenant or host context."
     >
       {errorMessage ? (
-        <Alert
+        <TimedAlertMessage
           type="error"
-          showIcon
           title={errorMessage}
+          onDismiss={clearMessages}
           className={styles.alert}
         />
       ) : null}
       {actionMessage ? (
-        <Alert
+        <TimedAlertMessage
           type={actionMessage.type}
-          showIcon
           title={actionMessage.text}
           className={styles.alert}
-          closable={{ onClose: () => setActionMessage(null) }}
+          onDismiss={clearMessages}
         />
       ) : null}
 
