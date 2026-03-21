@@ -10,7 +10,7 @@ import {
   canAccessUsers,
 } from "@/utils/auth/roles";
 import { PERMISSIONS } from "./auth/roles";
-import React from "react";
+import type React from "react";
 import {
   AlertOutlined,
   AppstoreOutlined,
@@ -32,7 +32,7 @@ export interface INavigationItem {
   key: string;
   href?: string;
   label: string;
-  icon?: React.ReactNode;
+  icon?: React.ReactElement;
   permission?: string;
   children?: INavigationItem[];
 }
@@ -42,47 +42,47 @@ export const NAVIGATION_ITEMS: INavigationItem[] = [
     key: "home",
     href: "/home",
     label: "Home",
-    icon: React.createElement(HomeOutlined),
+    icon: <HomeOutlined aria-hidden />,
   },
   {
     key: "datasentinel-dashboard",
     href: "/datasentinel/dashboard",
     label: "Dashboard",
-    icon: React.createElement(BarChartOutlined),
+    icon: <BarChartOutlined aria-hidden />,
     permission: PERMISSIONS.dataSentinelDashboard,
   },
   {
     key: "datasentinel-infrastructure",
     label: "Infrastructure",
-    icon: React.createElement(ClusterOutlined),
+    icon: <ClusterOutlined aria-hidden />,
     permission: PERMISSIONS.dataSentinelInfrastructureView,
     children: [
       {
         key: "datasentinel-infrastructure-overview",
         href: "/datasentinel/infrastructure",
         label: "Overview",
-        icon: React.createElement(AppstoreOutlined),
+        icon: <AppstoreOutlined aria-hidden />,
         permission: PERMISSIONS.dataSentinelInfrastructureView,
       },
       {
         key: "datasentinel-infrastructure-servers",
         href: "/datasentinel/infrastructure/servers",
         label: "Servers",
-        icon: React.createElement(CloudServerOutlined),
+        icon: <CloudServerOutlined aria-hidden />,
         permission: PERMISSIONS.dataSentinelInfrastructureView,
       },
       {
         key: "datasentinel-infrastructure-databases",
         href: "/datasentinel/infrastructure/databases",
         label: "Databases",
-        icon: React.createElement(DatabaseOutlined),
+        icon: <DatabaseOutlined aria-hidden />,
         permission: PERMISSIONS.dataSentinelInfrastructureView,
       },
       {
         key: "datasentinel-infrastructure-tables",
         href: "/datasentinel/infrastructure/tables",
         label: "Tables",
-        icon: React.createElement(TableOutlined),
+        icon: <TableOutlined aria-hidden />,
         permission: PERMISSIONS.dataSentinelInfrastructureView,
       },
     ],
@@ -91,56 +91,56 @@ export const NAVIGATION_ITEMS: INavigationItem[] = [
     key: "datasentinel-intake",
     href: "/datasentinel/intake",
     label: "Intake",
-    icon: React.createElement(InboxOutlined),
+    icon: <InboxOutlined aria-hidden />,
     permission: PERMISSIONS.dataSentinelIntake,
   },
   {
     key: "datasentinel-activity",
     href: "/datasentinel/activity",
     label: "Activity",
-    icon: React.createElement(AreaChartOutlined),
+    icon: <AreaChartOutlined aria-hidden />,
     permission: PERMISSIONS.dataSentinelActivity,
   },
   {
     key: "datasentinel-alerts",
     href: "/datasentinel/alerts",
     label: "Alerts",
-    icon: React.createElement(AlertOutlined),
+    icon: <AlertOutlined aria-hidden />,
     permission: PERMISSIONS.dataSentinelAlertsView,
   },
   {
     key: "datasentinel-reports",
     href: "/datasentinel/reports",
     label: "Reports",
-    icon: React.createElement(FileTextOutlined),
+    icon: <FileTextOutlined aria-hidden />,
     permission: PERMISSIONS.dataSentinelReportsExport,
   },
   {
     key: "roles",
     href: "/roles",
     label: "Roles",
-    icon: React.createElement(SafetyOutlined),
+    icon: <SafetyOutlined aria-hidden />,
     permission: PERMISSIONS.roles,
   },
   {
     key: "tenants",
     href: "/tenants",
     label: "Tenants",
-    icon: React.createElement(ClusterOutlined),
+    icon: <ClusterOutlined aria-hidden />,
     permission: PERMISSIONS.tenants,
   },
   {
     key: "users",
     href: "/users",
     label: "Users",
-    icon: React.createElement(TeamOutlined),
+    icon: <TeamOutlined aria-hidden />,
     permission: PERMISSIONS.users,
   },
   {
     key: "profile",
     href: "/profile",
     label: "Profile",
-    icon: React.createElement(UserOutlined),
+    icon: <UserOutlined aria-hidden />,
   },
 ];
 
