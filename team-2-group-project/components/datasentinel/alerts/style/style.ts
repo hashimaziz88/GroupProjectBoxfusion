@@ -62,6 +62,19 @@ export const useStyles = createStyles(() => ({
     gap: 8px;
   `,
 
+  filterBar: css`
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+  `,
+
+  filterBarControl: css`
+    flex: 1;
+    min-width: 140px;
+    max-width: 260px;
+  `,
+
   filterActionsRow: css`
     display: flex;
     flex-wrap: wrap;

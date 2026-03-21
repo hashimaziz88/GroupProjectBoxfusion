@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { Button, Card, DatePicker, Input, Select, Typography, Tag, Space } from "antd";
+import { FilterOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import {
   ALERT_SEVERITY_OPTIONS,
@@ -14,9 +16,10 @@ import { DEFAULT_FILTERS } from "@/providers/securityAlertsProvider/context";
 import { ISecurityAlertFilterDraft } from "@/interfaces/datasentinel/alerts";
 import { useStyles } from "./style/style";
 
-const { Paragraph, Text, Title } = Typography;
+const { Text } = Typography;
 
 const SecurityAlertsFilterPanel = () => {
+  const [showMoreFilters, setShowMoreFilters] = useState(false);
   const { styles } = useStyles();
   const { filterOptions, filters, isRefreshing } = useSecurityAlertsState();
   const { applyFilters, refresh, resetFilters, setFilterValue } =
@@ -29,29 +32,21 @@ const SecurityAlertsFilterPanel = () => {
 
   return (
     <Card className={styles.pageCard}>
-      <Title level={4} className={styles.sectionTitle}>
-        Filters
-      </Title>
-      <Paragraph className={styles.sectionLead}>
-        Search by alert title, summary, or actor, then narrow by severity, review status, database, and time window.
-      </Paragraph>
-
-      <div className={styles.filterGrid}>
-        <div className={styles.filterField}>
-          <Text strong>Search</Text>
+      {/* Primary filter bar — always visible */}
+      <div className={styles.filterBar}>
+        <div className={styles.filterBarControl}>
           <Input
             value={filters.keyword}
-            placeholder="Title, summary, actor"
+            placeholder="Search alerts..."
             onChange={(event) => setFilterValue("keyword", event.target.value)}
           />
         </div>
-
-        <div className={styles.filterField}>
-          <Text strong>Severity</Text>
+        <div className={styles.filterBarControl}>
           <Select
             allowClear
+            style={{ width: "100%" }}
             value={filters.severity}
-            placeholder="All severities"
+            placeholder="All Severities"
             options={ALERT_SEVERITY_OPTIONS.map((option) => ({
               value: option.value,
               label: option.label,
@@ -59,13 +54,12 @@ const SecurityAlertsFilterPanel = () => {
             onChange={(value) => setFilterValue("severity", value)}
           />
         </div>
-
-        <div className={styles.filterField}>
-          <Text strong>Status</Text>
+        <div className={styles.filterBarControl}>
           <Select
             allowClear
+            style={{ width: "100%" }}
             value={filters.status}
-            placeholder="All statuses"
+            placeholder="All Statuses"
             options={ALERT_STATUS_OPTIONS.map((option) => ({
               value: option.value,
               label: option.label,
@@ -73,13 +67,12 @@ const SecurityAlertsFilterPanel = () => {
             onChange={(value) => setFilterValue("status", value)}
           />
         </div>
-
-        <div className={styles.filterField}>
-          <Text strong>Database</Text>
+        <div className={styles.filterBarControl}>
           <Select
             allowClear
+            style={{ width: "100%" }}
             value={filters.databaseId}
-            placeholder="All databases"
+            placeholder="All Databases"
             options={filterOptions.databases.map((database) => ({
               value: database.id,
               label: database.name,
@@ -87,35 +80,45 @@ const SecurityAlertsFilterPanel = () => {
             onChange={(value) => setFilterValue("databaseId", value)}
           />
         </div>
-
-        <div className={styles.filterField}>
-          <Text strong>From</Text>
-          <DatePicker
-            showTime
-            format="YYYY-MM-DD HH:mm"
-            style={{ width: "100%" }}
-            value={filters.startDate ? dayjs(filters.startDate) : null}
-            onChange={(date) => setFilterValue("startDate", date ? date.toISOString() : "")}
-          />
-        </div>
-
-        <div className={styles.filterField}>
-          <Text strong>To</Text>
-          <DatePicker
-            showTime
-            format="YYYY-MM-DD HH:mm"
-            style={{ width: "100%" }}
-            status={dateError ? "error" : undefined}
-            value={filters.endDate ? dayjs(filters.endDate) : null}
-            onChange={(date) => setFilterValue("endDate", date ? date.toISOString() : "")}
-          />
-          {dateError && (
-            <Text type="danger" style={{ fontSize: 12 }}>
-              End date must be after start date
-            </Text>
-          )}
-        </div>
+        <Button
+          icon={<FilterOutlined />}
+          onClick={() => setShowMoreFilters((prev) => !prev)}
+        >
+          {showMoreFilters ? "Less Filters" : "More Filters"}
+        </Button>
       </div>
+
+      {/* Secondary filters — revealed by More Filters */}
+      {showMoreFilters && (
+        <div className={styles.filterGrid} style={{ marginTop: 14 }}>
+          <div className={styles.filterField}>
+            <Text strong>From</Text>
+            <DatePicker
+              showTime
+              format="YYYY-MM-DD HH:mm"
+              style={{ width: "100%" }}
+              value={filters.startDate ? dayjs(filters.startDate) : null}
+              onChange={(date) => setFilterValue("startDate", date ? date.toISOString() : "")}
+            />
+          </div>
+          <div className={styles.filterField}>
+            <Text strong>To</Text>
+            <DatePicker
+              showTime
+              format="YYYY-MM-DD HH:mm"
+              style={{ width: "100%" }}
+              status={dateError ? "error" : undefined}
+              value={filters.endDate ? dayjs(filters.endDate) : null}
+              onChange={(date) => setFilterValue("endDate", date ? date.toISOString() : "")}
+            />
+            {dateError && (
+              <Text type="danger" style={{ fontSize: 12 }}>
+                End date must be after start date
+              </Text>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Active filters: show removable chips when filters applied */}
       <div className={styles.activeFiltersRow}>
