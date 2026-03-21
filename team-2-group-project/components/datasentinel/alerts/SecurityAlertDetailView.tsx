@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Alert,
   Button,
@@ -21,10 +22,12 @@ import {
   CheckCircleOutlined,
   ClockCircleOutlined,
   ExclamationCircleOutlined,
+  ExportOutlined,
   FileSearchOutlined,
   MessageOutlined,
   RobotOutlined,
 } from "@ant-design/icons";
+import { exportIncidentReport } from "@/utils/datasentinel/alertsService";
 import { ALERT_REVIEW_STATUS_OPTIONS } from "@/constants/datasentinel/alerts";
 import {
   useSecurityAlertsActions,
@@ -144,6 +147,7 @@ const resolveStatusTone = (status: number) => {
 };
 
 const SecurityAlertDetailView = () => {
+  const [isExporting, setIsExporting] = useState(false);
   const { styles } = useStyles();
   const {
     aiAnalysis,
@@ -163,6 +167,23 @@ const SecurityAlertDetailView = () => {
 
   const [statusForm] = Form.useForm();
   const [noteForm] = Form.useForm();
+
+  const handleExportReport = async () => {
+    if (!selectedAlert) return;
+    setIsExporting(true);
+    try {
+      const buffer = await exportIncidentReport(selectedAlert.id);
+      const blob = new Blob([buffer], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `alert-report-${selectedAlert.alertId}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   return (
     <Card className={styles.pageCard}>
@@ -223,7 +244,14 @@ const SecurityAlertDetailView = () => {
                 ) : (
                   <Tag className={styles.workflowPill}>Read-only access</Tag>
                 )}
-
+                <Button
+                  type="primary"
+                  icon={<ExportOutlined />}
+                  loading={isExporting}
+                  onClick={() => void handleExportReport()}
+                >
+                  Export Report
+                </Button>
               </div>
             </div>
 
