@@ -2,7 +2,8 @@ import { createStyles, css } from "antd-style";
 
 export const useStyles = createStyles(() => ({
   shell: css`
-    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
     background:
       radial-gradient(circle at top left, rgba(8, 145, 178, 0.10) 0%, transparent 30%),
       linear-gradient(180deg, #f3f7fa 0%, #eaf4f8 100%);
@@ -12,16 +13,20 @@ export const useStyles = createStyles(() => ({
     &.ant-layout-sider {
       background: #0c1a2e;
       border-right: 1px solid rgba(8, 145, 178, 0.18);
-      height: auto !important;
-      min-height: 100vh;
-      overflow: visible;
+      height: 100vh !important;
+      overflow: visible !important;
+    }
+
+    &.ant-layout-sider-zero-width {
+      .ant-layout-sider-children {
+        display: none;
+      }
     }
 
     .ant-layout-sider-children {
       display: flex;
       flex-direction: column;
-      min-height: 100vh;
-      height: auto;
+      height: 100%;
     }
   `,
 
@@ -93,6 +98,8 @@ export const useStyles = createStyles(() => ({
     &.ant-layout {
       background: transparent;
       min-width: 0;
+      overflow-y: auto;
+      height: 100vh;
     }
   `,
 

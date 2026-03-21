@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { Button, Card, DatePicker, Input, Select, Switch, Tabs, Typography, Tag, Space } from "antd";
+import { FilterOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useStyles } from "@/components/datasentinel/activity/style/style";
 import { EVENT_TYPE_OPTIONS, SEVERITY_OPTIONS } from "@/constants/datasentinel/activity";
@@ -14,6 +16,7 @@ import { IActivityFilterDraft } from "@/interfaces/datasentinel/activity";
 const { Text, Title, Paragraph } = Typography;
 
 const ActivityFilterPanel = () => {
+  const [showMoreFilters, setShowMoreFilters] = useState(false);
   const { styles } = useStyles();
   const { activeTab, filterOptions, filters, isRefreshing, summary } =
     useActivityMonitoringState();
@@ -40,29 +43,21 @@ const ActivityFilterPanel = () => {
         ]}
       />
 
-      <Title level={4} className={styles.sectionTitle}>
-        Filters
-      </Title>
-      <Paragraph className={styles.sectionLead}>
-        Search by actor, IP, object, or operation, then narrow by server, database, event type, severity, and time range.
-      </Paragraph>
-
-      <div className={styles.filterGrid}>
-        <div className={styles.filterField}>
-          <Text strong>Search</Text>
+      {/* Primary filter bar — always visible */}
+      <div className={styles.filterBar}>
+        <div className={styles.filterBarControl}>
           <Input
             value={filters.keyword}
-            placeholder="Actor, object, operation, failure"
+            placeholder="Search activity..."
             onChange={(event) => setFilterValue("keyword", event.target.value)}
           />
         </div>
-
-        <div className={styles.filterField}>
-          <Text strong>Server</Text>
+        <div className={styles.filterBarControl}>
           <Select
             allowClear
+            style={{ width: "100%" }}
             value={filters.serverId}
-            placeholder="All servers"
+            placeholder="All Servers"
             options={filterOptions.servers.map((server) => ({
               value: server.id,
               label: server.name,
@@ -70,13 +65,12 @@ const ActivityFilterPanel = () => {
             onChange={(value) => setFilterValue("serverId", value)}
           />
         </div>
-
-        <div className={styles.filterField}>
-          <Text strong>Database</Text>
+        <div className={styles.filterBarControl}>
           <Select
             allowClear
+            style={{ width: "100%" }}
             value={filters.databaseId}
-            placeholder="All databases"
+            placeholder="All Databases"
             options={filterOptions.databases.map((database) => ({
               value: database.id,
               label: database.name,
@@ -84,63 +78,12 @@ const ActivityFilterPanel = () => {
             onChange={(value) => setFilterValue("databaseId", value)}
           />
         </div>
-
-        <div className={styles.filterField}>
-          <Text strong>User</Text>
+        <div className={styles.filterBarControl}>
           <Select
             allowClear
-            showSearch
-            value={filters.actorUser}
-            placeholder="All users"
-            options={filterOptions.users.map((user) => ({ value: user, label: user }))}
-            onChange={(value) => setFilterValue("actorUser", value)}
-          />
-        </div>
-
-        <div className={styles.filterField}>
-          <Text strong>IP address</Text>
-          <Select
-            allowClear
-            showSearch
-            value={filters.actorIp}
-            placeholder="All IPs"
-            options={filterOptions.ipAddresses.map((ip) => ({ value: ip, label: ip }))}
-            onChange={(value) => setFilterValue("actorIp", value)}
-          />
-        </div>
-
-        <div className={styles.filterField}>
-          <Text strong>Operation</Text>
-          <Select
-            allowClear
-            showSearch
-            value={filters.operation}
-            placeholder="All operations"
-            options={filterOptions.operations.map((op) => ({ value: op, label: op }))}
-            onChange={(value) => setFilterValue("operation", value)}
-          />
-        </div>
-
-        <div className={styles.filterField}>
-          <Text strong>Event type</Text>
-          <Select
-            allowClear
-            value={filters.eventType}
-            placeholder="All event types"
-            options={EVENT_TYPE_OPTIONS.map((option) => ({
-              value: option.value,
-              label: option.label,
-            }))}
-            onChange={(value) => setFilterValue("eventType", value)}
-          />
-        </div>
-
-        <div className={styles.filterField}>
-          <Text strong>Min severity</Text>
-          <Select
-            allowClear
+            style={{ width: "100%" }}
             value={filters.severity}
-            placeholder="All severities"
+            placeholder="All Severities"
             options={SEVERITY_OPTIONS.map((option) => ({
               value: option.value,
               label: option.label,
@@ -148,56 +91,110 @@ const ActivityFilterPanel = () => {
             onChange={(value) => setFilterValue("severity", value)}
           />
         </div>
-
-        <div className={styles.filterField}>
-          <Text strong>Status</Text>
-          <Select
-            value={filters.status}
-            options={[
-              { value: "all", label: "All outcomes" },
-              { value: "success", label: "Success only" },
-              { value: "failure", label: "Failure only" },
-            ]}
-            onChange={(value) => setFilterValue("status", value)}
-          />
-        </div>
-
-        <div className={styles.filterField}>
-          <Text strong>From</Text>
-          <DatePicker
-            showTime
-            format="YYYY-MM-DD HH:mm"
-            style={{ width: "100%" }}
-            value={filters.startDate ? dayjs(filters.startDate) : null}
-            onChange={(date) => setFilterValue("startDate", date ? date.toISOString() : "")}
-          />
-        </div>
-
-        <div className={styles.filterField}>
-          <Text strong>To</Text>
-          <DatePicker
-            showTime
-            format="YYYY-MM-DD HH:mm"
-            style={{ width: "100%" }}
-            status={dateError ? "error" : undefined}
-            value={filters.endDate ? dayjs(filters.endDate) : null}
-            onChange={(date) => setFilterValue("endDate", date ? date.toISOString() : "")}
-          />
-          {dateError && (
-            <Text type="danger" style={{ fontSize: 12 }}>
-              End date must be after start date
-            </Text>
-          )}
-        </div>
-
-        <div className={styles.filterField}>
-          <Text strong>Newest first</Text>
-          <Switch
-            checked={filters.sortDescending}
-            onChange={(checked) => setFilterValue("sortDescending", checked)}
-          />
-        </div>
+        <Button
+          icon={<FilterOutlined />}
+          onClick={() => setShowMoreFilters((prev) => !prev)}
+        >
+          {showMoreFilters ? "Less Filters" : "More Filters"}
+        </Button>
       </div>
+
+      {/* Secondary filters — revealed by More Filters */}
+      {showMoreFilters && (
+        <div className={styles.filterGrid} style={{ marginTop: 14 }}>
+          <div className={styles.filterField}>
+            <Text strong>User</Text>
+            <Select
+              allowClear
+              showSearch
+              value={filters.actorUser}
+              placeholder="All users"
+              options={filterOptions.users.map((user) => ({ value: user, label: user }))}
+              onChange={(value) => setFilterValue("actorUser", value)}
+            />
+          </div>
+          <div className={styles.filterField}>
+            <Text strong>IP address</Text>
+            <Select
+              allowClear
+              showSearch
+              value={filters.actorIp}
+              placeholder="All IPs"
+              options={filterOptions.ipAddresses.map((ip) => ({ value: ip, label: ip }))}
+              onChange={(value) => setFilterValue("actorIp", value)}
+            />
+          </div>
+          <div className={styles.filterField}>
+            <Text strong>Operation</Text>
+            <Select
+              allowClear
+              showSearch
+              value={filters.operation}
+              placeholder="All operations"
+              options={filterOptions.operations.map((op) => ({ value: op, label: op }))}
+              onChange={(value) => setFilterValue("operation", value)}
+            />
+          </div>
+          <div className={styles.filterField}>
+            <Text strong>Event type</Text>
+            <Select
+              allowClear
+              value={filters.eventType}
+              placeholder="All event types"
+              options={EVENT_TYPE_OPTIONS.map((option) => ({
+                value: option.value,
+                label: option.label,
+              }))}
+              onChange={(value) => setFilterValue("eventType", value)}
+            />
+          </div>
+          <div className={styles.filterField}>
+            <Text strong>Status</Text>
+            <Select
+              value={filters.status}
+              options={[
+                { value: "all", label: "All outcomes" },
+                { value: "success", label: "Success only" },
+                { value: "failure", label: "Failure only" },
+              ]}
+              onChange={(value) => setFilterValue("status", value)}
+            />
+          </div>
+          <div className={styles.filterField}>
+            <Text strong>From</Text>
+            <DatePicker
+              showTime
+              format="YYYY-MM-DD HH:mm"
+              style={{ width: "100%" }}
+              value={filters.startDate ? dayjs(filters.startDate) : null}
+              onChange={(date) => setFilterValue("startDate", date ? date.toISOString() : "")}
+            />
+          </div>
+          <div className={styles.filterField}>
+            <Text strong>To</Text>
+            <DatePicker
+              showTime
+              format="YYYY-MM-DD HH:mm"
+              style={{ width: "100%" }}
+              status={dateError ? "error" : undefined}
+              value={filters.endDate ? dayjs(filters.endDate) : null}
+              onChange={(date) => setFilterValue("endDate", date ? date.toISOString() : "")}
+            />
+            {dateError && (
+              <Text type="danger" style={{ fontSize: 12 }}>
+                End date must be after start date
+              </Text>
+            )}
+          </div>
+          <div className={styles.filterField}>
+            <Text strong>Newest first</Text>
+            <Switch
+              checked={filters.sortDescending}
+              onChange={(checked) => setFilterValue("sortDescending", checked)}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Active filters: show removable chips when filters applied */}
       <div className={styles.activeFiltersRow}>

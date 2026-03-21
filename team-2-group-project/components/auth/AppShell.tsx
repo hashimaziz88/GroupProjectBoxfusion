@@ -39,6 +39,7 @@ const buildMenuItems = (
       return {
         key: item.key,
         label: item.label,
+        icon: item.icon,
         children: buildMenuItems(item.children, onNavigate),
       };
     }
@@ -46,6 +47,7 @@ const buildMenuItems = (
     return {
       key: item.key,
       label: item.label,
+      icon: item.icon,
       onClick: item.href ? () => onNavigate(item.href!) : undefined,
     };
   });
@@ -55,7 +57,9 @@ const resolveMenuSelection = (
   pathname: string,
   ancestorKeys: string[] = [],
 ): { selectedKey: string; openKeys: string[] } | null => {
-  for (const item of items) {
+  const sorted = [...items].sort((a, b) => (b.href?.length ?? 0) - (a.href?.length ?? 0));
+
+  for (const item of sorted) {
     if (item.children?.length) {
       const childSelection = resolveMenuSelection(item.children, pathname, [
         ...ancestorKeys,
@@ -67,7 +71,7 @@ const resolveMenuSelection = (
       }
     }
 
-    if (item.href && pathname.startsWith(item.href)) {
+    if (item.href && (pathname === item.href || pathname.startsWith(item.href + "/"))) {
       return {
         selectedKey: item.key,
         openKeys: ancestorKeys,
@@ -85,6 +89,9 @@ const AppShell = ({ title, subtitle, children }: IAppShellProps) => {
   const { logout } = useAuthActions();
   const { currentTenant, permissions, user } = useAuthState();
 
+  const [collapsed, setCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
   const visibleItems = getVisibleNavigationItems(
     permissions,
     user?.roles,
@@ -100,9 +107,27 @@ const AppShell = ({ title, subtitle, children }: IAppShellProps) => {
       ? userOpenKeys
       : menuSelection.openKeys;
 
+  const handleNavigate = (href: string) => {
+    if (isMobile) {
+      setCollapsed(true);
+      setUserOpenKeys([]);
+    }
+    router.push(href);
+  };
+
   return (
     <Layout className={styles.shell}>
-      <Sider breakpoint="lg" collapsedWidth="0" className={styles.sider}>
+      <Sider
+        breakpoint="lg"
+        collapsedWidth="0"
+        collapsed={collapsed}
+        onCollapse={(c) => setCollapsed(c)}
+        onBreakpoint={(broken) => {
+          setIsMobile(broken);
+          setCollapsed(broken);
+        }}
+        className={styles.sider}
+      >
         <Link className={styles.brandBlock} href="/landing">
           <Image
             src="/logoipsum-custom-logo.svg"
@@ -122,7 +147,7 @@ const AppShell = ({ title, subtitle, children }: IAppShellProps) => {
           selectedKeys={[menuSelection.selectedKey]}
           openKeys={openKeys}
           onOpenChange={(nextKeys) => setUserOpenKeys(nextKeys)}
-          items={buildMenuItems(visibleItems, (href) => router.push(href))}
+          items={buildMenuItems(visibleItems, handleNavigate)}
           className={styles.menu}
         />
       </Sider>
