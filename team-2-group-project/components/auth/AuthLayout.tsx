@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { Card, Typography } from "antd";
 import { useStyles } from "@/app/(auth)/style/style";
 import { IAuthLayoutProps } from "@/interfaces/auth/authProps";
@@ -20,7 +21,7 @@ const AuthLayout = ({
     <main className={styles.page}>
       <section className={styles.heroPanel}>
         <div className={styles.heroContent}>
-          <div className={styles.heroBrand}>
+          <Link href="/landing" className={styles.heroBrand}>
             <Image
               src="/logoipsum-custom-logo.svg"
               alt="DataSentinel"
@@ -29,7 +30,7 @@ const AuthLayout = ({
               className={styles.heroBrandLogo}
             />
             <span className={styles.heroBrandContext}>Secure access portal</span>
-          </div>
+          </Link>
           <span className={styles.eyebrow}>DataSentinel Platform</span>
           <Title level={1} className={styles.heroTitle}>
             {asideTitle}
@@ -40,7 +41,7 @@ const AuthLayout = ({
 
       <section className={styles.formSection}>
         <Card className={styles.formCard}>
-          <div className={styles.formBrand}>
+          <Link href="/landing" className={styles.formBrand}>
             <Image
               src="/logoipsum-custom-logo.svg"
               alt="DataSentinel"
@@ -51,7 +52,7 @@ const AuthLayout = ({
             <span className={styles.formBrandCaption}>
               Tenant-aware security access
             </span>
-          </div>
+          </Link>
           {children}
         </Card>
       </section>

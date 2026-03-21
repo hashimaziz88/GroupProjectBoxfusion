@@ -20,7 +20,6 @@ import {
 import {
   CheckCircleOutlined,
   ClockCircleOutlined,
-  DownloadOutlined,
   ExclamationCircleOutlined,
   FileSearchOutlined,
   MessageOutlined,
@@ -149,27 +148,21 @@ const SecurityAlertDetailView = () => {
   const {
     aiAnalysis,
     aiError,
-    canExportReports,
     canReviewAlerts,
     detailErrorMessage,
     history,
     isAiLoading,
     isCreatingNote,
     isDetailLoading,
-    isExportingReport,
     isUpdatingStatus,
     notes,
     selectedAlert,
   } = useSecurityAlertsState();
-  const { createNote, exportReport, retryAiAnalysis, updateStatus } =
+  const { createNote, retryAiAnalysis, updateStatus } =
     useSecurityAlertsActions();
 
   const [statusForm] = Form.useForm();
   const [noteForm] = Form.useForm();
-
-  const handleExportReport = async () => {
-    await exportReport();
-  };
 
   return (
     <Card className={styles.pageCard}>
@@ -230,16 +223,7 @@ const SecurityAlertDetailView = () => {
                 ) : (
                   <Tag className={styles.workflowPill}>Read-only access</Tag>
                 )}
-                {canExportReports ? (
-                  <Button
-                    type="primary"
-                    icon={<DownloadOutlined />}
-                    onClick={handleExportReport}
-                    loading={isExportingReport}
-                  >
-                    Export incident report
-                  </Button>
-                ) : null}
+
               </div>
             </div>
 
@@ -526,32 +510,6 @@ const SecurityAlertDetailView = () => {
                 )}
               </div>
 
-              <div className={styles.actionPanel}>
-                <div className={styles.actionPanelHeader}>
-                  <DownloadOutlined />
-                  <div>
-                    <Title level={5} className={styles.sectionTitle}>
-                      Reporting
-                    </Title>
-                    <Paragraph className={styles.sectionLead}>
-                      Export this incident package for audit records or demo walkthroughs.
-                    </Paragraph>
-                  </div>
-                </div>
-
-                <div className={styles.drawerActions}>
-                  <Button
-                    type={canExportReports ? "default" : "dashed"}
-                    icon={<DownloadOutlined />}
-                    onClick={handleExportReport}
-                    loading={isExportingReport}
-                    disabled={!canExportReports}
-                    block
-                  >
-                    Export incident report
-                  </Button>
-                </div>
-              </div>
             </div>
           </div>
         </>

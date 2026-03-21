@@ -197,6 +197,7 @@ const RolesPageContent = () => {
           loading={isLoadingRoles}
           dataSource={roles}
           className={styles.table}
+          scroll={{ x: "max-content" }}
           columns={[
             {
               title: "Role",

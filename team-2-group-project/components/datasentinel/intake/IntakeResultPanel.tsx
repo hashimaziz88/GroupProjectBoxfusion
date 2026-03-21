@@ -81,6 +81,7 @@ const IntakeResultPanel = ({ lastResult }: IIntakeResultPanelProps) => {
             dataSource={toArray(lastResult.result.errors)}
             className={styles.table}
             columns={errorColumns}
+            scroll={{ x: "max-content" }}
             pagination={false}
           />
         </div>

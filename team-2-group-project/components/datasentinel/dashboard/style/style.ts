@@ -63,6 +63,15 @@ export const useStyles = createStyles(() => ({
     margin-top: 12px;
   `,
 
+  activeFiltersRow: css`
+    margin-top: 12px;
+  `,
+
+  mutedText: css`
+    color: #94a3b8;
+    font-size: 12px;
+  `,
+
   statGrid: css`
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -281,9 +290,15 @@ export const useStyles = createStyles(() => ({
   `,
 
   table: css`
+    width: 100%;
+
+    .ant-table-content,
+    .ant-table-body {
+      overflow: auto !important;
+    }
+
     .ant-table-container {
       border-radius: 18px !important;
-      overflow: hidden;
     }
   `,
 

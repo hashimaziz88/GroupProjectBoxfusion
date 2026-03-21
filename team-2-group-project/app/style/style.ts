@@ -12,12 +12,16 @@ export const useStyles = createStyles(() => ({
     &.ant-layout-sider {
       background: #0f172a;
       border-right: 1px solid rgba(148, 163, 184, 0.14);
+      height: auto !important;
+      min-height: 100vh;
+      overflow: visible;
     }
 
     .ant-layout-sider-children {
       display: flex;
       flex-direction: column;
-      height: 100%;
+      min-height: 100vh;
+      height: auto;
     }
   `,
 
@@ -87,13 +91,15 @@ export const useStyles = createStyles(() => ({
   header: css`
     &.ant-layout-header {
       height: auto;
-      min-height: 108px;
-      padding: 24px 28px 16px;
+      width: min(100%, 1440px);
+      min-height: 92px;
+      margin: 0 auto;
+      padding: 18px 22px 12px;
       background: transparent;
       display: flex;
       flex-wrap: wrap;
       justify-content: space-between;
-      gap: 18px;
+      gap: 14px;
       align-items: flex-start;
     }
   `,
@@ -101,7 +107,7 @@ export const useStyles = createStyles(() => ({
   headerCopy: css`
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
   `,
 
   pageTitle: css`
@@ -163,24 +169,26 @@ export const useStyles = createStyles(() => ({
   `,
 
   content: css`
-    padding: 0 28px 28px;
+    width: min(100%, 1440px);
+    margin: 0 auto;
+    padding: 0 22px 22px;
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 14px;
   `,
 
   pageCard: css`
     &.ant-card {
-      border-radius: 24px;
+      border-radius: 20px;
       border: 1px solid rgba(148, 163, 184, 0.2);
-      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.07);
+      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
     }
   `,
 
   statGrid: css`
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 16px;
+    gap: 14px;
 
     @media (max-width: 960px) {
       grid-template-columns: 1fr;
@@ -188,13 +196,13 @@ export const useStyles = createStyles(() => ({
   `,
 
   statCard: css`
-    border-radius: 20px;
-    padding: 20px;
+    border-radius: 18px;
+    padding: 18px;
     background: linear-gradient(180deg, #f8fdff 0%, #eef8fb 100%);
     border: 1px solid #c8e8f0;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
   `,
 
   statLabel: css`
@@ -207,7 +215,7 @@ export const useStyles = createStyles(() => ({
 
   statValue: css`
     color: #0f172a;
-    font-size: 28px;
+    font-size: 24px;
     font-weight: 700;
   `,
 
@@ -242,15 +250,21 @@ export const useStyles = createStyles(() => ({
 
   sectionLead: css`
     &.ant-typography {
-      margin: 0 0 16px;
+      margin: 0 0 14px;
       color: #64748b;
     }
   `,
 
   table: css`
+    width: 100%;
+
+    .ant-table-content,
+    .ant-table-body {
+      overflow: auto !important;
+    }
+
     .ant-table-container {
       border-radius: 18px !important;
-      overflow: hidden;
     }
   `,
 
@@ -275,7 +289,7 @@ export const useStyles = createStyles(() => ({
   filterGrid: css`
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 14px;
+    gap: 12px;
 
     @media (max-width: 1280px) {
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -302,7 +316,7 @@ export const useStyles = createStyles(() => ({
   splitGrid: css`
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 18px;
+    gap: 16px;
 
     @media (max-width: 960px) {
       grid-template-columns: 1fr;
@@ -312,7 +326,7 @@ export const useStyles = createStyles(() => ({
   tripleGrid: css`
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 18px;
+    gap: 16px;
 
     @media (max-width: 1200px) {
       grid-template-columns: 1fr;
@@ -322,7 +336,7 @@ export const useStyles = createStyles(() => ({
   stackedCards: css`
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 16px;
   `,
 
   cellHint: css`
@@ -393,7 +407,43 @@ export const useStyles = createStyles(() => ({
     }
   `,
 
-  alignSelfStart: css`
-    align-self: start;
+  profileHeader: css`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  `,
+
+  profileAvatar: css`
+    &.ant-avatar {
+      background: linear-gradient(135deg, #1f6feb 0%, #3251a8 100%);
+      color: white;
+      font-weight: 700;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+  `,
+
+  profileName: css`
+    &.ant-typography {
+      margin: 0;
+      color: #0f172a;
+    }
+  `,
+
+  profileDescriptions: css`
+    .ant-descriptions-item-label {
+      color: #64748b;
+      font-weight: 600;
+      font-size: 13px;
+      min-width: 90px;
+    }
+    .ant-descriptions-item-content {
+      color: #0f172a;
+      font-size: 14px;
+    }
   `,
 }));
