@@ -49,7 +49,7 @@ export const getSecurityAlertById = async (id: string) => {
 export const updateSecurityAlertStatus = async (
   input: IUpdateAlertStatusInput,
 ) => {
-  await axiosInstance().post("/api/services/app/SecurityAlert/UpdateStatus", input);
+  await axiosInstance().put("/api/services/app/SecurityAlert/UpdateStatus", input);
 };
 
 export const bulkUpdateSecurityAlertStatus = async (
