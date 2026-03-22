@@ -39,9 +39,9 @@ async function handleRequest(
     body,
   });
 
-  const responseText = await response.text();
+  const responseBody = await response.arrayBuffer();
 
-  return new NextResponse(responseText, {
+  return new NextResponse(responseBody, {
     status: response.status,
     headers: {
       "Content-Type": response.headers.get("content-type") || "application/json",
