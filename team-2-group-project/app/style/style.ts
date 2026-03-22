@@ -153,7 +153,13 @@ export const useStyles = createStyles(() => ({
       padding-inline: 18px;
       color: white;
       font-weight: 600;
-      background: linear-gradient(135deg, #1f6feb 0%, #3251a8 100%);
+      background: linear-gradient(135deg, #0891b2 0%, #0e4f6b 100%);
+    }
+
+    &.ant-btn:hover,
+    &.ant-btn:focus {
+      color: white !important;
+      background: linear-gradient(135deg, #0e9fc3 0%, #0f5a7a 100%) !important;
     }
   `,
 
@@ -419,7 +425,7 @@ export const useStyles = createStyles(() => ({
 
   profileAvatar: css`
     &.ant-avatar {
-      background: linear-gradient(135deg, #1f6feb 0%, #3251a8 100%);
+      background: linear-gradient(135deg, #0891b2 0%, #0e4f6b 100%);
       color: white;
       font-weight: 700;
       font-size: 24px;
