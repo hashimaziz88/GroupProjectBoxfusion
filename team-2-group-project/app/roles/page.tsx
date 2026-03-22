@@ -11,7 +11,6 @@ import {
   Popconfirm,
   Space,
   Table,
-  Tag,
   Typography,
 } from "antd";
 import AppShell from "@/components/auth/AppShell";
@@ -25,7 +24,7 @@ import {
   deleteRole,
   getRoleForEdit,
 } from "@/utils/auth/adminService";
-import { formatDateTime, toArray } from "@/utils/helpers";
+import { toArray } from "@/utils/helpers";
 import { useStyles } from "@/app/style/style";
 import {
   ICreateRoleDto,
@@ -218,26 +217,6 @@ const RolesPageContent = () => {
                   {value || "No description"}
                 </span>
               ),
-            },
-            {
-              title: "Flags",
-              key: "flags",
-              render: (_, record) => (
-                <>
-                  {record.isStatic ? (
-                    <Tag color="blue">Static</Tag>
-                  ) : null}
-                  {record.isDefault ? (
-                    <Tag color="green">Default</Tag>
-                  ) : null}
-                </>
-              ),
-            },
-            {
-              title: "Created",
-              dataIndex: "creationTime",
-              key: "creationTime",
-              render: (value?: string | null) => formatDateTime(value),
             },
             {
               title: "Permissions",

@@ -30,7 +30,7 @@ import {
   resetPassword,
   updateUser,
 } from "@/utils/auth/adminService";
-import { formatDateTime, toArray } from "@/utils/helpers";
+import { toArray } from "@/utils/helpers";
 import { useStyles } from "@/app/style/style";
 import {
   ICreateUserDto,
@@ -377,12 +377,6 @@ const UsersPageContent = () => {
                 ) : (
                   <span className={styles.mutedText}>No roles</span>
                 ),
-            },
-            {
-              title: "Last login",
-              dataIndex: "lastLoginTime",
-              key: "lastLoginTime",
-              render: (value?: string | null) => formatDateTime(value),
             },
             {
               title: "Actions",
