@@ -1,0 +1,130 @@
+<mxfile host="65bd71144e">
+    <diagram name="Page-1" id="DWTWlaoybDcV_3unEDes">
+        <mxGraphModel dx="732" dy="769" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="1600" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title" value="DataSentinel: SQL Security and Anomaly Monitoring Platform" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=24;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="620" y="150" width="900" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="subtitle" value="Current entity model for monitoring, activity ingestion, anomaly detection, alert lifecycle, and risk scoring" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=13;" parent="1" vertex="1">
+                    <mxGeometry x="630" y="195" width="1200" height="24" as="geometry"/>
+                </mxCell>
+                <mxCell id="user" value="User" style="swimlane;fontStyle=1;horizontal=1;startSize=28;rounded=0;fillColor=#ffffff;swimlaneFillColor=#f5f5f5;strokeColor=#666666;fontColor=#000000;whiteSpace=wrap;html=1;container=1;collapsible=0;" parent="1" vertex="1">
+                    <mxGeometry x="640" y="597.5" width="340" height="165" as="geometry"/>
+                </mxCell>
+                <mxCell id="userBody" value="UserName : string&lt;br&gt;Name : string&lt;br&gt;Surname : string&lt;br&gt;EmailAddress : string&lt;br&gt;Role : RefList(DataSentinelRole):&lt;br&gt;(SecurityAnalyst, DBA, OperationsManager)" style="text;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;whiteSpace=wrap;overflow=hidden;rounded=0;pointerEvents=0;" parent="user" vertex="1">
+                    <mxGeometry y="28" width="340" height="137" as="geometry"/>
+                </mxCell>
+                <mxCell id="userRiskProfile" value="UserRiskProfile (Derived from SecurityAlerts Data)" style="swimlane;fontStyle=1;horizontal=1;startSize=28;rounded=0;fillColor=#ffffff;swimlaneFillColor=#f5f5f5;strokeColor=#666666;fontColor=#000000;whiteSpace=wrap;html=1;container=1;collapsible=0;" parent="1" vertex="1">
+                    <mxGeometry x="630" y="1010" width="360" height="240" as="geometry"/>
+                </mxCell>
+                <mxCell id="userRiskProfileBody" value="ActorUser : string&lt;br&gt;ActorIp : string&lt;br&gt;RiskScore : int&lt;br&gt;RiskLevel : RefList(UserRiskLevel):&lt;br&gt;(None, Low, Medium, High, Critical)&lt;br&gt;LastEvaluatedAt : DateTime&lt;br&gt;AlertCount : int&lt;br&gt;FailedLoginCount : int&lt;br&gt;PrivilegedActionCount : int&lt;br&gt;HighSeverityAlertCount : int&lt;br&gt;OutOfHoursEventCount : int" style="text;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;whiteSpace=wrap;overflow=hidden;rounded=0;pointerEvents=0;" parent="userRiskProfile" vertex="1">
+                    <mxGeometry y="28" width="360" height="212" as="geometry"/>
+                </mxCell>
+                <mxCell id="monitoredServer" value="MonitoredServer" style="swimlane;fontStyle=1;horizontal=1;startSize=28;rounded=0;fillColor=#ffffff;swimlaneFillColor=#f5f5f5;strokeColor=#666666;fontColor=#000000;whiteSpace=wrap;html=1;container=1;collapsible=0;" parent="1" vertex="1">
+                    <mxGeometry x="680" y="250" width="340" height="170" as="geometry"/>
+                </mxCell>
+                <mxCell id="monitoredServerBody" value="Name : string&lt;br&gt;HostName : string&lt;br&gt;Environment : string&lt;br&gt;Description : string&lt;br&gt;IsEnabled : bool&lt;br&gt;LastHeartbeatAt : DateTime?" style="text;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;whiteSpace=wrap;overflow=hidden;rounded=0;pointerEvents=0;" parent="monitoredServer" vertex="1">
+                    <mxGeometry y="28" width="340" height="142" as="geometry"/>
+                </mxCell>
+                <mxCell id="monitoredDatabase" value="MonitoredDatabase" style="swimlane;fontStyle=1;horizontal=1;startSize=28;rounded=0;fillColor=#ffffff;swimlaneFillColor=#f5f5f5;strokeColor=#666666;fontColor=#000000;whiteSpace=wrap;html=1;container=1;collapsible=0;" parent="1" vertex="1">
+                    <mxGeometry x="1090" y="250" width="340" height="170" as="geometry"/>
+                </mxCell>
+                <mxCell id="monitoredDatabaseBody" value="partof : MonitoredServer&lt;br&gt;Name : string&lt;br&gt;Engine : string&lt;br&gt;Description : string&lt;br&gt;IsEnabled : bool&lt;br&gt;LastActivityAt : DateTime?" style="text;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;whiteSpace=wrap;overflow=hidden;rounded=0;pointerEvents=0;" parent="monitoredDatabase" vertex="1">
+                    <mxGeometry y="28" width="340" height="142" as="geometry"/>
+                </mxCell>
+                <mxCell id="monitoredTable" value="MonitoredTable" style="swimlane;fontStyle=1;horizontal=1;startSize=28;rounded=0;fillColor=#ffffff;swimlaneFillColor=#f5f5f5;strokeColor=#666666;fontColor=#000000;whiteSpace=wrap;html=1;container=1;collapsible=0;" parent="1" vertex="1">
+                    <mxGeometry x="1500" y="250" width="350" height="170" as="geometry"/>
+                </mxCell>
+                <mxCell id="monitoredTableBody" value="partof : MonitoredDatabase&lt;br&gt;SchemaName : string&lt;br&gt;Name : string&lt;br&gt;Description : string&lt;br&gt;IsEnabled : bool&lt;br&gt;LastActivityAt : DateTime?" style="text;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;whiteSpace=wrap;overflow=hidden;rounded=0;pointerEvents=0;" parent="monitoredTable" vertex="1">
+                    <mxGeometry y="28" width="350" height="142" as="geometry"/>
+                </mxCell>
+                <mxCell id="activityEvent" value="ActivityEvent" style="swimlane;fontStyle=1;horizontal=1;startSize=28;rounded=0;fillColor=#ffffff;swimlaneFillColor=#f5f5f5;strokeColor=#666666;fontColor=#000000;whiteSpace=wrap;html=1;container=1;collapsible=0;" parent="1" vertex="1">
+                    <mxGeometry x="1070" y="510" width="480" height="340" as="geometry"/>
+                </mxCell>
+                <mxCell id="activityEventBody" value="Server : MonitoredServer?&lt;br&gt;Database : MonitoredDatabase?&lt;br&gt;EventTime : DateTime&lt;br&gt;EventType : RefList(ActivityEventType):&lt;br&gt;(Login, Logout, Read, Write, Delete, SchemaChange,&lt;br&gt;PrivilegedAction, PermissionChange, BulkOperation, Other)&lt;br&gt;SourceSystem : string&lt;br&gt;SourceEventKey : string&lt;br&gt;ActorUser : string&lt;br&gt;ActorIp : string&lt;br&gt;ObjectName : string&lt;br&gt;Operation : string&lt;br&gt;RowsAffected : int?&lt;br&gt;DurationMs : int?&lt;br&gt;IsOutOfHours : bool&lt;br&gt;Severity : RefList(ActivitySeverity):&lt;br&gt;(Info, Low, Medium, High, Critical)&lt;br&gt;IsSuccess : bool&lt;br&gt;FailureReason : string&lt;br&gt;EvidenceJson : string" style="text;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;whiteSpace=wrap;overflow=hidden;rounded=0;pointerEvents=0;" parent="activityEvent" vertex="1">
+                    <mxGeometry y="28" width="480" height="302" as="geometry"/>
+                </mxCell>
+                <mxCell id="alertRule" value="AlertRule" style="swimlane;fontStyle=1;horizontal=1;startSize=28;rounded=0;fillColor=#ffffff;swimlaneFillColor=#f5f5f5;strokeColor=#666666;fontColor=#000000;whiteSpace=wrap;html=1;container=1;collapsible=0;" parent="1" vertex="1">
+                    <mxGeometry x="1880" y="390" width="500" height="280" as="geometry"/>
+                </mxCell>
+                <mxCell id="alertRuleBody" value="Name : string&lt;br&gt;Description : string&lt;br&gt;IsEnabled : bool&lt;br&gt;RuleType : RefList(AlertRuleType):&lt;br&gt;(ThresholdBased, RepeatedFailure, OutOfHours,&lt;br&gt;PrivilegedAction, BulkOperation)&lt;br&gt;EventType : RefList(ActivityEventType)?:&lt;br&gt;(Login, Logout, Read, Write, Delete, SchemaChange,&lt;br&gt;PrivilegedAction, PermissionChange, BulkOperation, Other)&lt;br&gt;WindowMinutes : int&lt;br&gt;ThresholdCount : int&lt;br&gt;GroupByField : RefList(AlertRuleGroupByField)?:&lt;br&gt;(ActorUser, ActorIp, DatabaseId, ObjectName)&lt;br&gt;Severity : RefList(ActivitySeverity):&lt;br&gt;(Info, Low, Medium, High, Critical)" style="text;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;whiteSpace=wrap;overflow=hidden;rounded=0;pointerEvents=0;" parent="alertRule" vertex="1">
+                    <mxGeometry y="28" width="500" height="212" as="geometry"/>
+                </mxCell>
+                <mxCell id="securityAlert" value="SecurityAlert" style="swimlane;fontStyle=1;horizontal=1;startSize=28;rounded=0;fillColor=#ffffff;swimlaneFillColor=#f5f5f5;strokeColor=#666666;fontColor=#000000;whiteSpace=wrap;html=1;container=1;collapsible=0;" parent="1" vertex="1">
+                    <mxGeometry x="1560" y="720" width="540" height="400" as="geometry"/>
+                </mxCell>
+                <mxCell id="securityAlertBody" value="Rule : AlertRule&lt;br&gt;TriggeringActivityEvent : ActivityEvent?&lt;br&gt;Server : MonitoredServer?&lt;br&gt;Database : MonitoredDatabase?&lt;br&gt;Table : MonitoredTable?&lt;br&gt;Title : string&lt;br&gt;Summary : string&lt;br&gt;Severity : RefList(ActivitySeverity):&lt;br&gt;(Info, Low, Medium, High, Critical)&lt;br&gt;Status : RefList(SecurityAlertStatus):&lt;br&gt;(New, Acknowledged, Investigating, Resolved, Dismissed)&lt;br&gt;TriggeredAt : DateTime&lt;br&gt;EventTimeStart : DateTime&lt;br&gt;EventTimeEnd : DateTime&lt;br&gt;RelatedEventCount : int&lt;br&gt;PrimaryActorUser : string&lt;br&gt;PrimaryActorIp : string&lt;br&gt;EvidenceSummaryJson : string&lt;br&gt;CorrelationKey : string&lt;br&gt;LastStatusChangedAt : DateTime?&lt;br&gt;AcknowledgedAt : DateTime?&lt;br&gt;ResolvedAt : DateTime?&lt;br&gt;DismissedAt : DateTime?" style="text;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;whiteSpace=wrap;overflow=hidden;rounded=0;pointerEvents=0;" parent="securityAlert" vertex="1">
+                    <mxGeometry y="28" width="540" height="352" as="geometry"/>
+                </mxCell>
+                <mxCell id="incidentNote" value="IncidentNote" style="swimlane;fontStyle=1;horizontal=1;startSize=28;rounded=0;fillColor=#ffffff;swimlaneFillColor=#f5f5f5;strokeColor=#666666;fontColor=#000000;whiteSpace=wrap;html=1;container=1;collapsible=0;" parent="1" vertex="1">
+                    <mxGeometry x="1070" y="1015" width="340" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="incidentNoteBody" value="partof : SecurityAlert&lt;br&gt;Body : string&lt;br&gt;IsInternal : bool" style="text;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;whiteSpace=wrap;overflow=hidden;rounded=0;pointerEvents=0;" parent="incidentNote" vertex="1">
+                    <mxGeometry y="28" width="340" height="82" as="geometry"/>
+                </mxCell>
+                <mxCell id="alertStatusHistory" value="AlertStatusHistory" style="swimlane;fontStyle=1;horizontal=1;startSize=28;rounded=0;fillColor=#ffffff;swimlaneFillColor=#f5f5f5;strokeColor=#666666;fontColor=#000000;whiteSpace=wrap;html=1;container=1;collapsible=0;" parent="1" vertex="1">
+                    <mxGeometry x="1420" y="1160" width="430" height="155" as="geometry"/>
+                </mxCell>
+                <mxCell id="alertStatusHistoryBody" value="partof : SecurityAlert&lt;br&gt;FromStatus : RefList(SecurityAlertStatus):&lt;br&gt;(New, Acknowledged, Investigating, Resolved, Dismissed)&lt;br&gt;ToStatus : RefList(SecurityAlertStatus):&lt;br&gt;(New, Acknowledged, Investigating, Resolved, Dismissed)&lt;br&gt;Comment : string" style="text;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;whiteSpace=wrap;overflow=hidden;rounded=0;pointerEvents=0;" parent="alertStatusHistory" vertex="1">
+                    <mxGeometry y="28" width="430" height="127" as="geometry"/>
+                </mxCell>
+                <mxCell id="edgeDatabaseToServer" value="partof" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#7f7f7f;fontColor=#666666;endArrow=diamondThin;endFill=1;" parent="1" source="monitoredDatabase" target="monitoredServer" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edgeTableToDatabase" value="partof" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#7f7f7f;fontColor=#666666;endArrow=diamondThin;endFill=1;" parent="1" source="monitoredTable" target="monitoredDatabase" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edgeActivityEventToServer" value="Server" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#7f7f7f;fontColor=#666666;endArrow=blockThin;endFill=1;" parent="1" source="activityEvent" target="monitoredServer" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="860" y="520"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="edgeActivityEventToDatabase" value="Database" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#7f7f7f;fontColor=#666666;endArrow=blockThin;endFill=1;" parent="1" source="activityEvent" target="monitoredDatabase" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edgeSecurityAlertToRule" value="Rule" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#7f7f7f;fontColor=#666666;endArrow=blockThin;endFill=1;" parent="1" source="securityAlert" target="alertRule" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edgeSecurityAlertToActivityEvent" value="TriggeringActivityEvent" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#7f7f7f;fontColor=#666666;endArrow=blockThin;endFill=1;" parent="1" source="securityAlert" target="activityEvent" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1380" y="900"/>
+                            <mxPoint x="1380" y="720"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="edgeSecurityAlertToServer" value="Server" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#7f7f7f;fontColor=#666666;endArrow=blockThin;endFill=1;" parent="1" source="securityAlert" target="monitoredServer" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1410" y="980"/>
+                            <mxPoint x="600" y="980"/>
+                            <mxPoint x="600" y="385"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="edgeSecurityAlertToDatabase" value="Database" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#7f7f7f;fontColor=#666666;endArrow=blockThin;endFill=1;" parent="1" source="securityAlert" target="monitoredDatabase" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1430" y="955"/>
+                            <mxPoint x="1030" y="955"/>
+                            <mxPoint x="1030" y="385"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="edgeSecurityAlertToTable" value="Table" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#7f7f7f;fontColor=#666666;endArrow=blockThin;endFill=1;" parent="1" source="securityAlert" target="monitoredTable" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edgeIncidentNoteToSecurityAlert" value="partof" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#7f7f7f;fontColor=#666666;endArrow=diamondThin;endFill=1;" parent="1" source="incidentNote" target="securityAlert" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edgeStatusHistoryToSecurityAlert" value="partof" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#7f7f7f;fontColor=#666666;endArrow=diamondThin;endFill=1;" parent="1" source="alertStatusHistory" target="securityAlert" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
